@@ -71,6 +71,16 @@ func (e *ProblemError) Unwrap() error {
 	return e.Err
 }
 
+func StrictRequestErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
+	log.Printf("request error: %v", err)
+	detail := strings.TrimSpace(err.Error())
+	if detail == "" {
+		detail = "malformed request payload"
+	}
+	problem := NewProblem(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), detail, nil)
+	WriteProblem(w, problem)
+}
+
 func WriteProblem(w http.ResponseWriter, problem gen.Problem) {
 	w.Header().Set("Content-Type", problemContentType)
 	w.WriteHeader(int(problem.Status))

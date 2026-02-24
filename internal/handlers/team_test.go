@@ -182,11 +182,43 @@ func TestTeamPlatformProblemError(t *testing.T) {
 		t.Fatalf("expected ProblemError, got %T", err)
 	}
 
-	if problemErr.Problem.Status != http.StatusUnprocessableEntity {
+	if int(problemErr.Problem.Status) != http.StatusUnprocessableEntity {
 		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
 	}
 
 	if problemErr.Problem.Detail == nil || *problemErr.Problem.Detail != "bad data" {
+		t.Fatalf("unexpected detail: %+v", problemErr.Problem.Detail)
+	}
+}
+
+func TestTeamPlatformErrorWithoutProblem(t *testing.T) {
+	stub := &stubPlatformClient{
+		t:            t,
+		expectMethod: http.MethodGet,
+		expectPath:   "/team/v1/agents",
+		err: &platform.Error{
+			Status: http.StatusUnauthorized,
+			Body:   []byte("denied"),
+		},
+	}
+
+	handler := NewTeam(stub)
+
+	_, err := handler.GetAgents(context.Background(), gen.GetAgentsRequestObject{Params: gen.GetAgentsParams{}})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	var problemErr *ProblemError
+	if !errors.As(err, &problemErr) {
+		t.Fatalf("expected ProblemError, got %T", err)
+	}
+
+	if int(problemErr.Problem.Status) != http.StatusUnauthorized {
+		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
+	}
+
+	if problemErr.Problem.Detail == nil || *problemErr.Problem.Detail != "denied" {
 		t.Fatalf("unexpected detail: %+v", problemErr.Problem.Detail)
 	}
 }

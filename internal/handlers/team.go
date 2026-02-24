@@ -454,7 +454,11 @@ func problemFromPlatform(err *platform.Error) gen.Problem {
 		if detail == "" && err.Err != nil {
 			detail = err.Err.Error()
 		}
-		return NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), detail, nil)
+		title := http.StatusText(status)
+		if title == "" {
+			title = http.StatusText(http.StatusBadGateway)
+		}
+		return NewProblem(status, title, detail, nil)
 	}
 
 	upstream := err.Problem

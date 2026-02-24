@@ -69,6 +69,7 @@ func main() {
 	}
 
 	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client), nil, gen.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
 		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
 	})
 	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{BaseRouter: teamRouter})
