@@ -36,17 +36,23 @@ jobs:
       - name: Spectral lint
         run: spectral lint spec/openapi.yaml
 
-      - name: oasdiff breaking-change gate
+      - name: oasdiff breaking-change gate (bundled)
         run: |
           set -euo pipefail
           git fetch origin main --depth=1 || true
-          BASE_SPEC="$(mktemp)"
+          mkdir -p dist
+          BASE_DIR="$(mktemp -d)"
           if git rev-parse --verify origin/main >/dev/null 2>&1 && git cat-file -e origin/main:spec/openapi.yaml 2>/dev/null; then
-            git show origin/main:spec/openapi.yaml > "$BASE_SPEC"
+            # Extract the entire spec directory from origin/main so $refs resolve
+            git archive --format=tar origin/main spec | tar -x -C "$BASE_DIR"
+            redocly bundle "$BASE_DIR/spec/openapi.yaml" -o dist/base.yaml
           else
-            cp spec/openapi.yaml "$BASE_SPEC"
+            redocly bundle spec/openapi.yaml -o dist/base.yaml
           fi
-          oasdiff breaking --fail-on ERR "$BASE_SPEC" spec/openapi.yaml
+          # Bundle current HEAD spec
+          redocly bundle spec/openapi.yaml -o dist/head.yaml
+          # Run breaking-change diff on bundled specs
+          oasdiff breaking --fail-on ERR dist/base.yaml dist/head.yaml
 
       - name: Verify generated code
         run: |
