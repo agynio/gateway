@@ -44,7 +44,7 @@ docker run --rm -p 8080:8080 \
 
 An OCI-packaged Helm chart is available at `oci://ghcr.io/agynio/charts/gateway`. The chart delegates to the `service-base` library and exposes typed values for all gateway configuration knobs.
 
-Install the chart by providing the target platform URL and (optionally) wiring a secret for the auth token:
+Install the chart by providing the target platform URL (required) and optionally wiring a secret for the auth token:
 
 ```bash
 helm install gateway oci://ghcr.io/agynio/charts/gateway \

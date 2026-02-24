@@ -1,7 +1,7 @@
 {{- define "gateway.configureEnv" -}}
 {{- $env := list -}}
 
-{{- $baseURL := default "https://platform.example.com" .Values.gateway.platformBaseUrl -}}
+{{- $baseURL := required "gateway.platformBaseUrl is required" (trimAll " \n\t" (default "" .Values.gateway.platformBaseUrl)) -}}
 {{- $env = append $env (dict "name" "PLATFORM_BASE_URL" "value" $baseURL) -}}
 
 {{- $authSecret := trim (default "" .Values.gateway.authToken.existingSecret) -}}

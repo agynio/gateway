@@ -151,7 +151,8 @@ metrics:
         scrapeTimeout: ""
 
 gateway:
-  platformBaseUrl: https://platform.example.com
+  # Required: target platform server base URL
+  platformBaseUrl: ""
   timeoutMs: 10000
   retries: 2
   requestHeadersJson: ""

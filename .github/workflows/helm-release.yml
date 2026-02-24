@@ -44,7 +44,7 @@ jobs:
         run: helm dependency build "$CHART_DIR"
 
       - name: Lint chart
-        run: helm lint "$CHART_DIR"
+        run: helm lint "$CHART_DIR" --set gateway.platformBaseUrl=https://platform.example.com
 
       - name: Package chart
         run: |
