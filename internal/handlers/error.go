@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -37,6 +38,37 @@ func NewProblem(status int, title, detail string, errs map[string][]string) gen.
 	}
 
 	return problem
+}
+
+type ProblemError struct {
+	Problem gen.Problem
+	Err     error
+}
+
+func NewProblemError(problem gen.Problem, err error) *ProblemError {
+	return &ProblemError{Problem: problem, Err: err}
+}
+
+func (e *ProblemError) Error() string {
+	ititle := strings.TrimSpace(e.Problem.Title)
+	if ititle == "" {
+		ititle = http.StatusText(int(e.Problem.Status))
+	}
+	detail := ""
+	if e.Problem.Detail != nil {
+		detail = strings.TrimSpace(*e.Problem.Detail)
+	}
+	if detail != "" {
+		return fmt.Sprintf("%s: %s", ititle, detail)
+	}
+	return ititle
+}
+
+func (e *ProblemError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.Err
 }
 
 func WriteProblem(w http.ResponseWriter, problem gen.Problem) {
@@ -79,4 +111,21 @@ func RequestValidationMultiError(me openapi3.MultiError) (int, error) {
 
 func ptr[T any](v T) *T {
 	return &v
+}
+
+func StrictErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
+	var problemErr *ProblemError
+	if errors.As(err, &problemErr) {
+		if problemErr.Err != nil {
+			log.Printf("handler error: %v", problemErr.Err)
+		} else {
+			log.Printf("handler error: %s %s", r.Method, r.URL.Path)
+		}
+		WriteProblem(w, problemErr.Problem)
+		return
+	}
+
+	log.Printf("handler unexpected error: %v", err)
+	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), "upstream request failed", nil)
+	WriteProblem(w, problem)
 }

@@ -1,0 +1,10 @@
+type: string
+enum:
+  - manage
+  - memory
+  - shell_command
+  - send_message
+  - send_slack_message
+  - remind_me
+  - github_clone_repo
+  - call_agent

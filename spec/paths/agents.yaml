@@ -1,0 +1,49 @@
+get:
+  tags: [Agents]
+  summary: List agents
+  parameters:
+    - in: query
+      name: q
+      schema:
+        type: string
+      description: Free-text search (name/role).
+    - in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - in: query
+      name: perPage
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/PaginatedAgents.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+post:
+  tags: [Agents]
+  summary: Create agent
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/AgentCreateRequest.yaml'
+  responses:
+    '201':
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/Agent.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'

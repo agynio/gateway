@@ -2,4 +2,5 @@ package: gen
 generate:
   chi-server: true
   strict-server: true
+  models: true
 output: internal/gen/server.gen.go

@@ -1,0 +1,9 @@
+type: object
+properties:
+  items:
+    type: array
+    items: { $ref: './Tool.yaml' }
+  page: { type: integer }
+  perPage: { type: integer }
+  total: { type: integer }
+required: [items, page, perPage, total]

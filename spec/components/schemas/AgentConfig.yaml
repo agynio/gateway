@@ -1,0 +1,16 @@
+type: object
+properties:
+  model: { type: string, default: 'gpt-5' }
+  systemPrompt: { type: string, default: 'You are a helpful AI assistant.' }
+  debounceMs: { type: integer, minimum: 0, default: 0 }
+  whenBusy: { type: string, enum: ['wait', 'injectAfterTools'], default: 'wait' }
+  processBuffer: { type: string, enum: ['allTogether', 'oneByOne'], default: 'allTogether' }
+  sendFinalResponseToThread: { type: boolean, default: true }
+  summarizationKeepTokens: { type: integer, minimum: 0, default: 0 }
+  summarizationMaxTokens: { type: integer, minimum: 1, default: 512 }
+  restrictOutput: { type: boolean, default: false }
+  restrictionMessage: { type: string, default: "Do not produce a final answer directly. Before finishing, call a tool. If no tool is needed, call the 'finish' tool." }
+  restrictionMaxInjections: { type: integer, minimum: 0, default: 0 }
+  name: { type: string }
+  role: { type: string }
+additionalProperties: false

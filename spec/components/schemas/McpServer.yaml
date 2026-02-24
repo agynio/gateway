@@ -1,0 +1,8 @@
+allOf:
+  - $ref: './EntityMeta.yaml'
+  - type: object
+    properties:
+      title: { type: string }
+      description: { type: string }
+      config: { $ref: './McpServerConfig.yaml' }
+    required: [config]
