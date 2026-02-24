@@ -7,10 +7,6 @@ import (
 	"github.com/agynio/gateway/internal/gen"
 )
 
-const (
-	healthStatusOK = "ok"
-)
-
 type Hello struct{}
 
 func NewHello() *Hello {
@@ -18,7 +14,7 @@ func NewHello() *Hello {
 }
 
 func (h *Hello) HealthCheck(_ context.Context, _ gen.HealthCheckRequestObject) (gen.HealthCheckResponseObject, error) {
-	return gen.HealthCheck200JSONResponse(gen.HealthStatus{Status: healthStatusOK}), nil
+	return gen.HealthCheck200JSONResponse(gen.HealthStatus{Status: gen.Ok}), nil
 }
 
 func (h *Hello) SayHello(_ context.Context, request gen.SayHelloRequestObject) (gen.SayHelloResponseObject, error) {
