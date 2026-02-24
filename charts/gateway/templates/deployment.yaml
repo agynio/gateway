@@ -1,0 +1,2 @@
+{{- include "gateway.configureEnv" . -}}
+{{- include "service-base.deployment" . -}}

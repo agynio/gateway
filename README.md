@@ -24,6 +24,39 @@ All Team Management endpoints are served under the `/team/v1` prefix and proxy t
 
 Enable optional response validation middleware by exporting `OPENAPI_VALIDATE_RESPONSE=true` before starting the server.
 
+## Container image
+
+Pre-built multi-architecture images are published to GitHub Container Registry as [`ghcr.io/agynio/gateway`](https://ghcr.io/agynio/gateway).
+
+- Pushes to `main` publish the `main` and `sha-<shortSHA>` tags.
+- Git tags following `vX.Y.Z` publish the `X.Y.Z`, `X.Y`, `X`, and `latest` tags.
+
+Run the gateway container locally by supplying the required platform settings:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e PLATFORM_BASE_URL="https://platform.example.com" \
+  -e PLATFORM_AUTH_TOKEN="<token>" \
+  ghcr.io/agynio/gateway:main
+```
+
+## Helm chart
+
+An OCI-packaged Helm chart is available at `oci://ghcr.io/agynio/charts/gateway`. The chart delegates to the `service-base` library and exposes typed values for all gateway configuration knobs.
+
+Install the chart by providing the target platform URL and (optionally) wiring a secret for the auth token:
+
+```bash
+helm install gateway oci://ghcr.io/agynio/charts/gateway \
+  --version 0.1.0 \
+  --namespace gateway --create-namespace \
+  --set gateway.platformBaseUrl="https://platform.example.com" \
+  --set gateway.authToken.existingSecret=gateway-auth \
+  --set gateway.authToken.existingSecretKey=token
+```
+
+Additional timeouts, retry counts, request headers, and response validation flags can be adjusted via the `gateway.*` values or by overriding `env`/`extraEnvVars` directly.
+
 ## Development
 
 Regenerate the typed models and Chi server whenever the OpenAPI document changes:
