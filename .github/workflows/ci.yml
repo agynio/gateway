@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install toolchain
+        run: |
+          set -euo pipefail
+          npm install --global @redocly/cli spectral
+          pip install --upgrade pip
+          pip install schemathesis
+          go install github.com/oasdiff/oasdiff@v1.11.10
+          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.0
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Spectral lint
+        run: spectral lint spec/openapi.yaml
+
+      - name: oasdiff breaking-change gate
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1 || true
+          BASE_SPEC="$(mktemp)"
+          if git rev-parse --verify origin/main >/dev/null 2>&1 && git ls-tree --full-tree --name-only origin/main -- spec/openapi.yaml >/dev/null 2>&1; then
+            git show origin/main:spec/openapi.yaml > "$BASE_SPEC"
+          else
+            cp spec/openapi.yaml "$BASE_SPEC"
+          fi
+          oasdiff breaking --fail-on ERR "$BASE_SPEC" spec/openapi.yaml
+
+      - name: Verify generated code
+        run: |
+          set -euo pipefail
+          oapi-codegen --package=gen --generate types -o internal/gen/types.gen.go spec/openapi.yaml
+          oapi-codegen --config oapi-codegen.server.yaml spec/openapi.yaml
+          gofmt -w internal/gen/types.gen.go internal/gen/server.gen.go
+          git diff --exit-code internal/gen/types.gen.go internal/gen/server.gen.go
+
+      - name: Go vet
+        run: go vet ./...
+
+      - name: Go test
+        run: go test ./...
+
+      - name: Start gateway
+        run: |
+          set -euo pipefail
+          VALIDATE_RESPONSES=true go run ./cmd/gateway > gateway.log 2>&1 &
+          echo $! > gateway.pid
+          for _ in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8080/health >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "gateway failed to start" >&2
+          cat gateway.log >&2
+          exit 1
+
+      - name: Schemathesis contract tests
+        run: schemathesis run --checks all --url=http://127.0.0.1:8080 spec/openapi.yaml
+
+      - name: Stop gateway
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f gateway.pid ]; then
+            kill "$(cat gateway.pid)" || true
+            wait "$(cat gateway.pid)" 2>/dev/null || true
+          fi
+          if [ -f gateway.log ]; then
+            cat gateway.log
+          fi
+
+      - name: Build Redoc documentation
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          redocly build-docs spec/openapi.yaml --output dist/redoc.html
+
+      - name: Upload Redoc artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: redoc-docs
+          path: dist/redoc.html
