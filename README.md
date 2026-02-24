@@ -15,36 +15,22 @@ The OpenAPI 3.0 definition lives in [`spec/openapi.yaml`](spec/openapi.yaml). Ge
 ## Quickstart
 
 ```bash
+PLATFORM_BASE_URL="https://platform.example.com" \
+PLATFORM_AUTH_TOKEN="<token>" \
 go run ./cmd/gateway
 ```
 
-### Health check
+All Team Management endpoints are served under the `/team/v1` prefix and proxy to the configured platform server.
 
-```bash
-curl http://localhost:8080/health
-# {"status":"ok"}
-```
-
-### Personalized greeting
-
-```bash
-curl \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Casey"}' \
-  http://localhost:8080/hello
-# {"message":"Hello, Casey"}
-```
-
-Enable optional response validation middleware by exporting `VALIDATE_RESPONSES=true` before starting the server.
+Enable optional response validation middleware by exporting `OPENAPI_VALIDATE_RESPONSE=true` before starting the server.
 
 ## Development
 
 Regenerate the typed models and Chi server whenever the OpenAPI document changes:
 
 ```bash
-oapi-codegen --package=gen --generate types -o internal/gen/types.gen.go spec/openapi.yaml
 oapi-codegen --config oapi-codegen.server.yaml spec/openapi.yaml
-go fmt ./internal/gen/...
+gofmt -w internal/gen/server.gen.go
 ```
 
 Run the full local test suite (mirrors CI):
@@ -65,7 +51,6 @@ The CI workflow performs:
 2. `oasdiff` breaking-change guard against the main branch specification.
 3. Re-generation checks for `oapi-codegen` output and Go format drift.
 4. `go vet` and `go test` over the module.
-5. Schemathesis contract tests against the running service.
-6. Redocly build with the rendered documentation uploaded as an artifact.
+5. Redocly build with the rendered documentation uploaded as an artifact.
 
 Artifacts and reports are available on each run via the GitHub Actions UI.

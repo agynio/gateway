@@ -1,0 +1,19 @@
+type: object
+properties:
+  namespace: { type: string }
+  command: { type: string }
+  workdir: { type: string }
+  env:
+    type: array
+    items: { $ref: './McpEnvItem.yaml' }
+  requestTimeoutMs: { type: integer, minimum: 1 }
+  startupTimeoutMs: { type: integer, minimum: 1 }
+  heartbeatIntervalMs: { type: integer, minimum: 1 }
+  staleTimeoutMs: { type: integer, minimum: 0 }
+  restart:
+    type: object
+    properties:
+      maxAttempts: { type: integer, minimum: 1, default: 5 }
+      backoffMs: { type: integer, minimum: 1, default: 2000 }
+    additionalProperties: false
+additionalProperties: false

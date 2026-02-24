@@ -8,34 +8,724 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Defines values for PostAgentsJSONBodyConfigProcessBuffer.
+const (
+	PostAgentsJSONBodyConfigProcessBufferAllTogether PostAgentsJSONBodyConfigProcessBuffer = "allTogether"
+	PostAgentsJSONBodyConfigProcessBufferOneByOne    PostAgentsJSONBodyConfigProcessBuffer = "oneByOne"
+)
+
+// Defines values for PostAgentsJSONBodyConfigWhenBusy.
+const (
+	PostAgentsJSONBodyConfigWhenBusyInjectAfterTools PostAgentsJSONBodyConfigWhenBusy = "injectAfterTools"
+	PostAgentsJSONBodyConfigWhenBusyWait             PostAgentsJSONBodyConfigWhenBusy = "wait"
+)
+
+// Defines values for PatchAgentsIdJSONBodyConfigProcessBuffer.
+const (
+	PatchAgentsIdJSONBodyConfigProcessBufferAllTogether PatchAgentsIdJSONBodyConfigProcessBuffer = "allTogether"
+	PatchAgentsIdJSONBodyConfigProcessBufferOneByOne    PatchAgentsIdJSONBodyConfigProcessBuffer = "oneByOne"
+)
+
+// Defines values for PatchAgentsIdJSONBodyConfigWhenBusy.
+const (
+	PatchAgentsIdJSONBodyConfigWhenBusyInjectAfterTools PatchAgentsIdJSONBodyConfigWhenBusy = "injectAfterTools"
+	PatchAgentsIdJSONBodyConfigWhenBusyWait             PatchAgentsIdJSONBodyConfigWhenBusy = "wait"
+)
+
+// Defines values for GetAttachmentsParamsSourceType.
+const (
+	GetAttachmentsParamsSourceTypeAgent                  GetAttachmentsParamsSourceType = "agent"
+	GetAttachmentsParamsSourceTypeMcpServer              GetAttachmentsParamsSourceType = "mcpServer"
+	GetAttachmentsParamsSourceTypeMemoryBucket           GetAttachmentsParamsSourceType = "memoryBucket"
+	GetAttachmentsParamsSourceTypeTool                   GetAttachmentsParamsSourceType = "tool"
+	GetAttachmentsParamsSourceTypeWorkspaceConfiguration GetAttachmentsParamsSourceType = "workspaceConfiguration"
+)
+
+// Defines values for GetAttachmentsParamsTargetType.
+const (
+	GetAttachmentsParamsTargetTypeAgent                  GetAttachmentsParamsTargetType = "agent"
+	GetAttachmentsParamsTargetTypeMcpServer              GetAttachmentsParamsTargetType = "mcpServer"
+	GetAttachmentsParamsTargetTypeMemoryBucket           GetAttachmentsParamsTargetType = "memoryBucket"
+	GetAttachmentsParamsTargetTypeTool                   GetAttachmentsParamsTargetType = "tool"
+	GetAttachmentsParamsTargetTypeWorkspaceConfiguration GetAttachmentsParamsTargetType = "workspaceConfiguration"
+)
+
+// Defines values for GetAttachmentsParamsKind.
+const (
+	GetAttachmentsParamsKindAgentMcpServer                  GetAttachmentsParamsKind = "agent_mcpServer"
+	GetAttachmentsParamsKindAgentMemoryBucket               GetAttachmentsParamsKind = "agent_memoryBucket"
+	GetAttachmentsParamsKindAgentTool                       GetAttachmentsParamsKind = "agent_tool"
+	GetAttachmentsParamsKindAgentWorkspaceConfiguration     GetAttachmentsParamsKind = "agent_workspaceConfiguration"
+	GetAttachmentsParamsKindMcpServerWorkspaceConfiguration GetAttachmentsParamsKind = "mcpServer_workspaceConfiguration"
+)
+
+// Defines values for PostAttachmentsJSONBodyKind.
+const (
+	PostAttachmentsJSONBodyKindAgentMcpServer                  PostAttachmentsJSONBodyKind = "agent_mcpServer"
+	PostAttachmentsJSONBodyKindAgentMemoryBucket               PostAttachmentsJSONBodyKind = "agent_memoryBucket"
+	PostAttachmentsJSONBodyKindAgentTool                       PostAttachmentsJSONBodyKind = "agent_tool"
+	PostAttachmentsJSONBodyKindAgentWorkspaceConfiguration     PostAttachmentsJSONBodyKind = "agent_workspaceConfiguration"
+	PostAttachmentsJSONBodyKindMcpServerWorkspaceConfiguration PostAttachmentsJSONBodyKind = "mcpServer_workspaceConfiguration"
+)
+
+// Defines values for PostMemoryBucketsJSONBodyConfigScope.
+const (
+	PostMemoryBucketsJSONBodyConfigScopeGlobal    PostMemoryBucketsJSONBodyConfigScope = "global"
+	PostMemoryBucketsJSONBodyConfigScopePerThread PostMemoryBucketsJSONBodyConfigScope = "perThread"
+)
+
+// Defines values for PatchMemoryBucketsIdJSONBodyConfigScope.
+const (
+	PatchMemoryBucketsIdJSONBodyConfigScopeGlobal    PatchMemoryBucketsIdJSONBodyConfigScope = "global"
+	PatchMemoryBucketsIdJSONBodyConfigScopePerThread PatchMemoryBucketsIdJSONBodyConfigScope = "perThread"
+)
+
+// Defines values for GetToolsParamsType.
+const (
+	GetToolsParamsTypeCallAgent        GetToolsParamsType = "call_agent"
+	GetToolsParamsTypeGithubCloneRepo  GetToolsParamsType = "github_clone_repo"
+	GetToolsParamsTypeManage           GetToolsParamsType = "manage"
+	GetToolsParamsTypeMemory           GetToolsParamsType = "memory"
+	GetToolsParamsTypeRemindMe         GetToolsParamsType = "remind_me"
+	GetToolsParamsTypeSendMessage      GetToolsParamsType = "send_message"
+	GetToolsParamsTypeSendSlackMessage GetToolsParamsType = "send_slack_message"
+	GetToolsParamsTypeShellCommand     GetToolsParamsType = "shell_command"
+)
+
+// Defines values for PostToolsJSONBodyType.
+const (
+	PostToolsJSONBodyTypeCallAgent        PostToolsJSONBodyType = "call_agent"
+	PostToolsJSONBodyTypeGithubCloneRepo  PostToolsJSONBodyType = "github_clone_repo"
+	PostToolsJSONBodyTypeManage           PostToolsJSONBodyType = "manage"
+	PostToolsJSONBodyTypeMemory           PostToolsJSONBodyType = "memory"
+	PostToolsJSONBodyTypeRemindMe         PostToolsJSONBodyType = "remind_me"
+	PostToolsJSONBodyTypeSendMessage      PostToolsJSONBodyType = "send_message"
+	PostToolsJSONBodyTypeSendSlackMessage PostToolsJSONBodyType = "send_slack_message"
+	PostToolsJSONBodyTypeShellCommand     PostToolsJSONBodyType = "shell_command"
+)
+
+// Defines values for PostWorkspaceConfigurationsJSONBodyConfigPlatform.
+const (
+	PostWorkspaceConfigurationsJSONBodyConfigPlatformAuto       PostWorkspaceConfigurationsJSONBodyConfigPlatform = "auto"
+	PostWorkspaceConfigurationsJSONBodyConfigPlatformLinuxamd64 PostWorkspaceConfigurationsJSONBodyConfigPlatform = "linux/amd64"
+	PostWorkspaceConfigurationsJSONBodyConfigPlatformLinuxarm64 PostWorkspaceConfigurationsJSONBodyConfigPlatform = "linux/arm64"
+)
+
+// Defines values for PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform.
+const (
+	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformAuto       PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "auto"
+	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformLinuxamd64 PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "linux/amd64"
+	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformLinuxarm64 PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "linux/arm64"
+)
+
+// GetAgentsParams defines parameters for GetAgents.
+type GetAgentsParams struct {
+	// Q Free-text search (name/role).
+	Q       *string `form:"q,omitempty" json:"q,omitempty"`
+	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// PostAgentsJSONBody defines parameters for PostAgents.
+type PostAgentsJSONBody struct {
+	Config struct {
+		DebounceMs                *int                                   `json:"debounceMs,omitempty"`
+		Model                     *string                                `json:"model,omitempty"`
+		Name                      *string                                `json:"name,omitempty"`
+		ProcessBuffer             *PostAgentsJSONBodyConfigProcessBuffer `json:"processBuffer,omitempty"`
+		RestrictOutput            *bool                                  `json:"restrictOutput,omitempty"`
+		RestrictionMaxInjections  *int                                   `json:"restrictionMaxInjections,omitempty"`
+		RestrictionMessage        *string                                `json:"restrictionMessage,omitempty"`
+		Role                      *string                                `json:"role,omitempty"`
+		SendFinalResponseToThread *bool                                  `json:"sendFinalResponseToThread,omitempty"`
+		SummarizationKeepTokens   *int                                   `json:"summarizationKeepTokens,omitempty"`
+		SummarizationMaxTokens    *int                                   `json:"summarizationMaxTokens,omitempty"`
+		SystemPrompt              *string                                `json:"systemPrompt,omitempty"`
+		WhenBusy                  *PostAgentsJSONBodyConfigWhenBusy      `json:"whenBusy,omitempty"`
+	} `json:"config"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PostAgentsJSONBodyConfigProcessBuffer defines parameters for PostAgents.
+type PostAgentsJSONBodyConfigProcessBuffer string
+
+// PostAgentsJSONBodyConfigWhenBusy defines parameters for PostAgents.
+type PostAgentsJSONBodyConfigWhenBusy string
+
+// PatchAgentsIdJSONBody defines parameters for PatchAgentsId.
+type PatchAgentsIdJSONBody struct {
+	Config *struct {
+		DebounceMs                *int                                      `json:"debounceMs,omitempty"`
+		Model                     *string                                   `json:"model,omitempty"`
+		Name                      *string                                   `json:"name,omitempty"`
+		ProcessBuffer             *PatchAgentsIdJSONBodyConfigProcessBuffer `json:"processBuffer,omitempty"`
+		RestrictOutput            *bool                                     `json:"restrictOutput,omitempty"`
+		RestrictionMaxInjections  *int                                      `json:"restrictionMaxInjections,omitempty"`
+		RestrictionMessage        *string                                   `json:"restrictionMessage,omitempty"`
+		Role                      *string                                   `json:"role,omitempty"`
+		SendFinalResponseToThread *bool                                     `json:"sendFinalResponseToThread,omitempty"`
+		SummarizationKeepTokens   *int                                      `json:"summarizationKeepTokens,omitempty"`
+		SummarizationMaxTokens    *int                                      `json:"summarizationMaxTokens,omitempty"`
+		SystemPrompt              *string                                   `json:"systemPrompt,omitempty"`
+		WhenBusy                  *PatchAgentsIdJSONBodyConfigWhenBusy      `json:"whenBusy,omitempty"`
+	} `json:"config,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PatchAgentsIdJSONBodyConfigProcessBuffer defines parameters for PatchAgentsId.
+type PatchAgentsIdJSONBodyConfigProcessBuffer string
+
+// PatchAgentsIdJSONBodyConfigWhenBusy defines parameters for PatchAgentsId.
+type PatchAgentsIdJSONBodyConfigWhenBusy string
+
+// GetAttachmentsParams defines parameters for GetAttachments.
+type GetAttachmentsParams struct {
+	SourceType *GetAttachmentsParamsSourceType `form:"sourceType,omitempty" json:"sourceType,omitempty"`
+	SourceId   *openapi_types.UUID             `form:"sourceId,omitempty" json:"sourceId,omitempty"`
+	TargetType *GetAttachmentsParamsTargetType `form:"targetType,omitempty" json:"targetType,omitempty"`
+	TargetId   *openapi_types.UUID             `form:"targetId,omitempty" json:"targetId,omitempty"`
+	Kind       *GetAttachmentsParamsKind       `form:"kind,omitempty" json:"kind,omitempty"`
+	Page       *int                            `form:"page,omitempty" json:"page,omitempty"`
+	PerPage    *int                            `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// GetAttachmentsParamsSourceType defines parameters for GetAttachments.
+type GetAttachmentsParamsSourceType string
+
+// GetAttachmentsParamsTargetType defines parameters for GetAttachments.
+type GetAttachmentsParamsTargetType string
+
+// GetAttachmentsParamsKind defines parameters for GetAttachments.
+type GetAttachmentsParamsKind string
+
+// PostAttachmentsJSONBody defines parameters for PostAttachments.
+type PostAttachmentsJSONBody struct {
+	// Kind Relation type between entities
+	Kind     PostAttachmentsJSONBodyKind `json:"kind"`
+	SourceId openapi_types.UUID          `json:"sourceId"`
+	TargetId openapi_types.UUID          `json:"targetId"`
+}
+
+// PostAttachmentsJSONBodyKind defines parameters for PostAttachments.
+type PostAttachmentsJSONBodyKind string
+
+// GetMcpServersParams defines parameters for GetMcpServers.
+type GetMcpServersParams struct {
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// PostMcpServersJSONBody defines parameters for PostMcpServers.
+type PostMcpServersJSONBody struct {
+	Config struct {
+		Command *string `json:"command,omitempty"`
+		Env     *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+		Namespace           *string `json:"namespace,omitempty"`
+		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+		Restart             *struct {
+			BackoffMs   *int `json:"backoffMs,omitempty"`
+			MaxAttempts *int `json:"maxAttempts,omitempty"`
+		} `json:"restart,omitempty"`
+		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+		Workdir          *string `json:"workdir,omitempty"`
+	} `json:"config"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PatchMcpServersIdJSONBody defines parameters for PatchMcpServersId.
+type PatchMcpServersIdJSONBody struct {
+	Config *struct {
+		Command *string `json:"command,omitempty"`
+		Env     *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+		Namespace           *string `json:"namespace,omitempty"`
+		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+		Restart             *struct {
+			BackoffMs   *int `json:"backoffMs,omitempty"`
+			MaxAttempts *int `json:"maxAttempts,omitempty"`
+		} `json:"restart,omitempty"`
+		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+		Workdir          *string `json:"workdir,omitempty"`
+	} `json:"config,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// GetMemoryBucketsParams defines parameters for GetMemoryBuckets.
+type GetMemoryBucketsParams struct {
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// PostMemoryBucketsJSONBody defines parameters for PostMemoryBuckets.
+type PostMemoryBucketsJSONBody struct {
+	Config struct {
+		CollectionPrefix *string                               `json:"collectionPrefix,omitempty"`
+		Scope            *PostMemoryBucketsJSONBodyConfigScope `json:"scope,omitempty"`
+	} `json:"config"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PostMemoryBucketsJSONBodyConfigScope defines parameters for PostMemoryBuckets.
+type PostMemoryBucketsJSONBodyConfigScope string
+
+// PatchMemoryBucketsIdJSONBody defines parameters for PatchMemoryBucketsId.
+type PatchMemoryBucketsIdJSONBody struct {
+	Config *struct {
+		CollectionPrefix *string                                  `json:"collectionPrefix,omitempty"`
+		Scope            *PatchMemoryBucketsIdJSONBodyConfigScope `json:"scope,omitempty"`
+	} `json:"config,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PatchMemoryBucketsIdJSONBodyConfigScope defines parameters for PatchMemoryBucketsId.
+type PatchMemoryBucketsIdJSONBodyConfigScope string
+
+// GetToolsParams defines parameters for GetTools.
+type GetToolsParams struct {
+	// Type Filter by tool type
+	Type    *GetToolsParamsType `form:"type,omitempty" json:"type,omitempty"`
+	Page    *int                `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int                `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// GetToolsParamsType defines parameters for GetTools.
+type GetToolsParamsType string
+
+// PostToolsJSONBody defines parameters for PostTools.
+type PostToolsJSONBody struct {
+	Config      *map[string]interface{} `json:"config,omitempty"`
+	Description *string                 `json:"description,omitempty"`
+	Name        *string                 `json:"name,omitempty"`
+	Type        PostToolsJSONBodyType   `json:"type"`
+}
+
+// PostToolsJSONBodyType defines parameters for PostTools.
+type PostToolsJSONBodyType string
+
+// PatchToolsIdJSONBody defines parameters for PatchToolsId.
+type PatchToolsIdJSONBody struct {
+	Config      *map[string]interface{} `json:"config,omitempty"`
+	Description *string                 `json:"description,omitempty"`
+	Name        *string                 `json:"name,omitempty"`
+}
+
+// GetWorkspaceConfigurationsParams defines parameters for GetWorkspaceConfigurations.
+type GetWorkspaceConfigurationsParams struct {
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
+// PostWorkspaceConfigurationsJSONBody defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBody struct {
+	Config struct {
+		CpuLimit   *PostWorkspaceConfigurationsJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                `json:"enableDinD,omitempty"`
+		Env        *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		Image         *string                                                 `json:"image,omitempty"`
+		InitialScript *string                                                 `json:"initialScript,omitempty"`
+		MemoryLimit   *PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                 `json:"nix,omitempty"`
+		Platform      *PostWorkspaceConfigurationsJSONBodyConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                    `json:"ttlSeconds,omitempty"`
+		Volumes       *struct {
+			Enabled   *bool   `json:"enabled,omitempty"`
+			MountPath *string `json:"mountPath,omitempty"`
+		} `json:"volumes,omitempty"`
+	} `json:"config"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 = float32
+
+// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 = string
+
+// PostWorkspaceConfigurationsJSONBody_Config_CpuLimit defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBody_Config_CpuLimit struct {
+	union json.RawMessage
+}
+
+// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 = float32
+
+// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 = string
+
+// PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit struct {
+	union json.RawMessage
+}
+
+// PostWorkspaceConfigurationsJSONBodyConfigPlatform defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigPlatform string
+
+// PatchWorkspaceConfigurationsIdJSONBody defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBody struct {
+	Config *struct {
+		CpuLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                   `json:"enableDinD,omitempty"`
+		Env        *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		Image         *string                                                    `json:"image,omitempty"`
+		InitialScript *string                                                    `json:"initialScript,omitempty"`
+		MemoryLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                    `json:"nix,omitempty"`
+		Platform      *PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                       `json:"ttlSeconds,omitempty"`
+		Volumes       *struct {
+			Enabled   *bool   `json:"enabled,omitempty"`
+			MountPath *string `json:"mountPath,omitempty"`
+		} `json:"volumes,omitempty"`
+	} `json:"config,omitempty"`
+	Description *string `json:"description,omitempty"`
+	Title       *string `json:"title,omitempty"`
+}
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 = float32
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 = string
+
+// PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit struct {
+	union json.RawMessage
+}
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 = float32
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 = string
+
+// PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit struct {
+	union json.RawMessage
+}
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform string
+
+// PostAgentsJSONRequestBody defines body for PostAgents for application/json ContentType.
+type PostAgentsJSONRequestBody PostAgentsJSONBody
+
+// PatchAgentsIdJSONRequestBody defines body for PatchAgentsId for application/json ContentType.
+type PatchAgentsIdJSONRequestBody PatchAgentsIdJSONBody
+
+// PostAttachmentsJSONRequestBody defines body for PostAttachments for application/json ContentType.
+type PostAttachmentsJSONRequestBody PostAttachmentsJSONBody
+
+// PostMcpServersJSONRequestBody defines body for PostMcpServers for application/json ContentType.
+type PostMcpServersJSONRequestBody PostMcpServersJSONBody
+
+// PatchMcpServersIdJSONRequestBody defines body for PatchMcpServersId for application/json ContentType.
+type PatchMcpServersIdJSONRequestBody PatchMcpServersIdJSONBody
+
+// PostMemoryBucketsJSONRequestBody defines body for PostMemoryBuckets for application/json ContentType.
+type PostMemoryBucketsJSONRequestBody PostMemoryBucketsJSONBody
+
+// PatchMemoryBucketsIdJSONRequestBody defines body for PatchMemoryBucketsId for application/json ContentType.
+type PatchMemoryBucketsIdJSONRequestBody PatchMemoryBucketsIdJSONBody
+
+// PostToolsJSONRequestBody defines body for PostTools for application/json ContentType.
+type PostToolsJSONRequestBody PostToolsJSONBody
+
+// PatchToolsIdJSONRequestBody defines body for PatchToolsId for application/json ContentType.
+type PatchToolsIdJSONRequestBody PatchToolsIdJSONBody
+
+// PostWorkspaceConfigurationsJSONRequestBody defines body for PostWorkspaceConfigurations for application/json ContentType.
+type PostWorkspaceConfigurationsJSONRequestBody PostWorkspaceConfigurationsJSONBody
+
+// PatchWorkspaceConfigurationsIdJSONRequestBody defines body for PatchWorkspaceConfigurationsId for application/json ContentType.
+type PatchWorkspaceConfigurationsIdJSONRequestBody PatchWorkspaceConfigurationsIdJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Health check
-	// (GET /health)
-	HealthCheck(w http.ResponseWriter, r *http.Request)
-	// Generate a personalized greeting
-	// (POST /hello)
-	SayHello(w http.ResponseWriter, r *http.Request)
+	// List agents
+	// (GET /agents)
+	GetAgents(w http.ResponseWriter, r *http.Request, params GetAgentsParams)
+	// Create agent
+	// (POST /agents)
+	PostAgents(w http.ResponseWriter, r *http.Request)
+	// Delete agent
+	// (DELETE /agents/{id})
+	DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Get agent by ID
+	// (GET /agents/{id})
+	GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Update agent (partial)
+	// (PATCH /agents/{id})
+	PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List attachments
+	// (GET /attachments)
+	GetAttachments(w http.ResponseWriter, r *http.Request, params GetAttachmentsParams)
+	// Create attachment (relation)
+	// (POST /attachments)
+	PostAttachments(w http.ResponseWriter, r *http.Request)
+	// Delete attachment
+	// (DELETE /attachments/{id})
+	DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List MCP servers
+	// (GET /mcp-servers)
+	GetMcpServers(w http.ResponseWriter, r *http.Request, params GetMcpServersParams)
+	// Create MCP server
+	// (POST /mcp-servers)
+	PostMcpServers(w http.ResponseWriter, r *http.Request)
+	// Delete MCP server
+	// (DELETE /mcp-servers/{id})
+	DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Get MCP server by ID
+	// (GET /mcp-servers/{id})
+	GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Update MCP server (partial)
+	// (PATCH /mcp-servers/{id})
+	PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List memory buckets
+	// (GET /memory-buckets)
+	GetMemoryBuckets(w http.ResponseWriter, r *http.Request, params GetMemoryBucketsParams)
+	// Create memory bucket
+	// (POST /memory-buckets)
+	PostMemoryBuckets(w http.ResponseWriter, r *http.Request)
+	// Delete memory bucket
+	// (DELETE /memory-buckets/{id})
+	DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Get memory bucket by ID
+	// (GET /memory-buckets/{id})
+	GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Update memory bucket (partial)
+	// (PATCH /memory-buckets/{id})
+	PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List tools
+	// (GET /tools)
+	GetTools(w http.ResponseWriter, r *http.Request, params GetToolsParams)
+	// Create tool
+	// (POST /tools)
+	PostTools(w http.ResponseWriter, r *http.Request)
+	// Delete tool
+	// (DELETE /tools/{id})
+	DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Get tool by ID
+	// (GET /tools/{id})
+	GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Update tool (partial)
+	// (PATCH /tools/{id})
+	PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// List workspace configurations
+	// (GET /workspace-configurations)
+	GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request, params GetWorkspaceConfigurationsParams)
+	// Create workspace configuration
+	// (POST /workspace-configurations)
+	PostWorkspaceConfigurations(w http.ResponseWriter, r *http.Request)
+	// Delete workspace configuration
+	// (DELETE /workspace-configurations/{id})
+	DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Get workspace configuration by ID
+	// (GET /workspace-configurations/{id})
+	GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	// Update workspace configuration (partial)
+	// (PATCH /workspace-configurations/{id})
+	PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
 
 type Unimplemented struct{}
 
-// Health check
-// (GET /health)
-func (_ Unimplemented) HealthCheck(w http.ResponseWriter, r *http.Request) {
+// List agents
+// (GET /agents)
+func (_ Unimplemented) GetAgents(w http.ResponseWriter, r *http.Request, params GetAgentsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Generate a personalized greeting
-// (POST /hello)
-func (_ Unimplemented) SayHello(w http.ResponseWriter, r *http.Request) {
+// Create agent
+// (POST /agents)
+func (_ Unimplemented) PostAgents(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete agent
+// (DELETE /agents/{id})
+func (_ Unimplemented) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get agent by ID
+// (GET /agents/{id})
+func (_ Unimplemented) GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update agent (partial)
+// (PATCH /agents/{id})
+func (_ Unimplemented) PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List attachments
+// (GET /attachments)
+func (_ Unimplemented) GetAttachments(w http.ResponseWriter, r *http.Request, params GetAttachmentsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create attachment (relation)
+// (POST /attachments)
+func (_ Unimplemented) PostAttachments(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete attachment
+// (DELETE /attachments/{id})
+func (_ Unimplemented) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List MCP servers
+// (GET /mcp-servers)
+func (_ Unimplemented) GetMcpServers(w http.ResponseWriter, r *http.Request, params GetMcpServersParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create MCP server
+// (POST /mcp-servers)
+func (_ Unimplemented) PostMcpServers(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete MCP server
+// (DELETE /mcp-servers/{id})
+func (_ Unimplemented) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get MCP server by ID
+// (GET /mcp-servers/{id})
+func (_ Unimplemented) GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update MCP server (partial)
+// (PATCH /mcp-servers/{id})
+func (_ Unimplemented) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List memory buckets
+// (GET /memory-buckets)
+func (_ Unimplemented) GetMemoryBuckets(w http.ResponseWriter, r *http.Request, params GetMemoryBucketsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create memory bucket
+// (POST /memory-buckets)
+func (_ Unimplemented) PostMemoryBuckets(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete memory bucket
+// (DELETE /memory-buckets/{id})
+func (_ Unimplemented) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get memory bucket by ID
+// (GET /memory-buckets/{id})
+func (_ Unimplemented) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update memory bucket (partial)
+// (PATCH /memory-buckets/{id})
+func (_ Unimplemented) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List tools
+// (GET /tools)
+func (_ Unimplemented) GetTools(w http.ResponseWriter, r *http.Request, params GetToolsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create tool
+// (POST /tools)
+func (_ Unimplemented) PostTools(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete tool
+// (DELETE /tools/{id})
+func (_ Unimplemented) DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get tool by ID
+// (GET /tools/{id})
+func (_ Unimplemented) GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update tool (partial)
+// (PATCH /tools/{id})
+func (_ Unimplemented) PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List workspace configurations
+// (GET /workspace-configurations)
+func (_ Unimplemented) GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request, params GetWorkspaceConfigurationsParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create workspace configuration
+// (POST /workspace-configurations)
+func (_ Unimplemented) PostWorkspaceConfigurations(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete workspace configuration
+// (DELETE /workspace-configurations/{id})
+func (_ Unimplemented) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get workspace configuration by ID
+// (GET /workspace-configurations/{id})
+func (_ Unimplemented) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update workspace configuration (partial)
+// (PATCH /workspace-configurations/{id})
+func (_ Unimplemented) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -48,11 +738,40 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// HealthCheck operation middleware
-func (siw *ServerInterfaceWrapper) HealthCheck(w http.ResponseWriter, r *http.Request) {
+// GetAgents operation middleware
+func (siw *ServerInterfaceWrapper) GetAgents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAgentsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.HealthCheck(w, r)
+		siw.Handler.GetAgents(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -62,11 +781,704 @@ func (siw *ServerInterfaceWrapper) HealthCheck(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// SayHello operation middleware
-func (siw *ServerInterfaceWrapper) SayHello(w http.ResponseWriter, r *http.Request) {
+// PostAgents operation middleware
+func (siw *ServerInterfaceWrapper) PostAgents(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SayHello(w, r)
+		siw.Handler.PostAgents(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAgentsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAgentsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAgentsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAgentsId operation middleware
+func (siw *ServerInterfaceWrapper) GetAgentsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAgentsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchAgentsId operation middleware
+func (siw *ServerInterfaceWrapper) PatchAgentsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchAgentsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAttachments operation middleware
+func (siw *ServerInterfaceWrapper) GetAttachments(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetAttachmentsParams
+
+	// ------------- Optional query parameter "sourceType" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sourceType", r.URL.Query(), &params.SourceType)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sourceType", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "sourceId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "sourceId", r.URL.Query(), &params.SourceId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "sourceId", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "targetType" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "targetType", r.URL.Query(), &params.TargetType)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetType", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "targetId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "targetId", r.URL.Query(), &params.TargetId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "targetId", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "kind", r.URL.Query(), &params.Kind)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAttachments(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostAttachments operation middleware
+func (siw *ServerInterfaceWrapper) PostAttachments(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostAttachments(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAttachmentsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAttachmentsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMcpServers operation middleware
+func (siw *ServerInterfaceWrapper) GetMcpServers(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetMcpServersParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMcpServers(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostMcpServers operation middleware
+func (siw *ServerInterfaceWrapper) PostMcpServers(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostMcpServers(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteMcpServersId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteMcpServersId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteMcpServersId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMcpServersId operation middleware
+func (siw *ServerInterfaceWrapper) GetMcpServersId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMcpServersId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchMcpServersId operation middleware
+func (siw *ServerInterfaceWrapper) PatchMcpServersId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchMcpServersId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMemoryBuckets operation middleware
+func (siw *ServerInterfaceWrapper) GetMemoryBuckets(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetMemoryBucketsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMemoryBuckets(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostMemoryBuckets operation middleware
+func (siw *ServerInterfaceWrapper) PostMemoryBuckets(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostMemoryBuckets(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteMemoryBucketsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteMemoryBucketsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetMemoryBucketsId operation middleware
+func (siw *ServerInterfaceWrapper) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetMemoryBucketsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchMemoryBucketsId operation middleware
+func (siw *ServerInterfaceWrapper) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchMemoryBucketsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetTools operation middleware
+func (siw *ServerInterfaceWrapper) GetTools(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetToolsParams
+
+	// ------------- Optional query parameter "type" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "type", r.URL.Query(), &params.Type)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "type", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetTools(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostTools operation middleware
+func (siw *ServerInterfaceWrapper) PostTools(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostTools(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteToolsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteToolsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteToolsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetToolsId operation middleware
+func (siw *ServerInterfaceWrapper) GetToolsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetToolsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchToolsId operation middleware
+func (siw *ServerInterfaceWrapper) PatchToolsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchToolsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceConfigurations operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetWorkspaceConfigurationsParams
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceConfigurations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostWorkspaceConfigurations operation middleware
+func (siw *ServerInterfaceWrapper) PostWorkspaceConfigurations(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostWorkspaceConfigurations(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteWorkspaceConfigurationsId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteWorkspaceConfigurationsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetWorkspaceConfigurationsId operation middleware
+func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetWorkspaceConfigurationsId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchWorkspaceConfigurationsId operation middleware
+func (siw *ServerInterfaceWrapper) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id openapi_types.UUID
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchWorkspaceConfigurationsId(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -190,116 +1602,1554 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/health", wrapper.HealthCheck)
+		r.Get(options.BaseURL+"/agents", wrapper.GetAgents)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/hello", wrapper.SayHello)
+		r.Post(options.BaseURL+"/agents", wrapper.PostAgents)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/agents/{id}", wrapper.DeleteAgentsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/agents/{id}", wrapper.GetAgentsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/agents/{id}", wrapper.PatchAgentsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/attachments", wrapper.GetAttachments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/attachments", wrapper.PostAttachments)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/attachments/{id}", wrapper.DeleteAttachmentsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/mcp-servers", wrapper.GetMcpServers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/mcp-servers", wrapper.PostMcpServers)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/mcp-servers/{id}", wrapper.DeleteMcpServersId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/mcp-servers/{id}", wrapper.GetMcpServersId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/mcp-servers/{id}", wrapper.PatchMcpServersId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/memory-buckets", wrapper.GetMemoryBuckets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/memory-buckets", wrapper.PostMemoryBuckets)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/memory-buckets/{id}", wrapper.DeleteMemoryBucketsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/memory-buckets/{id}", wrapper.GetMemoryBucketsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/memory-buckets/{id}", wrapper.PatchMemoryBucketsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/tools", wrapper.GetTools)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/tools", wrapper.PostTools)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/tools/{id}", wrapper.DeleteToolsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/tools/{id}", wrapper.GetToolsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/tools/{id}", wrapper.PatchToolsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspace-configurations", wrapper.GetWorkspaceConfigurations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/workspace-configurations", wrapper.PostWorkspaceConfigurations)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/workspace-configurations/{id}", wrapper.DeleteWorkspaceConfigurationsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/workspace-configurations/{id}", wrapper.GetWorkspaceConfigurationsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/workspace-configurations/{id}", wrapper.PatchWorkspaceConfigurationsId)
 	})
 
 	return r
 }
 
-type ProblemResponseApplicationProblemPlusJSONResponse Problem
-
-type HealthCheckRequestObject struct {
+type GetAgentsRequestObject struct {
+	Params GetAgentsParams
 }
 
-type HealthCheckResponseObject interface {
-	VisitHealthCheckResponse(w http.ResponseWriter) error
+type GetAgentsResponseObject interface {
+	VisitGetAgentsResponse(w http.ResponseWriter) error
 }
 
-type HealthCheck200JSONResponse HealthStatus
+type GetAgents200JSONResponse struct {
+	Items []struct {
+		Config struct {
+			DebounceMs                *int                                              `json:"debounceMs,omitempty"`
+			Model                     *string                                           `json:"model,omitempty"`
+			Name                      *string                                           `json:"name,omitempty"`
+			ProcessBuffer             *GetAgents200JSONResponseItemsConfigProcessBuffer `json:"processBuffer,omitempty"`
+			RestrictOutput            *bool                                             `json:"restrictOutput,omitempty"`
+			RestrictionMaxInjections  *int                                              `json:"restrictionMaxInjections,omitempty"`
+			RestrictionMessage        *string                                           `json:"restrictionMessage,omitempty"`
+			Role                      *string                                           `json:"role,omitempty"`
+			SendFinalResponseToThread *bool                                             `json:"sendFinalResponseToThread,omitempty"`
+			SummarizationKeepTokens   *int                                              `json:"summarizationKeepTokens,omitempty"`
+			SummarizationMaxTokens    *int                                              `json:"summarizationMaxTokens,omitempty"`
+			SystemPrompt              *string                                           `json:"systemPrompt,omitempty"`
+			WhenBusy                  *GetAgents200JSONResponseItemsConfigWhenBusy      `json:"whenBusy,omitempty"`
+		} `json:"config"`
+		CreatedAt   time.Time          `json:"createdAt"`
+		Description *string            `json:"description,omitempty"`
+		Id          openapi_types.UUID `json:"id"`
+		Title       *string            `json:"title,omitempty"`
+		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
 
-func (response HealthCheck200JSONResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
+func (response GetAgents200JSONResponse) VisitGetAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type HealthCheck400ApplicationProblemPlusJSONResponse struct {
-	ProblemResponseApplicationProblemPlusJSONResponse
+type GetAgentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
 }
 
-func (response HealthCheck400ApplicationProblemPlusJSONResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
+func (response GetAgentsdefaultApplicationProblemPlusJSONResponse) VisitGetAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(400)
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostAgentsRequestObject struct {
+	Body *PostAgentsJSONRequestBody
+}
+
+type PostAgentsResponseObject interface {
+	VisitPostAgentsResponse(w http.ResponseWriter) error
+}
+
+type PostAgents201JSONResponse struct {
+	Config struct {
+		DebounceMs                *int                                          `json:"debounceMs,omitempty"`
+		Model                     *string                                       `json:"model,omitempty"`
+		Name                      *string                                       `json:"name,omitempty"`
+		ProcessBuffer             *PostAgents201JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
+		RestrictOutput            *bool                                         `json:"restrictOutput,omitempty"`
+		RestrictionMaxInjections  *int                                          `json:"restrictionMaxInjections,omitempty"`
+		RestrictionMessage        *string                                       `json:"restrictionMessage,omitempty"`
+		Role                      *string                                       `json:"role,omitempty"`
+		SendFinalResponseToThread *bool                                         `json:"sendFinalResponseToThread,omitempty"`
+		SummarizationKeepTokens   *int                                          `json:"summarizationKeepTokens,omitempty"`
+		SummarizationMaxTokens    *int                                          `json:"summarizationMaxTokens,omitempty"`
+		SystemPrompt              *string                                       `json:"systemPrompt,omitempty"`
+		WhenBusy                  *PostAgents201JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PostAgents201JSONResponse) VisitPostAgentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type HealthCheck401ApplicationProblemPlusJSONResponse Problem
+type PostAgentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
 
-func (response HealthCheck401ApplicationProblemPlusJSONResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
+func (response PostAgentsdefaultApplicationProblemPlusJSONResponse) VisitPostAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
+	w.WriteHeader(response.StatusCode)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type HealthCheck422ApplicationProblemPlusJSONResponse Problem
+type DeleteAgentsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
 
-func (response HealthCheck422ApplicationProblemPlusJSONResponse) VisitHealthCheckResponse(w http.ResponseWriter) error {
+type DeleteAgentsIdResponseObject interface {
+	VisitDeleteAgentsIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteAgentsId204Response struct {
+}
+
+func (response DeleteAgentsId204Response) VisitDeleteAgentsIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAgentsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteAgentsIddefaultApplicationProblemPlusJSONResponse) VisitDeleteAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
+	w.WriteHeader(response.StatusCode)
 
-	return json.NewEncoder(w).Encode(response)
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
-type SayHelloRequestObject struct {
-	Body *SayHelloJSONRequestBody
+type GetAgentsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
 }
 
-type SayHelloResponseObject interface {
-	VisitSayHelloResponse(w http.ResponseWriter) error
+type GetAgentsIdResponseObject interface {
+	VisitGetAgentsIdResponse(w http.ResponseWriter) error
 }
 
-type SayHello200JSONResponse HelloResponse
+type GetAgentsId200JSONResponse struct {
+	Config struct {
+		DebounceMs                *int                                           `json:"debounceMs,omitempty"`
+		Model                     *string                                        `json:"model,omitempty"`
+		Name                      *string                                        `json:"name,omitempty"`
+		ProcessBuffer             *GetAgentsId200JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
+		RestrictOutput            *bool                                          `json:"restrictOutput,omitempty"`
+		RestrictionMaxInjections  *int                                           `json:"restrictionMaxInjections,omitempty"`
+		RestrictionMessage        *string                                        `json:"restrictionMessage,omitempty"`
+		Role                      *string                                        `json:"role,omitempty"`
+		SendFinalResponseToThread *bool                                          `json:"sendFinalResponseToThread,omitempty"`
+		SummarizationKeepTokens   *int                                           `json:"summarizationKeepTokens,omitempty"`
+		SummarizationMaxTokens    *int                                           `json:"summarizationMaxTokens,omitempty"`
+		SystemPrompt              *string                                        `json:"systemPrompt,omitempty"`
+		WhenBusy                  *GetAgentsId200JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
 
-func (response SayHello200JSONResponse) VisitSayHelloResponse(w http.ResponseWriter) error {
+func (response GetAgentsId200JSONResponse) VisitGetAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type SayHello400ApplicationProblemPlusJSONResponse struct {
-	ProblemResponseApplicationProblemPlusJSONResponse
+type GetAgentsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
 }
 
-func (response SayHello400ApplicationProblemPlusJSONResponse) VisitSayHelloResponse(w http.ResponseWriter) error {
+func (response GetAgentsIddefaultApplicationProblemPlusJSONResponse) VisitGetAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(400)
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchAgentsIdRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PatchAgentsIdJSONRequestBody
+}
+
+type PatchAgentsIdResponseObject interface {
+	VisitPatchAgentsIdResponse(w http.ResponseWriter) error
+}
+
+type PatchAgentsId200JSONResponse struct {
+	Config struct {
+		DebounceMs                *int                                             `json:"debounceMs,omitempty"`
+		Model                     *string                                          `json:"model,omitempty"`
+		Name                      *string                                          `json:"name,omitempty"`
+		ProcessBuffer             *PatchAgentsId200JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
+		RestrictOutput            *bool                                            `json:"restrictOutput,omitempty"`
+		RestrictionMaxInjections  *int                                             `json:"restrictionMaxInjections,omitempty"`
+		RestrictionMessage        *string                                          `json:"restrictionMessage,omitempty"`
+		Role                      *string                                          `json:"role,omitempty"`
+		SendFinalResponseToThread *bool                                            `json:"sendFinalResponseToThread,omitempty"`
+		SummarizationKeepTokens   *int                                             `json:"summarizationKeepTokens,omitempty"`
+		SummarizationMaxTokens    *int                                             `json:"summarizationMaxTokens,omitempty"`
+		SystemPrompt              *string                                          `json:"systemPrompt,omitempty"`
+		WhenBusy                  *PatchAgentsId200JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PatchAgentsId200JSONResponse) VisitPatchAgentsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type SayHello401ApplicationProblemPlusJSONResponse Problem
+type PatchAgentsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
 
-func (response SayHello401ApplicationProblemPlusJSONResponse) VisitSayHelloResponse(w http.ResponseWriter) error {
+func (response PatchAgentsIddefaultApplicationProblemPlusJSONResponse) VisitPatchAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(401)
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetAttachmentsRequestObject struct {
+	Params GetAttachmentsParams
+}
+
+type GetAttachmentsResponseObject interface {
+	VisitGetAttachmentsResponse(w http.ResponseWriter) error
+}
+
+type GetAttachments200JSONResponse struct {
+	Items []struct {
+		CreatedAt time.Time          `json:"createdAt"`
+		Id        openapi_types.UUID `json:"id"`
+
+		// Kind Relation type between entities
+		Kind       GetAttachments200JSONResponseItemsKind       `json:"kind"`
+		SourceId   openapi_types.UUID                           `json:"sourceId"`
+		SourceType GetAttachments200JSONResponseItemsSourceType `json:"sourceType"`
+		TargetId   openapi_types.UUID                           `json:"targetId"`
+		TargetType GetAttachments200JSONResponseItemsTargetType `json:"targetType"`
+		UpdatedAt  *time.Time                                   `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
+
+func (response GetAttachments200JSONResponse) VisitGetAttachmentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
 }
 
-type SayHello422ApplicationProblemPlusJSONResponse Problem
+type GetAttachmentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
 
-func (response SayHello422ApplicationProblemPlusJSONResponse) VisitSayHelloResponse(w http.ResponseWriter) error {
+func (response GetAttachmentsdefaultApplicationProblemPlusJSONResponse) VisitGetAttachmentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(422)
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostAttachmentsRequestObject struct {
+	Body *PostAttachmentsJSONRequestBody
+}
+
+type PostAttachmentsResponseObject interface {
+	VisitPostAttachmentsResponse(w http.ResponseWriter) error
+}
+
+type PostAttachments201JSONResponse struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Kind Relation type between entities
+	Kind       PostAttachments201JSONResponseKind       `json:"kind"`
+	SourceId   openapi_types.UUID                       `json:"sourceId"`
+	SourceType PostAttachments201JSONResponseSourceType `json:"sourceType"`
+	TargetId   openapi_types.UUID                       `json:"targetId"`
+	TargetType PostAttachments201JSONResponseTargetType `json:"targetType"`
+	UpdatedAt  *time.Time                               `json:"updatedAt,omitempty"`
+}
+
+func (response PostAttachments201JSONResponse) VisitPostAttachmentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type PostAttachmentsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PostAttachmentsdefaultApplicationProblemPlusJSONResponse) VisitPostAttachmentsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteAttachmentsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteAttachmentsIdResponseObject interface {
+	VisitDeleteAttachmentsIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteAttachmentsId204Response struct {
+}
+
+func (response DeleteAttachmentsId204Response) VisitDeleteAttachmentsIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteAttachmentsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteAttachmentsIddefaultApplicationProblemPlusJSONResponse) VisitDeleteAttachmentsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetMcpServersRequestObject struct {
+	Params GetMcpServersParams
+}
+
+type GetMcpServersResponseObject interface {
+	VisitGetMcpServersResponse(w http.ResponseWriter) error
+}
+
+type GetMcpServers200JSONResponse struct {
+	Items []struct {
+		Config struct {
+			Command *string `json:"command,omitempty"`
+			Env     *[]struct {
+				Name  string `json:"name"`
+				Value string `json:"value"`
+			} `json:"env,omitempty"`
+			HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+			Namespace           *string `json:"namespace,omitempty"`
+			RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+			Restart             *struct {
+				BackoffMs   *int `json:"backoffMs,omitempty"`
+				MaxAttempts *int `json:"maxAttempts,omitempty"`
+			} `json:"restart,omitempty"`
+			StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+			StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+			Workdir          *string `json:"workdir,omitempty"`
+		} `json:"config"`
+		CreatedAt   time.Time          `json:"createdAt"`
+		Description *string            `json:"description,omitempty"`
+		Id          openapi_types.UUID `json:"id"`
+		Title       *string            `json:"title,omitempty"`
+		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
+
+func (response GetMcpServers200JSONResponse) VisitGetMcpServersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMcpServersdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetMcpServersdefaultApplicationProblemPlusJSONResponse) VisitGetMcpServersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostMcpServersRequestObject struct {
+	Body *PostMcpServersJSONRequestBody
+}
+
+type PostMcpServersResponseObject interface {
+	VisitPostMcpServersResponse(w http.ResponseWriter) error
+}
+
+type PostMcpServers201JSONResponse struct {
+	Config struct {
+		Command *string `json:"command,omitempty"`
+		Env     *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+		Namespace           *string `json:"namespace,omitempty"`
+		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+		Restart             *struct {
+			BackoffMs   *int `json:"backoffMs,omitempty"`
+			MaxAttempts *int `json:"maxAttempts,omitempty"`
+		} `json:"restart,omitempty"`
+		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+		Workdir          *string `json:"workdir,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PostMcpServers201JSONResponse) VisitPostMcpServersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMcpServersdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PostMcpServersdefaultApplicationProblemPlusJSONResponse) VisitPostMcpServersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteMcpServersIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteMcpServersIdResponseObject interface {
+	VisitDeleteMcpServersIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteMcpServersId204Response struct {
+}
+
+func (response DeleteMcpServersId204Response) VisitDeleteMcpServersIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteMcpServersIddefaultApplicationProblemPlusJSONResponse) VisitDeleteMcpServersIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetMcpServersIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type GetMcpServersIdResponseObject interface {
+	VisitGetMcpServersIdResponse(w http.ResponseWriter) error
+}
+
+type GetMcpServersId200JSONResponse struct {
+	Config struct {
+		Command *string `json:"command,omitempty"`
+		Env     *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+		Namespace           *string `json:"namespace,omitempty"`
+		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+		Restart             *struct {
+			BackoffMs   *int `json:"backoffMs,omitempty"`
+			MaxAttempts *int `json:"maxAttempts,omitempty"`
+		} `json:"restart,omitempty"`
+		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+		Workdir          *string `json:"workdir,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response GetMcpServersId200JSONResponse) VisitGetMcpServersIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetMcpServersIddefaultApplicationProblemPlusJSONResponse) VisitGetMcpServersIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchMcpServersIdRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PatchMcpServersIdJSONRequestBody
+}
+
+type PatchMcpServersIdResponseObject interface {
+	VisitPatchMcpServersIdResponse(w http.ResponseWriter) error
+}
+
+type PatchMcpServersId200JSONResponse struct {
+	Config struct {
+		Command *string `json:"command,omitempty"`
+		Env     *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
+		Namespace           *string `json:"namespace,omitempty"`
+		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
+		Restart             *struct {
+			BackoffMs   *int `json:"backoffMs,omitempty"`
+			MaxAttempts *int `json:"maxAttempts,omitempty"`
+		} `json:"restart,omitempty"`
+		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+		Workdir          *string `json:"workdir,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PatchMcpServersId200JSONResponse) VisitPatchMcpServersIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PatchMcpServersIddefaultApplicationProblemPlusJSONResponse) VisitPatchMcpServersIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetMemoryBucketsRequestObject struct {
+	Params GetMemoryBucketsParams
+}
+
+type GetMemoryBucketsResponseObject interface {
+	VisitGetMemoryBucketsResponse(w http.ResponseWriter) error
+}
+
+type GetMemoryBuckets200JSONResponse struct {
+	Items []struct {
+		Config struct {
+			CollectionPrefix *string                                          `json:"collectionPrefix,omitempty"`
+			Scope            *GetMemoryBuckets200JSONResponseItemsConfigScope `json:"scope,omitempty"`
+		} `json:"config"`
+		CreatedAt   time.Time          `json:"createdAt"`
+		Description *string            `json:"description,omitempty"`
+		Id          openapi_types.UUID `json:"id"`
+		Title       *string            `json:"title,omitempty"`
+		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
+
+func (response GetMemoryBuckets200JSONResponse) VisitGetMemoryBucketsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMemoryBucketsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetMemoryBucketsdefaultApplicationProblemPlusJSONResponse) VisitGetMemoryBucketsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostMemoryBucketsRequestObject struct {
+	Body *PostMemoryBucketsJSONRequestBody
+}
+
+type PostMemoryBucketsResponseObject interface {
+	VisitPostMemoryBucketsResponse(w http.ResponseWriter) error
+}
+
+type PostMemoryBuckets201JSONResponse struct {
+	Config struct {
+		CollectionPrefix *string                                      `json:"collectionPrefix,omitempty"`
+		Scope            *PostMemoryBuckets201JSONResponseConfigScope `json:"scope,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PostMemoryBuckets201JSONResponse) VisitPostMemoryBucketsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostMemoryBucketsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PostMemoryBucketsdefaultApplicationProblemPlusJSONResponse) VisitPostMemoryBucketsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteMemoryBucketsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteMemoryBucketsIdResponseObject interface {
+	VisitDeleteMemoryBucketsIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteMemoryBucketsId204Response struct {
+}
+
+func (response DeleteMemoryBucketsId204Response) VisitDeleteMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteMemoryBucketsIddefaultApplicationProblemPlusJSONResponse) VisitDeleteMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetMemoryBucketsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type GetMemoryBucketsIdResponseObject interface {
+	VisitGetMemoryBucketsIdResponse(w http.ResponseWriter) error
+}
+
+type GetMemoryBucketsId200JSONResponse struct {
+	Config struct {
+		CollectionPrefix *string                                       `json:"collectionPrefix,omitempty"`
+		Scope            *GetMemoryBucketsId200JSONResponseConfigScope `json:"scope,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response GetMemoryBucketsId200JSONResponse) VisitGetMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetMemoryBucketsIddefaultApplicationProblemPlusJSONResponse) VisitGetMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchMemoryBucketsIdRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PatchMemoryBucketsIdJSONRequestBody
+}
+
+type PatchMemoryBucketsIdResponseObject interface {
+	VisitPatchMemoryBucketsIdResponse(w http.ResponseWriter) error
+}
+
+type PatchMemoryBucketsId200JSONResponse struct {
+	Config struct {
+		CollectionPrefix *string                                         `json:"collectionPrefix,omitempty"`
+		Scope            *PatchMemoryBucketsId200JSONResponseConfigScope `json:"scope,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PatchMemoryBucketsId200JSONResponse) VisitPatchMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PatchMemoryBucketsIddefaultApplicationProblemPlusJSONResponse) VisitPatchMemoryBucketsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetToolsRequestObject struct {
+	Params GetToolsParams
+}
+
+type GetToolsResponseObject interface {
+	VisitGetToolsResponse(w http.ResponseWriter) error
+}
+
+type GetTools200JSONResponse struct {
+	Items []struct {
+		Config      *map[string]interface{}          `json:"config,omitempty"`
+		CreatedAt   time.Time                        `json:"createdAt"`
+		Description *string                          `json:"description,omitempty"`
+		Id          openapi_types.UUID               `json:"id"`
+		Name        *string                          `json:"name,omitempty"`
+		Type        GetTools200JSONResponseItemsType `json:"type"`
+		UpdatedAt   *time.Time                       `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
+
+func (response GetTools200JSONResponse) VisitGetToolsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetToolsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetToolsdefaultApplicationProblemPlusJSONResponse) VisitGetToolsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostToolsRequestObject struct {
+	Body *PostToolsJSONRequestBody
+}
+
+type PostToolsResponseObject interface {
+	VisitPostToolsResponse(w http.ResponseWriter) error
+}
+
+type PostTools201JSONResponse struct {
+	Config      *map[string]interface{}      `json:"config,omitempty"`
+	CreatedAt   time.Time                    `json:"createdAt"`
+	Description *string                      `json:"description,omitempty"`
+	Id          openapi_types.UUID           `json:"id"`
+	Name        *string                      `json:"name,omitempty"`
+	Type        PostTools201JSONResponseType `json:"type"`
+	UpdatedAt   *time.Time                   `json:"updatedAt,omitempty"`
+}
+
+func (response PostTools201JSONResponse) VisitPostToolsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostToolsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PostToolsdefaultApplicationProblemPlusJSONResponse) VisitPostToolsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteToolsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteToolsIdResponseObject interface {
+	VisitDeleteToolsIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteToolsId204Response struct {
+}
+
+func (response DeleteToolsId204Response) VisitDeleteToolsIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteToolsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteToolsIddefaultApplicationProblemPlusJSONResponse) VisitDeleteToolsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetToolsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type GetToolsIdResponseObject interface {
+	VisitGetToolsIdResponse(w http.ResponseWriter) error
+}
+
+type GetToolsId200JSONResponse struct {
+	Config      *map[string]interface{}       `json:"config,omitempty"`
+	CreatedAt   time.Time                     `json:"createdAt"`
+	Description *string                       `json:"description,omitempty"`
+	Id          openapi_types.UUID            `json:"id"`
+	Name        *string                       `json:"name,omitempty"`
+	Type        GetToolsId200JSONResponseType `json:"type"`
+	UpdatedAt   *time.Time                    `json:"updatedAt,omitempty"`
+}
+
+func (response GetToolsId200JSONResponse) VisitGetToolsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetToolsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetToolsIddefaultApplicationProblemPlusJSONResponse) VisitGetToolsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchToolsIdRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PatchToolsIdJSONRequestBody
+}
+
+type PatchToolsIdResponseObject interface {
+	VisitPatchToolsIdResponse(w http.ResponseWriter) error
+}
+
+type PatchToolsId200JSONResponse struct {
+	Config      *map[string]interface{}         `json:"config,omitempty"`
+	CreatedAt   time.Time                       `json:"createdAt"`
+	Description *string                         `json:"description,omitempty"`
+	Id          openapi_types.UUID              `json:"id"`
+	Name        *string                         `json:"name,omitempty"`
+	Type        PatchToolsId200JSONResponseType `json:"type"`
+	UpdatedAt   *time.Time                      `json:"updatedAt,omitempty"`
+}
+
+func (response PatchToolsId200JSONResponse) VisitPatchToolsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchToolsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PatchToolsIddefaultApplicationProblemPlusJSONResponse) VisitPatchToolsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetWorkspaceConfigurationsRequestObject struct {
+	Params GetWorkspaceConfigurationsParams
+}
+
+type GetWorkspaceConfigurationsResponseObject interface {
+	VisitGetWorkspaceConfigurationsResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceConfigurations200JSONResponse struct {
+	Items []struct {
+		Config struct {
+			CpuLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_CpuLimit `json:"cpu_limit,omitempty"`
+			EnableDinD *bool                                                            `json:"enableDinD,omitempty"`
+			Env        *[]struct {
+				Name  string `json:"name"`
+				Value string `json:"value"`
+			} `json:"env,omitempty"`
+			Image         *string                                                             `json:"image,omitempty"`
+			InitialScript *string                                                             `json:"initialScript,omitempty"`
+			MemoryLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_MemoryLimit `json:"memory_limit,omitempty"`
+			Nix           *map[string]interface{}                                             `json:"nix,omitempty"`
+			Platform      *GetWorkspaceConfigurations200JSONResponseItemsConfigPlatform       `json:"platform,omitempty"`
+			TtlSeconds    *int                                                                `json:"ttlSeconds,omitempty"`
+			Volumes       *struct {
+				Enabled   *bool   `json:"enabled,omitempty"`
+				MountPath *string `json:"mountPath,omitempty"`
+			} `json:"volumes,omitempty"`
+		} `json:"config"`
+		CreatedAt   time.Time          `json:"createdAt"`
+		Description *string            `json:"description,omitempty"`
+		Id          openapi_types.UUID `json:"id"`
+		Title       *string            `json:"title,omitempty"`
+		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+	} `json:"items"`
+	Page    int `json:"page"`
+	PerPage int `json:"perPage"`
+	Total   int `json:"total"`
+}
+
+func (response GetWorkspaceConfigurations200JSONResponse) VisitGetWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse) VisitGetWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostWorkspaceConfigurationsRequestObject struct {
+	Body *PostWorkspaceConfigurationsJSONRequestBody
+}
+
+type PostWorkspaceConfigurationsResponseObject interface {
+	VisitPostWorkspaceConfigurationsResponse(w http.ResponseWriter) error
+}
+
+type PostWorkspaceConfigurations201JSONResponse struct {
+	Config struct {
+		CpuLimit   *PostWorkspaceConfigurations201JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                       `json:"enableDinD,omitempty"`
+		Env        *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		Image         *string                                                        `json:"image,omitempty"`
+		InitialScript *string                                                        `json:"initialScript,omitempty"`
+		MemoryLimit   *PostWorkspaceConfigurations201JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                        `json:"nix,omitempty"`
+		Platform      *PostWorkspaceConfigurations201JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                           `json:"ttlSeconds,omitempty"`
+		Volumes       *struct {
+			Enabled   *bool   `json:"enabled,omitempty"`
+			MountPath *string `json:"mountPath,omitempty"`
+		} `json:"volumes,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PostWorkspaceConfigurations201JSONResponse) VisitPostWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PostWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse) VisitPostWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteWorkspaceConfigurationsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type DeleteWorkspaceConfigurationsIdResponseObject interface {
+	VisitDeleteWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteWorkspaceConfigurationsId204Response struct {
+}
+
+func (response DeleteWorkspaceConfigurationsId204Response) VisitDeleteWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response DeleteWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse) VisitDeleteWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetWorkspaceConfigurationsIdRequestObject struct {
+	Id openapi_types.UUID `json:"id"`
+}
+
+type GetWorkspaceConfigurationsIdResponseObject interface {
+	VisitGetWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error
+}
+
+type GetWorkspaceConfigurationsId200JSONResponse struct {
+	Config struct {
+		CpuLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                        `json:"enableDinD,omitempty"`
+		Env        *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		Image         *string                                                         `json:"image,omitempty"`
+		InitialScript *string                                                         `json:"initialScript,omitempty"`
+		MemoryLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                         `json:"nix,omitempty"`
+		Platform      *GetWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                            `json:"ttlSeconds,omitempty"`
+		Volumes       *struct {
+			Enabled   *bool   `json:"enabled,omitempty"`
+			MountPath *string `json:"mountPath,omitempty"`
+		} `json:"volumes,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response GetWorkspaceConfigurationsId200JSONResponse) VisitGetWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response GetWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse) VisitGetWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchWorkspaceConfigurationsIdRequestObject struct {
+	Id   openapi_types.UUID `json:"id"`
+	Body *PatchWorkspaceConfigurationsIdJSONRequestBody
+}
+
+type PatchWorkspaceConfigurationsIdResponseObject interface {
+	VisitPatchWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error
+}
+
+type PatchWorkspaceConfigurationsId200JSONResponse struct {
+	Config struct {
+		CpuLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                          `json:"enableDinD,omitempty"`
+		Env        *[]struct {
+			Name  string `json:"name"`
+			Value string `json:"value"`
+		} `json:"env,omitempty"`
+		Image         *string                                                           `json:"image,omitempty"`
+		InitialScript *string                                                           `json:"initialScript,omitempty"`
+		MemoryLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                           `json:"nix,omitempty"`
+		Platform      *PatchWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                              `json:"ttlSeconds,omitempty"`
+		Volumes       *struct {
+			Enabled   *bool   `json:"enabled,omitempty"`
+			MountPath *string `json:"mountPath,omitempty"`
+		} `json:"volumes,omitempty"`
+	} `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+func (response PatchWorkspaceConfigurationsId200JSONResponse) VisitPatchWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
+	Body struct {
+		Detail   *string `json:"detail,omitempty"`
+		Instance *string `json:"instance,omitempty"`
+		Status   int     `json:"status"`
+		Title    string  `json:"title"`
+		Type     *string `json:"type,omitempty"`
+	}
+	StatusCode int
+}
+
+func (response PatchWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse) VisitPatchWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
 }
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-	// Health check
-	// (GET /health)
-	HealthCheck(ctx context.Context, request HealthCheckRequestObject) (HealthCheckResponseObject, error)
-	// Generate a personalized greeting
-	// (POST /hello)
-	SayHello(ctx context.Context, request SayHelloRequestObject) (SayHelloResponseObject, error)
+	// List agents
+	// (GET /agents)
+	GetAgents(ctx context.Context, request GetAgentsRequestObject) (GetAgentsResponseObject, error)
+	// Create agent
+	// (POST /agents)
+	PostAgents(ctx context.Context, request PostAgentsRequestObject) (PostAgentsResponseObject, error)
+	// Delete agent
+	// (DELETE /agents/{id})
+	DeleteAgentsId(ctx context.Context, request DeleteAgentsIdRequestObject) (DeleteAgentsIdResponseObject, error)
+	// Get agent by ID
+	// (GET /agents/{id})
+	GetAgentsId(ctx context.Context, request GetAgentsIdRequestObject) (GetAgentsIdResponseObject, error)
+	// Update agent (partial)
+	// (PATCH /agents/{id})
+	PatchAgentsId(ctx context.Context, request PatchAgentsIdRequestObject) (PatchAgentsIdResponseObject, error)
+	// List attachments
+	// (GET /attachments)
+	GetAttachments(ctx context.Context, request GetAttachmentsRequestObject) (GetAttachmentsResponseObject, error)
+	// Create attachment (relation)
+	// (POST /attachments)
+	PostAttachments(ctx context.Context, request PostAttachmentsRequestObject) (PostAttachmentsResponseObject, error)
+	// Delete attachment
+	// (DELETE /attachments/{id})
+	DeleteAttachmentsId(ctx context.Context, request DeleteAttachmentsIdRequestObject) (DeleteAttachmentsIdResponseObject, error)
+	// List MCP servers
+	// (GET /mcp-servers)
+	GetMcpServers(ctx context.Context, request GetMcpServersRequestObject) (GetMcpServersResponseObject, error)
+	// Create MCP server
+	// (POST /mcp-servers)
+	PostMcpServers(ctx context.Context, request PostMcpServersRequestObject) (PostMcpServersResponseObject, error)
+	// Delete MCP server
+	// (DELETE /mcp-servers/{id})
+	DeleteMcpServersId(ctx context.Context, request DeleteMcpServersIdRequestObject) (DeleteMcpServersIdResponseObject, error)
+	// Get MCP server by ID
+	// (GET /mcp-servers/{id})
+	GetMcpServersId(ctx context.Context, request GetMcpServersIdRequestObject) (GetMcpServersIdResponseObject, error)
+	// Update MCP server (partial)
+	// (PATCH /mcp-servers/{id})
+	PatchMcpServersId(ctx context.Context, request PatchMcpServersIdRequestObject) (PatchMcpServersIdResponseObject, error)
+	// List memory buckets
+	// (GET /memory-buckets)
+	GetMemoryBuckets(ctx context.Context, request GetMemoryBucketsRequestObject) (GetMemoryBucketsResponseObject, error)
+	// Create memory bucket
+	// (POST /memory-buckets)
+	PostMemoryBuckets(ctx context.Context, request PostMemoryBucketsRequestObject) (PostMemoryBucketsResponseObject, error)
+	// Delete memory bucket
+	// (DELETE /memory-buckets/{id})
+	DeleteMemoryBucketsId(ctx context.Context, request DeleteMemoryBucketsIdRequestObject) (DeleteMemoryBucketsIdResponseObject, error)
+	// Get memory bucket by ID
+	// (GET /memory-buckets/{id})
+	GetMemoryBucketsId(ctx context.Context, request GetMemoryBucketsIdRequestObject) (GetMemoryBucketsIdResponseObject, error)
+	// Update memory bucket (partial)
+	// (PATCH /memory-buckets/{id})
+	PatchMemoryBucketsId(ctx context.Context, request PatchMemoryBucketsIdRequestObject) (PatchMemoryBucketsIdResponseObject, error)
+	// List tools
+	// (GET /tools)
+	GetTools(ctx context.Context, request GetToolsRequestObject) (GetToolsResponseObject, error)
+	// Create tool
+	// (POST /tools)
+	PostTools(ctx context.Context, request PostToolsRequestObject) (PostToolsResponseObject, error)
+	// Delete tool
+	// (DELETE /tools/{id})
+	DeleteToolsId(ctx context.Context, request DeleteToolsIdRequestObject) (DeleteToolsIdResponseObject, error)
+	// Get tool by ID
+	// (GET /tools/{id})
+	GetToolsId(ctx context.Context, request GetToolsIdRequestObject) (GetToolsIdResponseObject, error)
+	// Update tool (partial)
+	// (PATCH /tools/{id})
+	PatchToolsId(ctx context.Context, request PatchToolsIdRequestObject) (PatchToolsIdResponseObject, error)
+	// List workspace configurations
+	// (GET /workspace-configurations)
+	GetWorkspaceConfigurations(ctx context.Context, request GetWorkspaceConfigurationsRequestObject) (GetWorkspaceConfigurationsResponseObject, error)
+	// Create workspace configuration
+	// (POST /workspace-configurations)
+	PostWorkspaceConfigurations(ctx context.Context, request PostWorkspaceConfigurationsRequestObject) (PostWorkspaceConfigurationsResponseObject, error)
+	// Delete workspace configuration
+	// (DELETE /workspace-configurations/{id})
+	DeleteWorkspaceConfigurationsId(ctx context.Context, request DeleteWorkspaceConfigurationsIdRequestObject) (DeleteWorkspaceConfigurationsIdResponseObject, error)
+	// Get workspace configuration by ID
+	// (GET /workspace-configurations/{id})
+	GetWorkspaceConfigurationsId(ctx context.Context, request GetWorkspaceConfigurationsIdRequestObject) (GetWorkspaceConfigurationsIdResponseObject, error)
+	// Update workspace configuration (partial)
+	// (PATCH /workspace-configurations/{id})
+	PatchWorkspaceConfigurationsId(ctx context.Context, request PatchWorkspaceConfigurationsIdRequestObject) (PatchWorkspaceConfigurationsIdResponseObject, error)
 }
 
 type StrictHandlerFunc = strictnethttp.StrictHTTPHandlerFunc
@@ -331,23 +3181,25 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// HealthCheck operation middleware
-func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
-	var request HealthCheckRequestObject
+// GetAgents operation middleware
+func (sh *strictHandler) GetAgents(w http.ResponseWriter, r *http.Request, params GetAgentsParams) {
+	var request GetAgentsRequestObject
+
+	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.HealthCheck(ctx, request.(HealthCheckRequestObject))
+		return sh.ssi.GetAgents(ctx, request.(GetAgentsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "HealthCheck")
+		handler = middleware(handler, "GetAgents")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(HealthCheckResponseObject); ok {
-		if err := validResponse.VisitHealthCheckResponse(w); err != nil {
+	} else if validResponse, ok := response.(GetAgentsResponseObject); ok {
+		if err := validResponse.VisitGetAgentsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -355,11 +3207,11 @@ func (sh *strictHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SayHello operation middleware
-func (sh *strictHandler) SayHello(w http.ResponseWriter, r *http.Request) {
-	var request SayHelloRequestObject
+// PostAgents operation middleware
+func (sh *strictHandler) PostAgents(w http.ResponseWriter, r *http.Request) {
+	var request PostAgentsRequestObject
 
-	var body SayHelloJSONRequestBody
+	var body PostAgentsJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -367,18 +3219,754 @@ func (sh *strictHandler) SayHello(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SayHello(ctx, request.(SayHelloRequestObject))
+		return sh.ssi.PostAgents(ctx, request.(PostAgentsRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SayHello")
+		handler = middleware(handler, "PostAgents")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SayHelloResponseObject); ok {
-		if err := validResponse.VisitSayHelloResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostAgentsResponseObject); ok {
+		if err := validResponse.VisitPostAgentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAgentsId operation middleware
+func (sh *strictHandler) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteAgentsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAgentsId(ctx, request.(DeleteAgentsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAgentsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAgentsIdResponseObject); ok {
+		if err := validResponse.VisitDeleteAgentsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAgentsId operation middleware
+func (sh *strictHandler) GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetAgentsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAgentsId(ctx, request.(GetAgentsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAgentsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAgentsIdResponseObject); ok {
+		if err := validResponse.VisitGetAgentsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchAgentsId operation middleware
+func (sh *strictHandler) PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PatchAgentsIdRequestObject
+
+	request.Id = id
+
+	var body PatchAgentsIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchAgentsId(ctx, request.(PatchAgentsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchAgentsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchAgentsIdResponseObject); ok {
+		if err := validResponse.VisitPatchAgentsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAttachments operation middleware
+func (sh *strictHandler) GetAttachments(w http.ResponseWriter, r *http.Request, params GetAttachmentsParams) {
+	var request GetAttachmentsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAttachments(ctx, request.(GetAttachmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAttachments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAttachmentsResponseObject); ok {
+		if err := validResponse.VisitGetAttachmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostAttachments operation middleware
+func (sh *strictHandler) PostAttachments(w http.ResponseWriter, r *http.Request) {
+	var request PostAttachmentsRequestObject
+
+	var body PostAttachmentsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostAttachments(ctx, request.(PostAttachmentsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostAttachments")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostAttachmentsResponseObject); ok {
+		if err := validResponse.VisitPostAttachmentsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAttachmentsId operation middleware
+func (sh *strictHandler) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteAttachmentsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAttachmentsId(ctx, request.(DeleteAttachmentsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAttachmentsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAttachmentsIdResponseObject); ok {
+		if err := validResponse.VisitDeleteAttachmentsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMcpServers operation middleware
+func (sh *strictHandler) GetMcpServers(w http.ResponseWriter, r *http.Request, params GetMcpServersParams) {
+	var request GetMcpServersRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMcpServers(ctx, request.(GetMcpServersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMcpServers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMcpServersResponseObject); ok {
+		if err := validResponse.VisitGetMcpServersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostMcpServers operation middleware
+func (sh *strictHandler) PostMcpServers(w http.ResponseWriter, r *http.Request) {
+	var request PostMcpServersRequestObject
+
+	var body PostMcpServersJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostMcpServers(ctx, request.(PostMcpServersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostMcpServers")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostMcpServersResponseObject); ok {
+		if err := validResponse.VisitPostMcpServersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteMcpServersId operation middleware
+func (sh *strictHandler) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteMcpServersIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteMcpServersId(ctx, request.(DeleteMcpServersIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteMcpServersId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteMcpServersIdResponseObject); ok {
+		if err := validResponse.VisitDeleteMcpServersIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMcpServersId operation middleware
+func (sh *strictHandler) GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetMcpServersIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMcpServersId(ctx, request.(GetMcpServersIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMcpServersId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMcpServersIdResponseObject); ok {
+		if err := validResponse.VisitGetMcpServersIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchMcpServersId operation middleware
+func (sh *strictHandler) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PatchMcpServersIdRequestObject
+
+	request.Id = id
+
+	var body PatchMcpServersIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchMcpServersId(ctx, request.(PatchMcpServersIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchMcpServersId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchMcpServersIdResponseObject); ok {
+		if err := validResponse.VisitPatchMcpServersIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMemoryBuckets operation middleware
+func (sh *strictHandler) GetMemoryBuckets(w http.ResponseWriter, r *http.Request, params GetMemoryBucketsParams) {
+	var request GetMemoryBucketsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMemoryBuckets(ctx, request.(GetMemoryBucketsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMemoryBuckets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMemoryBucketsResponseObject); ok {
+		if err := validResponse.VisitGetMemoryBucketsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostMemoryBuckets operation middleware
+func (sh *strictHandler) PostMemoryBuckets(w http.ResponseWriter, r *http.Request) {
+	var request PostMemoryBucketsRequestObject
+
+	var body PostMemoryBucketsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostMemoryBuckets(ctx, request.(PostMemoryBucketsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostMemoryBuckets")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostMemoryBucketsResponseObject); ok {
+		if err := validResponse.VisitPostMemoryBucketsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteMemoryBucketsId operation middleware
+func (sh *strictHandler) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteMemoryBucketsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteMemoryBucketsId(ctx, request.(DeleteMemoryBucketsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteMemoryBucketsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteMemoryBucketsIdResponseObject); ok {
+		if err := validResponse.VisitDeleteMemoryBucketsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetMemoryBucketsId operation middleware
+func (sh *strictHandler) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetMemoryBucketsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetMemoryBucketsId(ctx, request.(GetMemoryBucketsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetMemoryBucketsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetMemoryBucketsIdResponseObject); ok {
+		if err := validResponse.VisitGetMemoryBucketsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchMemoryBucketsId operation middleware
+func (sh *strictHandler) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PatchMemoryBucketsIdRequestObject
+
+	request.Id = id
+
+	var body PatchMemoryBucketsIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchMemoryBucketsId(ctx, request.(PatchMemoryBucketsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchMemoryBucketsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchMemoryBucketsIdResponseObject); ok {
+		if err := validResponse.VisitPatchMemoryBucketsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetTools operation middleware
+func (sh *strictHandler) GetTools(w http.ResponseWriter, r *http.Request, params GetToolsParams) {
+	var request GetToolsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetTools(ctx, request.(GetToolsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetTools")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetToolsResponseObject); ok {
+		if err := validResponse.VisitGetToolsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostTools operation middleware
+func (sh *strictHandler) PostTools(w http.ResponseWriter, r *http.Request) {
+	var request PostToolsRequestObject
+
+	var body PostToolsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostTools(ctx, request.(PostToolsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostTools")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostToolsResponseObject); ok {
+		if err := validResponse.VisitPostToolsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteToolsId operation middleware
+func (sh *strictHandler) DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteToolsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteToolsId(ctx, request.(DeleteToolsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteToolsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteToolsIdResponseObject); ok {
+		if err := validResponse.VisitDeleteToolsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetToolsId operation middleware
+func (sh *strictHandler) GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetToolsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetToolsId(ctx, request.(GetToolsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetToolsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetToolsIdResponseObject); ok {
+		if err := validResponse.VisitGetToolsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchToolsId operation middleware
+func (sh *strictHandler) PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PatchToolsIdRequestObject
+
+	request.Id = id
+
+	var body PatchToolsIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchToolsId(ctx, request.(PatchToolsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchToolsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchToolsIdResponseObject); ok {
+		if err := validResponse.VisitPatchToolsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceConfigurations operation middleware
+func (sh *strictHandler) GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request, params GetWorkspaceConfigurationsParams) {
+	var request GetWorkspaceConfigurationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceConfigurations(ctx, request.(GetWorkspaceConfigurationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceConfigurations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceConfigurationsResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceConfigurationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostWorkspaceConfigurations operation middleware
+func (sh *strictHandler) PostWorkspaceConfigurations(w http.ResponseWriter, r *http.Request) {
+	var request PostWorkspaceConfigurationsRequestObject
+
+	var body PostWorkspaceConfigurationsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostWorkspaceConfigurations(ctx, request.(PostWorkspaceConfigurationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostWorkspaceConfigurations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostWorkspaceConfigurationsResponseObject); ok {
+		if err := validResponse.VisitPostWorkspaceConfigurationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteWorkspaceConfigurationsId operation middleware
+func (sh *strictHandler) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request DeleteWorkspaceConfigurationsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteWorkspaceConfigurationsId(ctx, request.(DeleteWorkspaceConfigurationsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteWorkspaceConfigurationsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteWorkspaceConfigurationsIdResponseObject); ok {
+		if err := validResponse.VisitDeleteWorkspaceConfigurationsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetWorkspaceConfigurationsId operation middleware
+func (sh *strictHandler) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request GetWorkspaceConfigurationsIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetWorkspaceConfigurationsId(ctx, request.(GetWorkspaceConfigurationsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetWorkspaceConfigurationsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetWorkspaceConfigurationsIdResponseObject); ok {
+		if err := validResponse.VisitGetWorkspaceConfigurationsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchWorkspaceConfigurationsId operation middleware
+func (sh *strictHandler) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+	var request PatchWorkspaceConfigurationsIdRequestObject
+
+	request.Id = id
+
+	var body PatchWorkspaceConfigurationsIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchWorkspaceConfigurationsId(ctx, request.(PatchWorkspaceConfigurationsIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchWorkspaceConfigurationsId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchWorkspaceConfigurationsIdResponseObject); ok {
+		if err := validResponse.VisitPatchWorkspaceConfigurationsIdResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

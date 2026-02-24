@@ -1,0 +1,8 @@
+type: string
+description: Relation type between entities
+enum:
+  - agent_tool
+  - agent_memoryBucket
+  - agent_workspaceConfiguration
+  - agent_mcpServer
+  - mcpServer_workspaceConfiguration

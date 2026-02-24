@@ -1,0 +1,44 @@
+get:
+  tags: [Tools]
+  summary: Get tool by ID
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/Tool.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+patch:
+  tags: [Tools]
+  summary: Update tool (partial)
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/ToolUpdateRequest.yaml'
+  responses:
+    '200':
+      description: Updated
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/Tool.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+delete:
+  tags: [Tools]
+  summary: Delete tool
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '204':
+      description: No Content
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
