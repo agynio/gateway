@@ -1,0 +1,44 @@
+get:
+  tags: [MCP Servers]
+  summary: List MCP servers
+  parameters:
+    - in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - in: query
+      name: perPage
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+post:
+  tags: [MCP Servers]
+  summary: Create MCP server
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+  responses:
+    '201':
+      description: Created
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/McpServer.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'

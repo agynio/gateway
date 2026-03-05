@@ -4,175 +4,321 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
-	"reflect"
 	"testing"
-
-	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/platform"
 )
 
-type stubPlatformClient struct {
-	t              *testing.T
-	expectMethod   string
-	expectPath     string
-	expectQuery    url.Values
-	expectBodyJSON string
-
-	responseStatus int
-	responseJSON   string
-	err            error
-
-	called bool
+type stubCall struct {
+	Method       string
+	Path         string
+	Query        url.Values
+	BodyAssert   func(any)
+	Status       int
+	ResponseJSON string
+	Err          error
+	Responder    func(any) (int, string, error)
 }
 
-func (s *stubPlatformClient) Do(ctx context.Context, method, path string, query url.Values, body any, out any) (int, error) {
-	s.called = true
+type stubPlatformClient struct {
+	t     *testing.T
+	calls []stubCall
+	idx   int
+}
 
-	if s.expectMethod != "" && method != s.expectMethod {
-		s.t.Fatalf("unexpected method: %s", method)
+func (s *stubPlatformClient) Expect(call stubCall) {
+	s.calls = append(s.calls, call)
+}
+
+func (s *stubPlatformClient) Do(_ context.Context, method, path string, query url.Values, body any, out any) (int, error) {
+	if s.idx >= len(s.calls) {
+		s.t.Fatalf("unexpected call: %s %s", method, path)
 	}
+	call := s.calls[s.idx]
+	s.idx++
 
-	if s.expectPath != "" && path != s.expectPath {
-		s.t.Fatalf("unexpected path: %s", path)
+	if method != call.Method {
+		s.t.Fatalf("unexpected method: got %s want %s", method, call.Method)
 	}
-
-	if s.expectQuery != nil {
+	if path != call.Path {
+		s.t.Fatalf("unexpected path: got %s want %s", path, call.Path)
+	}
+	if call.Query != nil {
 		if query == nil {
 			query = url.Values{}
 		}
-		if !reflect.DeepEqual(query, s.expectQuery) {
-			s.t.Fatalf("unexpected query: %v", query)
+		if len(query) != len(call.Query) {
+			s.t.Fatalf("unexpected query: got %v want %v", query, call.Query)
+		}
+		for key, expected := range call.Query {
+			values := query[key]
+			if len(values) != len(expected) {
+				s.t.Fatalf("unexpected query[%s]: got %v want %v", key, values, expected)
+			}
+			for i := range values {
+				if values[i] != expected[i] {
+					s.t.Fatalf("unexpected query[%s]: got %s want %s", key, values[i], expected[i])
+				}
+			}
 		}
 	}
 
-	if s.expectBodyJSON != "" {
-		payload, err := json.Marshal(body)
-		if err != nil {
-			s.t.Fatalf("marshal body: %v", err)
-		}
-		if !jsonEqual(payload, []byte(s.expectBodyJSON)) {
-			s.t.Fatalf("unexpected body: %s", payload)
-		}
+	if call.BodyAssert != nil {
+		call.BodyAssert(body)
 	}
 
-	if s.responseJSON != "" && out != nil {
-		if err := json.Unmarshal([]byte(s.responseJSON), out); err != nil {
+	status := call.Status
+	response := call.ResponseJSON
+	err := call.Err
+	if call.Responder != nil {
+		status, response, err = call.Responder(body)
+	}
+
+	if response != "" && out != nil {
+		if err := json.Unmarshal([]byte(response), out); err != nil {
 			s.t.Fatalf("unmarshal response: %v", err)
 		}
 	}
 
-	if s.responseStatus == 0 {
-		s.responseStatus = http.StatusOK
+	if status == 0 {
+		status = http.StatusOK
 	}
-
-	return s.responseStatus, s.err
+	return status, err
 }
 
-func jsonEqual(a, b []byte) bool {
-	var left any
-	var right any
-	if err := json.Unmarshal(a, &left); err != nil {
-		return false
+func (s *stubPlatformClient) AssertDone() {
+	if s.idx != len(s.calls) {
+		s.t.Fatalf("expected %d calls, got %d", len(s.calls), s.idx)
 	}
-	if err := json.Unmarshal(b, &right); err != nil {
-		return false
-	}
-	return reflect.DeepEqual(left, right)
 }
 
 func TestTeamGetAgents(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:            t,
-		expectMethod: http.MethodGet,
-		expectPath:   "/team/v1/agents",
-		expectQuery: url.Values{
-			"q":       []string{"demo"},
-			"page":    []string{"2"},
-			"perPage": []string{"25"},
-		},
-		responseJSON: `{"items":[],"page":2,"perPage":25,"total":0}`,
-	}
-
-	handler := NewTeam(stub)
-
-	resp, err := handler.GetAgents(context.Background(), gen.GetAgentsRequestObject{
-		Params: gen.GetAgentsParams{
-			Q:       ptr("demo"),
-			Page:    ptr(2),
-			PerPage: ptr(25),
-		},
+	stub := &stubPlatformClient{t: t}
+	stub.Expect(stubCall{
+		Method: http.MethodGet,
+		Path:   "/api/graph",
+		Status: http.StatusOK,
+		ResponseJSON: `{
+			"name":"main",
+			"version":1,
+			"updatedAt":"2024-01-01T00:00:00Z",
+			"nodes":[
+				{
+					"id":"11111111-1111-1111-1111-111111111111",
+					"template":"agent",
+					"config":{
+						"title":"Demo Agent",
+						"description":"Primary",
+						"config":{"model":"gpt-5","systemPrompt":"hello"},
+						"_teamResource":"agent",
+						"_teamVersion":1,
+						"_teamCreatedAt":"2024-01-01T00:00:00Z",
+						"_teamUpdatedAt":"2024-01-02T00:00:00Z"
+					}
+				},
+				{
+					"id":"22222222-2222-2222-2222-222222222222",
+					"template":"tool",
+					"config":{}
+				}
+			],
+			"edges":[]
+		}`,
 	})
+
+	h := NewTeam(stub)
+
+	resp, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	result, ok := resp.(gen.GetAgents200JSONResponse)
+	list, ok := resp.(gen.GetAgents200JSONResponse)
 	if !ok {
 		t.Fatalf("unexpected response type: %T", resp)
 	}
 
-	if result.Page != 2 || result.PerPage != 25 {
-		t.Fatalf("unexpected response payload: %+v", result)
+	if len(list.Items) != 1 {
+		t.Fatalf("expected 1 agent, got %d", len(list.Items))
 	}
 
-	if !stub.called {
-		t.Fatalf("platform client was not invoked")
+	item := list.Items[0]
+	if item.Title == nil || *item.Title != "Demo Agent" {
+		t.Fatalf("unexpected title: %v", item.Title)
 	}
+	if item.Description == nil || *item.Description != "Primary" {
+		t.Fatalf("unexpected description: %v", item.Description)
+	}
+	if item.Config.Model == nil || *item.Config.Model != "gpt-5" {
+		t.Fatalf("unexpected config model: %+v", item.Config)
+	}
+	if item.Config.SystemPrompt == nil || *item.Config.SystemPrompt != "hello" {
+		t.Fatalf("unexpected config prompt: %+v", item.Config)
+	}
+	if item.Config.RestrictOutput != nil {
+		t.Fatalf("unexpected metadata in config: %+v", item.Config)
+	}
+
+	stub.AssertDone()
 }
 
 func TestTeamPostAgents(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:              t,
-		expectMethod:   http.MethodPost,
-		expectPath:     "/team/v1/agents",
-		expectBodyJSON: `{"config":{"model":"gpt"},"title":"Demo"}`,
-		responseStatus: http.StatusCreated,
-		responseJSON:   `{"config":{"model":"gpt"},"createdAt":"2024-01-01T00:00:00Z","id":"9d4cdb42-8c84-4d84-9f39-a740249bca7a"}`,
-	}
+	stub := &stubPlatformClient{t: t}
+	stub.Expect(stubCall{
+		Method: http.MethodGet,
+		Path:   "/api/graph",
+		ResponseJSON: `{
+			"name":"main",
+			"version":3,
+			"updatedAt":"2024-01-01T00:00:00Z",
+			"nodes":[],
+			"edges":[]
+		}`,
+	})
+	var createdID string
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		BodyAssert: func(body any) {
+			doc, ok := body.(*graphDocument)
+			if !ok {
+				t.Fatalf("unexpected body type: %T", body)
+			}
+			if len(doc.Nodes) != 1 {
+				t.Fatalf("expected 1 node, got %d", len(doc.Nodes))
+			}
+			node := doc.Nodes[0]
+			createdID = node.ID
+			if node.Template != agentTemplateName {
+				t.Fatalf("unexpected template: %s", node.Template)
+			}
+			if node.Config[agentMetadataResourceKey] != agentMetadataResourceValue {
+				t.Fatalf("missing resource metadata: %+v", node.Config)
+			}
+			if cfg, ok := node.Config["config"].(map[string]any); !ok || cfg["model"] != "gpt-4" {
+				t.Fatalf("unexpected inner config: %+v", node.Config["config"])
+			}
+		},
+		Responder: func(any) (int, string, error) {
+			if createdID == "" {
+				t.Fatalf("create call did not capture node id")
+			}
+			response := fmt.Sprintf(`{
+				"name":"main",
+				"version":4,
+				"updatedAt":"2024-01-02T00:00:00Z",
+				"nodes":[{
+					"id":"%s",
+					"template":"agent",
+					"config":{
+						"title":"New Agent",
+						"config":{"model":"gpt-4"},
+						"_teamResource":"agent",
+						"_teamVersion":1,
+						"_teamCreatedAt":"2024-01-02T00:00:00Z",
+						"_teamUpdatedAt":"2024-01-02T00:00:00Z"
+					}
+				}],
+				"edges":[]
+			}`, createdID)
+			return http.StatusOK, response, nil
+		},
+	})
 
-	handler := NewTeam(stub)
-
+	h := NewTeam(stub)
 	body := &gen.PostAgentsJSONRequestBody{}
-	body.Config.Model = ptr("gpt")
-	body.Title = ptr("Demo")
+	body.Config.Model = ptr("gpt-4")
+	body.Title = ptr("New Agent")
 
-	resp, err := handler.PostAgents(context.Background(), gen.PostAgentsRequestObject{Body: body})
+	resp, err := h.PostAgents(context.Background(), gen.PostAgentsRequestObject{Body: body})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, ok := resp.(gen.PostAgents201JSONResponse); !ok {
+	created, ok := resp.(gen.PostAgents201JSONResponse)
+	if !ok {
 		t.Fatalf("unexpected response type: %T", resp)
 	}
-
-	if !stub.called {
-		t.Fatalf("platform client was not invoked")
+	if created.Id.String() != createdID {
+		t.Fatalf("unexpected id: %s", created.Id)
 	}
+
+	stub.AssertDone()
 }
 
-func TestTeamPlatformProblemError(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:            t,
-		expectMethod: http.MethodGet,
-		expectPath:   "/team/v1/agents",
-		err: &platform.Error{
-			Status: http.StatusUnprocessableEntity,
-			Problem: &platform.Problem{
-				Title:  "Invalid",
-				Status: http.StatusUnprocessableEntity,
-				Detail: ptr("bad data"),
-			},
+func TestTeamPostAgentsConflictRetry(t *testing.T) {
+	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Detail: ptr("conflict")}}
+	stub := &stubPlatformClient{t: t}
+	stub.Expect(stubCall{
+		Method:       http.MethodGet,
+		Path:         "/api/graph",
+		ResponseJSON: `{"name":"main","version":1,"updatedAt":"2024-01-01T00:00:00Z","nodes":[],"edges":[]}`,
+	})
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		Err:    conflictErr,
+		Status: http.StatusConflict,
+	})
+	stub.Expect(stubCall{
+		Method:       http.MethodGet,
+		Path:         "/api/graph",
+		ResponseJSON: `{"name":"main","version":2,"updatedAt":"2024-01-01T00:01:00Z","nodes":[],"edges":[]}`,
+	})
+	var retriedID string
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		BodyAssert: func(body any) {
+			doc, ok := body.(*graphDocument)
+			if !ok {
+				t.Fatalf("unexpected body type: %T", body)
+			}
+			if len(doc.Nodes) != 1 {
+				t.Fatalf("expected 1 node, got %d", len(doc.Nodes))
+			}
+			retriedID = doc.Nodes[0].ID
 		},
+		Responder: func(any) (int, string, error) {
+			if retriedID == "" {
+				t.Fatalf("retry body missing id")
+			}
+			response := fmt.Sprintf(`{"name":"main","version":3,"updatedAt":"2024-01-01T00:02:00Z","nodes":[{"id":"%s","template":"agent","config":{"config":{"model":"gpt"},"_teamResource":"agent","_teamVersion":1,"_teamCreatedAt":"2024-01-01T00:02:00Z","_teamUpdatedAt":"2024-01-01T00:02:00Z"}}],"edges":[]}`,
+				retriedID)
+			return http.StatusOK, response, nil
+		},
+	})
+
+	h := NewTeam(stub)
+	body := &gen.PostAgentsJSONRequestBody{}
+	body.Config.Model = ptr("gpt")
+
+	if _, err := h.PostAgents(context.Background(), gen.PostAgentsRequestObject{Body: body}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	handler := NewTeam(stub)
+	stub.AssertDone()
+}
 
-	_, err := handler.GetAgents(context.Background(), gen.GetAgentsRequestObject{Params: gen.GetAgentsParams{}})
+func TestTeamGetAgentsPlatformError(t *testing.T) {
+	stub := &stubPlatformClient{t: t}
+	stub.Expect(stubCall{
+		Method: http.MethodGet,
+		Path:   "/api/graph",
+		Err: &platform.Error{
+			Status:  http.StatusUnprocessableEntity,
+			Problem: &platform.Problem{Detail: ptr("bad data"), Status: http.StatusUnprocessableEntity},
+		},
+		Status: http.StatusUnprocessableEntity,
+	})
+
+	h := NewTeam(stub)
+
+	_, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -181,30 +327,27 @@ func TestTeamPlatformProblemError(t *testing.T) {
 	if !errors.As(err, &problemErr) {
 		t.Fatalf("expected ProblemError, got %T", err)
 	}
-
-	if int(problemErr.Problem.Status) != http.StatusUnprocessableEntity {
+	if problemErr.Problem.Status != http.StatusUnprocessableEntity {
 		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
 	}
-
 	if problemErr.Problem.Detail == nil || *problemErr.Problem.Detail != "bad data" {
-		t.Fatalf("unexpected detail: %+v", problemErr.Problem.Detail)
+		t.Fatalf("unexpected detail: %v", problemErr.Problem.Detail)
 	}
+
+	stub.AssertDone()
 }
 
-func TestTeamPlatformErrorWithoutProblem(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:            t,
-		expectMethod: http.MethodGet,
-		expectPath:   "/team/v1/agents",
-		err: &platform.Error{
-			Status: http.StatusUnauthorized,
-			Body:   []byte("denied"),
-		},
-	}
+func TestTeamGetAgentsUnexpectedError(t *testing.T) {
+	stub := &stubPlatformClient{t: t}
+	stub.Expect(stubCall{
+		Method: http.MethodGet,
+		Path:   "/api/graph",
+		Err:    errors.New("boom"),
+	})
 
-	handler := NewTeam(stub)
+	h := NewTeam(stub)
 
-	_, err := handler.GetAgents(context.Background(), gen.GetAgentsRequestObject{Params: gen.GetAgentsParams{}})
+	_, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -213,66 +356,9 @@ func TestTeamPlatformErrorWithoutProblem(t *testing.T) {
 	if !errors.As(err, &problemErr) {
 		t.Fatalf("expected ProblemError, got %T", err)
 	}
-
-	if int(problemErr.Problem.Status) != http.StatusUnauthorized {
-		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
-	}
-
-	if problemErr.Problem.Detail == nil || *problemErr.Problem.Detail != "denied" {
-		t.Fatalf("unexpected detail: %+v", problemErr.Problem.Detail)
-	}
-}
-
-func TestTeamUnexpectedStatus(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:              t,
-		expectMethod:   http.MethodDelete,
-		expectPath:     "/team/v1/agents/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
-		responseStatus: http.StatusOK,
-	}
-
-	handler := NewTeam(stub)
-
-	_, err := handler.DeleteAgentsId(context.Background(), gen.DeleteAgentsIdRequestObject{Id: mustUUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")})
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-
-	if !stub.called {
-		t.Fatalf("platform client was not invoked")
-	}
-
-	var problemErr *ProblemError
-	if !errors.As(err, &problemErr) {
-		t.Fatalf("expected ProblemError, got %T", err)
-	}
-}
-
-func TestTeamWrapsNonPlatformError(t *testing.T) {
-	stub := &stubPlatformClient{
-		t:            t,
-		expectMethod: http.MethodGet,
-		expectPath:   "/team/v1/tools",
-		err:          errors.New("boom"),
-	}
-
-	handler := NewTeam(stub)
-
-	_, err := handler.GetTools(context.Background(), gen.GetToolsRequestObject{Params: gen.GetToolsParams{}})
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-
-	var problemErr *ProblemError
-	if !errors.As(err, &problemErr) {
-		t.Fatalf("expected ProblemError, got %T", err)
-	}
-
 	if problemErr.Problem.Status != http.StatusBadGateway {
 		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
 	}
-}
 
-func mustUUID(value string) openapi_types.UUID {
-	return openapi_types.UUID(uuid.MustParse(value))
+	stub.AssertDone()
 }

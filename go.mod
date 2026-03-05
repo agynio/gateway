@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/agynio/api v0.0.0-20260228035936-070d9cc268b6 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect

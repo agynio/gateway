@@ -1,0 +1,120 @@
+openapi: 3.0.3
+info:
+  title: Team Management API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Agents
+  - name: Tools
+  - name: MCP Servers
+  - name: WorkspaceConfigurations
+  - name: MemoryBuckets
+  - name: Attachments
+paths:
+  /agents:
+    $ref: './paths/agents.yaml'
+  /agents/{id}:
+    $ref: './paths/agent-by-id.yaml'
+  /tools:
+    $ref: './paths/tools.yaml'
+  /tools/{id}:
+    $ref: './paths/tool-by-id.yaml'
+  /mcp-servers:
+    $ref: './paths/mcp-servers.yaml'
+  /mcp-servers/{id}:
+    $ref: './paths/mcp-server-by-id.yaml'
+  /workspace-configurations:
+    $ref: './paths/workspace-configurations.yaml'
+  /workspace-configurations/{id}:
+    $ref: './paths/workspace-configuration-by-id.yaml'
+  /memory-buckets:
+    $ref: './paths/memory-buckets.yaml'
+  /memory-buckets/{id}:
+    $ref: './paths/memory-bucket-by-id.yaml'
+  /attachments:
+    $ref: './paths/attachments.yaml'
+  /attachments/{id}:
+    $ref: './paths/attachment-by-id.yaml'
+components:
+  parameters:
+    IdPath:
+      $ref: './components/parameters/IdPath.yaml'
+  responses:
+    ProblemResponse:
+      $ref: './components/responses/ProblemResponse.yaml'
+  schemas:
+    Problem:
+      $ref: './components/schemas/Problem.yaml'
+    Pagination:
+      $ref: './components/schemas/Pagination.yaml'
+    EntityMeta:
+      $ref: './components/schemas/EntityMeta.yaml'
+    Agent:
+      $ref: './components/schemas/Agent.yaml'
+    AgentConfig:
+      $ref: './components/schemas/AgentConfig.yaml'
+    AgentCreateRequest:
+      $ref: './components/schemas/AgentCreateRequest.yaml'
+    AgentUpdateRequest:
+      $ref: './components/schemas/AgentUpdateRequest.yaml'
+    PaginatedAgents:
+      $ref: './components/schemas/PaginatedAgents.yaml'
+    Tool:
+      $ref: './components/schemas/Tool.yaml'
+    ToolType:
+      $ref: './components/schemas/ToolType.yaml'
+    ToolCreateRequest:
+      $ref: './components/schemas/ToolCreateRequest.yaml'
+    ToolUpdateRequest:
+      $ref: './components/schemas/ToolUpdateRequest.yaml'
+    PaginatedTools:
+      $ref: './components/schemas/PaginatedTools.yaml'
+    McpServer:
+      $ref: './components/schemas/McpServer.yaml'
+    McpEnvItem:
+      $ref: './components/schemas/McpEnvItem.yaml'
+    McpServerConfig:
+      $ref: './components/schemas/McpServerConfig.yaml'
+    McpServerCreateRequest:
+      $ref: './components/schemas/McpServerCreateRequest.yaml'
+    McpServerUpdateRequest:
+      $ref: './components/schemas/McpServerUpdateRequest.yaml'
+    PaginatedMcpServers:
+      $ref: './components/schemas/PaginatedMcpServers.yaml'
+    WorkspaceConfiguration:
+      $ref: './components/schemas/WorkspaceConfiguration.yaml'
+    WorkspaceEnvItem:
+      $ref: './components/schemas/WorkspaceEnvItem.yaml'
+    WorkspaceVolumeConfig:
+      $ref: './components/schemas/WorkspaceVolumeConfig.yaml'
+    WorkspacePlatform:
+      $ref: './components/schemas/WorkspacePlatform.yaml'
+    WorkspaceConfig:
+      $ref: './components/schemas/WorkspaceConfig.yaml'
+    WorkspaceConfigurationCreateRequest:
+      $ref: './components/schemas/WorkspaceConfigurationCreateRequest.yaml'
+    WorkspaceConfigurationUpdateRequest:
+      $ref: './components/schemas/WorkspaceConfigurationUpdateRequest.yaml'
+    PaginatedWorkspaceConfigurations:
+      $ref: './components/schemas/PaginatedWorkspaceConfigurations.yaml'
+    MemoryBucket:
+      $ref: './components/schemas/MemoryBucket.yaml'
+    MemoryBucketConfig:
+      $ref: './components/schemas/MemoryBucketConfig.yaml'
+    MemoryBucketCreateRequest:
+      $ref: './components/schemas/MemoryBucketCreateRequest.yaml'
+    MemoryBucketUpdateRequest:
+      $ref: './components/schemas/MemoryBucketUpdateRequest.yaml'
+    PaginatedMemoryBuckets:
+      $ref: './components/schemas/PaginatedMemoryBuckets.yaml'
+    EntityType:
+      $ref: './components/schemas/EntityType.yaml'
+    AttachmentKind:
+      $ref: './components/schemas/AttachmentKind.yaml'
+    Attachment:
+      $ref: './components/schemas/Attachment.yaml'
+    AttachmentCreateRequest:
+      $ref: './components/schemas/AttachmentCreateRequest.yaml'
+    PaginatedAttachments:
+      $ref: './components/schemas/PaginatedAttachments.yaml'
