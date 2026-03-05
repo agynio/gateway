@@ -3,6 +3,11 @@ get:
   summary: List workspace configurations
   parameters:
     - in: query
+      name: q
+      schema:
+        type: string
+      description: Free-text search (title/description/id).
+    - in: query
       name: page
       schema:
         type: integer

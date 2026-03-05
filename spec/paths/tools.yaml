@@ -3,6 +3,11 @@ get:
   summary: List tools
   parameters:
     - in: query
+      name: q
+      schema:
+        type: string
+      description: Free-text search (name/description/id).
+    - in: query
       name: type
       schema:
         $ref: '../components/schemas/ToolType.yaml'

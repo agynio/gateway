@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -33,22 +32,66 @@ type PlatformClient interface {
 type Team struct {
 	client PlatformClient
 
-	agentService   *agentService
-	agentValidator *agentValidator
+	agentService          *agentService
+	agentValidator        *agentValidator
+	toolService           *toolService
+	toolValidator         *toolValidator
+	mcpServerService      *mcpServerService
+	mcpServerValidator    *mcpServerValidator
+	workspaceService      *workspaceService
+	workspaceValidator    *workspaceValidator
+	memoryBucketService   *memoryBucketService
+	memoryBucketValidator *memoryBucketValidator
+	attachmentService     *attachmentService
+	attachmentValidator   *attachmentValidator
 }
 
 func NewTeam(client PlatformClient) *Team {
 	if client == nil {
 		panic("platform client is required")
 	}
-	validator, err := newAgentValidator()
+	spec, err := loadTeamSpec()
 	if err != nil {
-		panic(fmt.Sprintf("load team schema: %v", err))
+		panic(fmt.Sprintf("load team spec: %v", err))
+	}
+	agentValidator, err := newAgentValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize agent validator: %v", err))
+	}
+	toolValidator, err := newToolValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize tool validator: %v", err))
+	}
+	mcpValidator, err := newMcpServerValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize mcp validator: %v", err))
+	}
+	workspaceValidator, err := newWorkspaceValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize workspace validator: %v", err))
+	}
+	memoryValidator, err := newMemoryBucketValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize memory validator: %v", err))
+	}
+	attachmentValidator, err := newAttachmentValidator(spec)
+	if err != nil {
+		panic(fmt.Sprintf("initialize attachment validator: %v", err))
 	}
 	return &Team{
-		client:         client,
-		agentService:   newAgentService(client),
-		agentValidator: validator,
+		client:                client,
+		agentService:          newAgentService(client),
+		agentValidator:        agentValidator,
+		toolService:           newToolService(client),
+		toolValidator:         toolValidator,
+		mcpServerService:      newMcpServerService(client),
+		mcpServerValidator:    mcpValidator,
+		workspaceService:      newWorkspaceService(client),
+		workspaceValidator:    workspaceValidator,
+		memoryBucketService:   newMemoryBucketService(client),
+		memoryBucketValidator: memoryValidator,
+		attachmentService:     newAttachmentService(client),
+		attachmentValidator:   attachmentValidator,
 	}
 }
 
@@ -202,6 +245,46 @@ func (t *Team) handleAgentError(err error) error {
 	return t.wrapError(err)
 }
 
+func (t *Team) handleResourceError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var resErr *resourceError
+	if errors.As(err, &resErr) {
+		status := resErr.status
+		if status <= 0 {
+			status = http.StatusBadGateway
+		}
+		title := http.StatusText(status)
+		if title == "" {
+			title = http.StatusText(http.StatusBadGateway)
+		}
+		detail := strings.TrimSpace(resErr.detail)
+		problem := NewProblem(status, title, detail, nil)
+		return NewProblemError(problem, resErr)
+	}
+
+	return t.wrapError(err)
+}
+
+func (t *Team) resourceValidationError(resource string, err error) error {
+	detail := strings.TrimSpace(err.Error())
+	if detail == "" {
+		detail = "response validation failed"
+	}
+	title := fmt.Sprintf("%s response validation failed", titleCase(resource))
+	problem := NewProblem(http.StatusInternalServerError, title, detail, nil)
+	return NewProblemError(problem, err)
+}
+
+func (t *Team) resourceSerializationError(resource string, err error) error {
+	title := fmt.Sprintf("%s serialization failed", titleCase(resource))
+	detail := fmt.Sprintf("failed to serialize %s payload", resource)
+	problem := NewProblem(http.StatusInternalServerError, title, detail, nil)
+	return NewProblemError(problem, err)
+}
+
 func (t *Team) agentValidationError(err error) error {
 	detail := strings.TrimSpace(err.Error())
 	if detail == "" {
@@ -254,6 +337,228 @@ func buildAgentPayload(agent agentResource) agentPayload {
 		Config:      clonedConfig,
 		CreatedAt:   agent.CreatedAt,
 		UpdatedAt:   agent.UpdatedAt,
+	}
+}
+
+type toolsListPayload struct {
+	Items   []toolPayload `json:"items"`
+	Page    int           `json:"page"`
+	PerPage int           `json:"perPage"`
+	Total   int           `json:"total"`
+}
+
+type toolPayload struct {
+	ID          string         `json:"id"`
+	Type        string         `json:"type"`
+	Name        *string        `json:"name,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Config      map[string]any `json:"config,omitempty"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt,omitempty"`
+}
+
+func buildToolsListPayload(result toolListResult) toolsListPayload {
+	items := make([]toolPayload, 0, len(result.Items))
+	for _, tool := range result.Items {
+		items = append(items, buildToolPayload(tool))
+	}
+	return toolsListPayload{
+		Items:   items,
+		Page:    result.Page,
+		PerPage: result.PerPage,
+		Total:   result.Total,
+	}
+}
+
+func buildToolPayload(tool toolResource) toolPayload {
+	config := cloneToInterfaceMap(tool.Config)
+	if len(config) == 0 {
+		config = nil
+	}
+	return toolPayload{
+		ID:          tool.ID.String(),
+		Type:        tool.Type,
+		Name:        tool.Name,
+		Description: tool.Description,
+		Config:      config,
+		CreatedAt:   tool.CreatedAt,
+		UpdatedAt:   tool.UpdatedAt,
+	}
+}
+
+type mcpServersListPayload struct {
+	Items   []mcpServerPayload `json:"items"`
+	Page    int                `json:"page"`
+	PerPage int                `json:"perPage"`
+	Total   int                `json:"total"`
+}
+
+type mcpServerPayload struct {
+	ID          string         `json:"id"`
+	Title       *string        `json:"title,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Config      map[string]any `json:"config,omitempty"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt,omitempty"`
+}
+
+func buildMcpServersListPayload(result mcpServerListResult) mcpServersListPayload {
+	items := make([]mcpServerPayload, 0, len(result.Items))
+	for _, server := range result.Items {
+		items = append(items, buildMcpServerPayload(server))
+	}
+	return mcpServersListPayload{
+		Items:   items,
+		Page:    result.Page,
+		PerPage: result.PerPage,
+		Total:   result.Total,
+	}
+}
+
+func buildMcpServerPayload(server mcpServerResource) mcpServerPayload {
+	config := cloneToInterfaceMap(server.Config)
+	if len(config) == 0 {
+		config = nil
+	}
+	return mcpServerPayload{
+		ID:          server.ID.String(),
+		Title:       server.Title,
+		Description: server.Description,
+		Config:      config,
+		CreatedAt:   server.CreatedAt,
+		UpdatedAt:   server.UpdatedAt,
+	}
+}
+
+type workspacesListPayload struct {
+	Items   []workspacePayload `json:"items"`
+	Page    int                `json:"page"`
+	PerPage int                `json:"perPage"`
+	Total   int                `json:"total"`
+}
+
+type workspacePayload struct {
+	ID          string         `json:"id"`
+	Title       *string        `json:"title,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Config      map[string]any `json:"config,omitempty"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt,omitempty"`
+}
+
+func buildWorkspacesListPayload(result workspaceListResult) workspacesListPayload {
+	items := make([]workspacePayload, 0, len(result.Items))
+	for _, workspace := range result.Items {
+		items = append(items, buildWorkspacePayload(workspace))
+	}
+	return workspacesListPayload{
+		Items:   items,
+		Page:    result.Page,
+		PerPage: result.PerPage,
+		Total:   result.Total,
+	}
+}
+
+func buildWorkspacePayload(workspace workspaceResource) workspacePayload {
+	config := cloneToInterfaceMap(workspace.Config)
+	if len(config) == 0 {
+		config = nil
+	}
+	return workspacePayload{
+		ID:          workspace.ID.String(),
+		Title:       workspace.Title,
+		Description: workspace.Description,
+		Config:      config,
+		CreatedAt:   workspace.CreatedAt,
+		UpdatedAt:   workspace.UpdatedAt,
+	}
+}
+
+type memoryBucketsListPayload struct {
+	Items   []memoryBucketPayload `json:"items"`
+	Page    int                   `json:"page"`
+	PerPage int                   `json:"perPage"`
+	Total   int                   `json:"total"`
+}
+
+type memoryBucketPayload struct {
+	ID          string         `json:"id"`
+	Title       *string        `json:"title,omitempty"`
+	Description *string        `json:"description,omitempty"`
+	Config      map[string]any `json:"config,omitempty"`
+	CreatedAt   time.Time      `json:"createdAt"`
+	UpdatedAt   *time.Time     `json:"updatedAt,omitempty"`
+}
+
+func buildMemoryBucketsListPayload(result memoryBucketListResult) memoryBucketsListPayload {
+	items := make([]memoryBucketPayload, 0, len(result.Items))
+	for _, bucket := range result.Items {
+		items = append(items, buildMemoryBucketPayload(bucket))
+	}
+	return memoryBucketsListPayload{
+		Items:   items,
+		Page:    result.Page,
+		PerPage: result.PerPage,
+		Total:   result.Total,
+	}
+}
+
+func buildMemoryBucketPayload(bucket memoryBucketResource) memoryBucketPayload {
+	config := cloneToInterfaceMap(bucket.Config)
+	if len(config) == 0 {
+		config = nil
+	}
+	return memoryBucketPayload{
+		ID:          bucket.ID.String(),
+		Title:       bucket.Title,
+		Description: bucket.Description,
+		Config:      config,
+		CreatedAt:   bucket.CreatedAt,
+		UpdatedAt:   bucket.UpdatedAt,
+	}
+}
+
+type attachmentsListPayload struct {
+	Items   []attachmentPayload `json:"items"`
+	Page    int                 `json:"page"`
+	PerPage int                 `json:"perPage"`
+	Total   int                 `json:"total"`
+}
+
+type attachmentPayload struct {
+	ID         string     `json:"id"`
+	Kind       string     `json:"kind"`
+	SourceType string     `json:"sourceType"`
+	SourceID   string     `json:"sourceId"`
+	TargetType string     `json:"targetType"`
+	TargetID   string     `json:"targetId"`
+	CreatedAt  time.Time  `json:"createdAt"`
+	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
+}
+
+func buildAttachmentsListPayload(result attachmentListResult) attachmentsListPayload {
+	items := make([]attachmentPayload, 0, len(result.Items))
+	for _, attachment := range result.Items {
+		items = append(items, buildAttachmentPayload(attachment))
+	}
+	return attachmentsListPayload{
+		Items:   items,
+		Page:    result.Page,
+		PerPage: result.PerPage,
+		Total:   result.Total,
+	}
+}
+
+func buildAttachmentPayload(attachment attachmentResource) attachmentPayload {
+	return attachmentPayload{
+		ID:         attachment.ID.String(),
+		Kind:       attachment.Kind,
+		SourceType: attachment.SourceType,
+		SourceID:   attachment.SourceID.String(),
+		TargetType: attachment.TargetType,
+		TargetID:   attachment.TargetID.String(),
+		CreatedAt:  attachment.CreatedAt,
+		UpdatedAt:  attachment.UpdatedAt,
 	}
 }
 
@@ -511,7 +816,11 @@ func (s *agentService) DeleteAgent(ctx context.Context, id uuid.UUID) error {
 		}
 
 		working.Nodes = append(working.Nodes[:idx], working.Nodes[idx+1:]...)
-		working.Edges = removeEdgesForNode(working.Edges, id.String())
+		filteredEdges, removed := removeEdgesForNode(working.Edges, id.String())
+		working.Edges = filteredEdges
+		if len(removed) > 0 {
+			working.Variables = removeAttachmentVariables(working.Variables, removed)
+		}
 
 		copyGraph := working
 		if _, persistErr := s.persistGraph(ctx, &copyGraph); persistErr != nil {
@@ -743,15 +1052,19 @@ func findNodeIndex(nodes []graphNode, id string) int {
 	return -1
 }
 
-func removeEdgesForNode(edges []graphEdge, id string) []graphEdge {
+func removeEdgesForNode(edges []graphEdge, id string) ([]graphEdge, []string) {
 	filtered := edges[:0]
+	removed := make([]string, 0)
 	for _, edge := range edges {
 		if strings.EqualFold(edge.Source, id) || strings.EqualFold(edge.Target, id) {
+			if edge.ID != nil {
+				removed = append(removed, *edge.ID)
+			}
 			continue
 		}
 		filtered = append(filtered, edge)
 	}
-	return filtered
+	return filtered, removed
 }
 
 func filterAgents(agents []agentResource, query string) []agentResource {
@@ -941,12 +1254,7 @@ type agentValidator struct {
 	paginatedSchema *openapi3.SchemaRef
 }
 
-func newAgentValidator() (*agentValidator, error) {
-	spec, err := loadTeamSpec()
-	if err != nil {
-		return nil, err
-	}
-
+func newAgentValidator(spec *openapi3.T) (*agentValidator, error) {
 	components := spec.Components
 	if components == nil {
 		return nil, fmt.Errorf("team spec missing components section")
@@ -1022,33 +1330,47 @@ func normalizeForValidation(value any) (any, error) {
 }
 
 func (t *Team) GetAttachments(ctx context.Context, request gen.GetAttachmentsRequestObject) (gen.GetAttachmentsResponseObject, error) {
-	query := url.Values{}
+	params := attachmentListParams{
+		Page:    1,
+		PerPage: 20,
+	}
 	if request.Params.SourceType != nil {
-		query.Set("sourceType", string(*request.Params.SourceType))
+		params.SourceType = string(*request.Params.SourceType)
 	}
 	if request.Params.SourceId != nil {
-		query.Set("sourceId", request.Params.SourceId.String())
+		params.SourceID = request.Params.SourceId.String()
 	}
 	if request.Params.TargetType != nil {
-		query.Set("targetType", string(*request.Params.TargetType))
+		params.TargetType = string(*request.Params.TargetType)
 	}
 	if request.Params.TargetId != nil {
-		query.Set("targetId", request.Params.TargetId.String())
+		params.TargetID = request.Params.TargetId.String()
 	}
 	if request.Params.Kind != nil {
-		query.Set("kind", string(*request.Params.Kind))
+		params.Kind = string(*request.Params.Kind)
 	}
 	if request.Params.Page != nil {
-		query.Set("page", strconv.Itoa(*request.Params.Page))
+		params.Page = *request.Params.Page
 	}
 	if request.Params.PerPage != nil {
-		query.Set("perPage", strconv.Itoa(*request.Params.PerPage))
+		params.PerPage = *request.Params.PerPage
+	}
+
+	result, err := t.attachmentService.ListAttachments(ctx, params)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildAttachmentsListPayload(result)
+	if err := t.attachmentValidator.ValidatePaginatedAttachments(payload); err != nil {
+		return nil, t.resourceValidationError("attachment", err)
 	}
 
 	var resp gen.GetAttachments200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/attachments", query, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("attachment", err)
 	}
+
 	return resp, nil
 }
 
@@ -1057,41 +1379,80 @@ func (t *Team) PostAttachments(ctx context.Context, request gen.PostAttachmentsR
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PostAttachments201JSONResponse
-	status, err := t.do(ctx, http.MethodPost, "/attachments", nil, request.Body, &resp)
+	sourceID, err := uuid.Parse(request.Body.SourceId.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("attachment", fmt.Errorf("invalid sourceId: %w", err))
 	}
-	if status != http.StatusCreated {
-		return nil, t.unexpectedStatus(status)
+	targetID, err := uuid.Parse(request.Body.TargetId.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("attachment", fmt.Errorf("invalid targetId: %w", err))
 	}
+
+	input := attachmentCreateInput{
+		Kind:     string(request.Body.Kind),
+		SourceID: sourceID,
+		TargetID: targetID,
+	}
+
+	created, err := t.attachmentService.CreateAttachment(ctx, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildAttachmentPayload(created)
+	if err := t.attachmentValidator.ValidateAttachment(payload); err != nil {
+		return nil, t.resourceValidationError("attachment", err)
+	}
+
+	var resp gen.PostAttachments201JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("attachment", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) DeleteAttachmentsId(ctx context.Context, request gen.DeleteAttachmentsIdRequestObject) (gen.DeleteAttachmentsIdResponseObject, error) {
-	status, err := t.do(ctx, http.MethodDelete, "/attachments/"+request.Id.String(), nil, nil, nil)
+	attachmentID, err := uuid.Parse(request.Id.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("attachment", fmt.Errorf("invalid attachment id: %w", err))
 	}
-	if status != http.StatusNoContent {
-		return nil, t.unexpectedStatus(status)
+	if err := t.attachmentService.DeleteAttachment(ctx, attachmentID); err != nil {
+		return nil, t.handleResourceError(err)
 	}
 	return gen.DeleteAttachmentsId204Response{}, nil
 }
 
 func (t *Team) GetMcpServers(ctx context.Context, request gen.GetMcpServersRequestObject) (gen.GetMcpServersResponseObject, error) {
-	query := url.Values{}
+	params := mcpServerListParams{
+		Page:    1,
+		PerPage: 20,
+	}
+	if request.Params.Q != nil {
+		params.Query = strings.TrimSpace(*request.Params.Q)
+	}
 	if request.Params.Page != nil {
-		query.Set("page", strconv.Itoa(*request.Params.Page))
+		params.Page = *request.Params.Page
 	}
 	if request.Params.PerPage != nil {
-		query.Set("perPage", strconv.Itoa(*request.Params.PerPage))
+		params.PerPage = *request.Params.PerPage
+	}
+
+	result, err := t.mcpServerService.ListMcpServers(ctx, params)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMcpServersListPayload(result)
+	if err := t.mcpServerValidator.ValidatePaginatedMcpServers(payload); err != nil {
+		return nil, t.resourceValidationError("MCP server", err)
 	}
 
 	var resp gen.GetMcpServers200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/mcp-servers", query, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("MCP server", err)
 	}
+
 	return resp, nil
 }
 
@@ -1100,33 +1461,67 @@ func (t *Team) PostMcpServers(ctx context.Context, request gen.PostMcpServersReq
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PostMcpServers201JSONResponse
-	status, err := t.do(ctx, http.MethodPost, "/mcp-servers", nil, request.Body, &resp)
+	config, err := structToMap(request.Body.Config)
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("MCP server", fmt.Errorf("invalid config: %w", err))
 	}
-	if status != http.StatusCreated {
-		return nil, t.unexpectedStatus(status)
+
+	input := mcpServerCreateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      config,
 	}
+
+	created, err := t.mcpServerService.CreateMcpServer(ctx, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMcpServerPayload(created)
+	if err := t.mcpServerValidator.ValidateMcpServer(payload); err != nil {
+		return nil, t.resourceValidationError("MCP server", err)
+	}
+
+	var resp gen.PostMcpServers201JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("MCP server", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) DeleteMcpServersId(ctx context.Context, request gen.DeleteMcpServersIdRequestObject) (gen.DeleteMcpServersIdResponseObject, error) {
-	status, err := t.do(ctx, http.MethodDelete, "/mcp-servers/"+request.Id.String(), nil, nil, nil)
+	id, err := uuid.Parse(request.Id.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("MCP server", fmt.Errorf("invalid MCP server id: %w", err))
 	}
-	if status != http.StatusNoContent {
-		return nil, t.unexpectedStatus(status)
+	if err := t.mcpServerService.DeleteMcpServer(ctx, id); err != nil {
+		return nil, t.handleResourceError(err)
 	}
 	return gen.DeleteMcpServersId204Response{}, nil
 }
 
 func (t *Team) GetMcpServersId(ctx context.Context, request gen.GetMcpServersIdRequestObject) (gen.GetMcpServersIdResponseObject, error) {
-	var resp gen.GetMcpServersId200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/mcp-servers/"+request.Id.String(), nil, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("MCP server", fmt.Errorf("invalid MCP server id: %w", err))
 	}
+
+	server, err := t.mcpServerService.GetMcpServer(ctx, id)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMcpServerPayload(server)
+	if err := t.mcpServerValidator.ValidateMcpServer(payload); err != nil {
+		return nil, t.resourceValidationError("MCP server", err)
+	}
+
+	var resp gen.GetMcpServersId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("MCP server", err)
+	}
+
 	return resp, nil
 }
 
@@ -1135,26 +1530,74 @@ func (t *Team) PatchMcpServersId(ctx context.Context, request gen.PatchMcpServer
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PatchMcpServersId200JSONResponse
-	if _, err := t.do(ctx, http.MethodPatch, "/mcp-servers/"+request.Id.String(), nil, request.Body, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("MCP server", fmt.Errorf("invalid MCP server id: %w", err))
 	}
+
+	var configPtr *map[string]any
+	if request.Body.Config != nil {
+		converted, err := structToMap(*request.Body.Config)
+		if err != nil {
+			return nil, t.resourceSerializationError("MCP server", fmt.Errorf("invalid config: %w", err))
+		}
+		configPtr = &converted
+	}
+
+	input := mcpServerUpdateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      configPtr,
+	}
+
+	updated, err := t.mcpServerService.UpdateMcpServer(ctx, id, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMcpServerPayload(updated)
+	if err := t.mcpServerValidator.ValidateMcpServer(payload); err != nil {
+		return nil, t.resourceValidationError("MCP server", err)
+	}
+
+	var resp gen.PatchMcpServersId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("MCP server", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) GetMemoryBuckets(ctx context.Context, request gen.GetMemoryBucketsRequestObject) (gen.GetMemoryBucketsResponseObject, error) {
-	query := url.Values{}
+	params := memoryBucketListParams{
+		Page:    1,
+		PerPage: 20,
+	}
+	if request.Params.Q != nil {
+		params.Query = strings.TrimSpace(*request.Params.Q)
+	}
 	if request.Params.Page != nil {
-		query.Set("page", strconv.Itoa(*request.Params.Page))
+		params.Page = *request.Params.Page
 	}
 	if request.Params.PerPage != nil {
-		query.Set("perPage", strconv.Itoa(*request.Params.PerPage))
+		params.PerPage = *request.Params.PerPage
+	}
+
+	result, err := t.memoryBucketService.ListMemoryBuckets(ctx, params)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMemoryBucketsListPayload(result)
+	if err := t.memoryBucketValidator.ValidatePaginatedMemoryBuckets(payload); err != nil {
+		return nil, t.resourceValidationError("memory bucket", err)
 	}
 
 	var resp gen.GetMemoryBuckets200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/memory-buckets", query, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("memory bucket", err)
 	}
+
 	return resp, nil
 }
 
@@ -1163,33 +1606,67 @@ func (t *Team) PostMemoryBuckets(ctx context.Context, request gen.PostMemoryBuck
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PostMemoryBuckets201JSONResponse
-	status, err := t.do(ctx, http.MethodPost, "/memory-buckets", nil, request.Body, &resp)
+	config, err := structToMap(request.Body.Config)
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("memory bucket", fmt.Errorf("invalid config: %w", err))
 	}
-	if status != http.StatusCreated {
-		return nil, t.unexpectedStatus(status)
+
+	input := memoryBucketCreateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      config,
 	}
+
+	created, err := t.memoryBucketService.CreateMemoryBucket(ctx, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMemoryBucketPayload(created)
+	if err := t.memoryBucketValidator.ValidateMemoryBucket(payload); err != nil {
+		return nil, t.resourceValidationError("memory bucket", err)
+	}
+
+	var resp gen.PostMemoryBuckets201JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("memory bucket", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) DeleteMemoryBucketsId(ctx context.Context, request gen.DeleteMemoryBucketsIdRequestObject) (gen.DeleteMemoryBucketsIdResponseObject, error) {
-	status, err := t.do(ctx, http.MethodDelete, "/memory-buckets/"+request.Id.String(), nil, nil, nil)
+	id, err := uuid.Parse(request.Id.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("memory bucket", fmt.Errorf("invalid memory bucket id: %w", err))
 	}
-	if status != http.StatusNoContent {
-		return nil, t.unexpectedStatus(status)
+	if err := t.memoryBucketService.DeleteMemoryBucket(ctx, id); err != nil {
+		return nil, t.handleResourceError(err)
 	}
 	return gen.DeleteMemoryBucketsId204Response{}, nil
 }
 
 func (t *Team) GetMemoryBucketsId(ctx context.Context, request gen.GetMemoryBucketsIdRequestObject) (gen.GetMemoryBucketsIdResponseObject, error) {
-	var resp gen.GetMemoryBucketsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/memory-buckets/"+request.Id.String(), nil, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("memory bucket", fmt.Errorf("invalid memory bucket id: %w", err))
 	}
+
+	bucket, err := t.memoryBucketService.GetMemoryBucket(ctx, id)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMemoryBucketPayload(bucket)
+	if err := t.memoryBucketValidator.ValidateMemoryBucket(payload); err != nil {
+		return nil, t.resourceValidationError("memory bucket", err)
+	}
+
+	var resp gen.GetMemoryBucketsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("memory bucket", err)
+	}
+
 	return resp, nil
 }
 
@@ -1198,29 +1675,77 @@ func (t *Team) PatchMemoryBucketsId(ctx context.Context, request gen.PatchMemory
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PatchMemoryBucketsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodPatch, "/memory-buckets/"+request.Id.String(), nil, request.Body, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("memory bucket", fmt.Errorf("invalid memory bucket id: %w", err))
 	}
+
+	var configPtr *map[string]any
+	if request.Body.Config != nil {
+		converted, err := structToMap(*request.Body.Config)
+		if err != nil {
+			return nil, t.resourceSerializationError("memory bucket", fmt.Errorf("invalid config: %w", err))
+		}
+		configPtr = &converted
+	}
+
+	input := memoryBucketUpdateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      configPtr,
+	}
+
+	updated, err := t.memoryBucketService.UpdateMemoryBucket(ctx, id, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildMemoryBucketPayload(updated)
+	if err := t.memoryBucketValidator.ValidateMemoryBucket(payload); err != nil {
+		return nil, t.resourceValidationError("memory bucket", err)
+	}
+
+	var resp gen.PatchMemoryBucketsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("memory bucket", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) GetTools(ctx context.Context, request gen.GetToolsRequestObject) (gen.GetToolsResponseObject, error) {
-	query := url.Values{}
+	params := toolListParams{
+		Page:    1,
+		PerPage: 20,
+	}
+	if request.Params.Q != nil {
+		params.Query = strings.TrimSpace(*request.Params.Q)
+	}
 	if request.Params.Type != nil {
-		query.Set("type", string(*request.Params.Type))
+		params.Type = string(*request.Params.Type)
 	}
 	if request.Params.Page != nil {
-		query.Set("page", strconv.Itoa(*request.Params.Page))
+		params.Page = *request.Params.Page
 	}
 	if request.Params.PerPage != nil {
-		query.Set("perPage", strconv.Itoa(*request.Params.PerPage))
+		params.PerPage = *request.Params.PerPage
+	}
+
+	result, err := t.toolService.ListTools(ctx, params)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildToolsListPayload(result)
+	if err := t.toolValidator.ValidatePaginatedTools(payload); err != nil {
+		return nil, t.resourceValidationError("tool", err)
 	}
 
 	var resp gen.GetTools200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/tools", query, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("tool", err)
 	}
+
 	return resp, nil
 }
 
@@ -1229,33 +1754,68 @@ func (t *Team) PostTools(ctx context.Context, request gen.PostToolsRequestObject
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PostTools201JSONResponse
-	status, err := t.do(ctx, http.MethodPost, "/tools", nil, request.Body, &resp)
+	config := make(map[string]any)
+	if request.Body.Config != nil {
+		config = cloneToInterfaceMap(*request.Body.Config)
+	}
+
+	input := toolCreateInput{
+		Type:        string(request.Body.Type),
+		Name:        request.Body.Name,
+		Description: request.Body.Description,
+		Config:      config,
+	}
+
+	created, err := t.toolService.CreateTool(ctx, input)
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.handleResourceError(err)
 	}
-	if status != http.StatusCreated {
-		return nil, t.unexpectedStatus(status)
+
+	payload := buildToolPayload(created)
+	if err := t.toolValidator.ValidateTool(payload); err != nil {
+		return nil, t.resourceValidationError("tool", err)
 	}
+
+	var resp gen.PostTools201JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("tool", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) DeleteToolsId(ctx context.Context, request gen.DeleteToolsIdRequestObject) (gen.DeleteToolsIdResponseObject, error) {
-	status, err := t.do(ctx, http.MethodDelete, "/tools/"+request.Id.String(), nil, nil, nil)
+	id, err := uuid.Parse(request.Id.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("tool", fmt.Errorf("invalid tool id: %w", err))
 	}
-	if status != http.StatusNoContent {
-		return nil, t.unexpectedStatus(status)
+	if err := t.toolService.DeleteTool(ctx, id); err != nil {
+		return nil, t.handleResourceError(err)
 	}
 	return gen.DeleteToolsId204Response{}, nil
 }
 
 func (t *Team) GetToolsId(ctx context.Context, request gen.GetToolsIdRequestObject) (gen.GetToolsIdResponseObject, error) {
-	var resp gen.GetToolsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/tools/"+request.Id.String(), nil, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("tool", fmt.Errorf("invalid tool id: %w", err))
 	}
+
+	tool, err := t.toolService.GetTool(ctx, id)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildToolPayload(tool)
+	if err := t.toolValidator.ValidateTool(payload); err != nil {
+		return nil, t.resourceValidationError("tool", err)
+	}
+
+	var resp gen.GetToolsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("tool", err)
+	}
+
 	return resp, nil
 }
 
@@ -1264,26 +1824,71 @@ func (t *Team) PatchToolsId(ctx context.Context, request gen.PatchToolsIdRequest
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PatchToolsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodPatch, "/tools/"+request.Id.String(), nil, request.Body, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("tool", fmt.Errorf("invalid tool id: %w", err))
 	}
+
+	var configPtr *map[string]any
+	if request.Body.Config != nil {
+		cloned := cloneToInterfaceMap(*request.Body.Config)
+		configPtr = &cloned
+	}
+
+	input := toolUpdateInput{
+		Name:        request.Body.Name,
+		Description: request.Body.Description,
+		Config:      configPtr,
+	}
+
+	updated, err := t.toolService.UpdateTool(ctx, id, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildToolPayload(updated)
+	if err := t.toolValidator.ValidateTool(payload); err != nil {
+		return nil, t.resourceValidationError("tool", err)
+	}
+
+	var resp gen.PatchToolsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("tool", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) GetWorkspaceConfigurations(ctx context.Context, request gen.GetWorkspaceConfigurationsRequestObject) (gen.GetWorkspaceConfigurationsResponseObject, error) {
-	query := url.Values{}
+	params := workspaceListParams{
+		Page:    1,
+		PerPage: 20,
+	}
+	if request.Params.Q != nil {
+		params.Query = strings.TrimSpace(*request.Params.Q)
+	}
 	if request.Params.Page != nil {
-		query.Set("page", strconv.Itoa(*request.Params.Page))
+		params.Page = *request.Params.Page
 	}
 	if request.Params.PerPage != nil {
-		query.Set("perPage", strconv.Itoa(*request.Params.PerPage))
+		params.PerPage = *request.Params.PerPage
+	}
+
+	result, err := t.workspaceService.ListWorkspaceConfigurations(ctx, params)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildWorkspacesListPayload(result)
+	if err := t.workspaceValidator.ValidatePaginatedWorkspaces(payload); err != nil {
+		return nil, t.resourceValidationError("workspace configuration", err)
 	}
 
 	var resp gen.GetWorkspaceConfigurations200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/workspace-configurations", query, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", err)
 	}
+
 	return resp, nil
 }
 
@@ -1292,33 +1897,67 @@ func (t *Team) PostWorkspaceConfigurations(ctx context.Context, request gen.Post
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PostWorkspaceConfigurations201JSONResponse
-	status, err := t.do(ctx, http.MethodPost, "/workspace-configurations", nil, request.Body, &resp)
+	config, err := structToMap(request.Body.Config)
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("workspace configuration", fmt.Errorf("invalid config: %w", err))
 	}
-	if status != http.StatusCreated {
-		return nil, t.unexpectedStatus(status)
+
+	input := workspaceCreateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      config,
 	}
+
+	created, err := t.workspaceService.CreateWorkspaceConfiguration(ctx, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildWorkspacePayload(created)
+	if err := t.workspaceValidator.ValidateWorkspace(payload); err != nil {
+		return nil, t.resourceValidationError("workspace configuration", err)
+	}
+
+	var resp gen.PostWorkspaceConfigurations201JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", err)
+	}
+
 	return resp, nil
 }
 
 func (t *Team) DeleteWorkspaceConfigurationsId(ctx context.Context, request gen.DeleteWorkspaceConfigurationsIdRequestObject) (gen.DeleteWorkspaceConfigurationsIdResponseObject, error) {
-	status, err := t.do(ctx, http.MethodDelete, "/workspace-configurations/"+request.Id.String(), nil, nil, nil)
+	id, err := uuid.Parse(request.Id.String())
 	if err != nil {
-		return nil, t.wrapError(err)
+		return nil, t.resourceSerializationError("workspace configuration", fmt.Errorf("invalid workspace id: %w", err))
 	}
-	if status != http.StatusNoContent {
-		return nil, t.unexpectedStatus(status)
+	if err := t.workspaceService.DeleteWorkspaceConfiguration(ctx, id); err != nil {
+		return nil, t.handleResourceError(err)
 	}
 	return gen.DeleteWorkspaceConfigurationsId204Response{}, nil
 }
 
 func (t *Team) GetWorkspaceConfigurationsId(ctx context.Context, request gen.GetWorkspaceConfigurationsIdRequestObject) (gen.GetWorkspaceConfigurationsIdResponseObject, error) {
-	var resp gen.GetWorkspaceConfigurationsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodGet, "/workspace-configurations/"+request.Id.String(), nil, nil, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", fmt.Errorf("invalid workspace id: %w", err))
 	}
+
+	workspace, err := t.workspaceService.GetWorkspaceConfiguration(ctx, id)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildWorkspacePayload(workspace)
+	if err := t.workspaceValidator.ValidateWorkspace(payload); err != nil {
+		return nil, t.resourceValidationError("workspace configuration", err)
+	}
+
+	var resp gen.GetWorkspaceConfigurationsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", err)
+	}
+
 	return resp, nil
 }
 
@@ -1327,19 +1966,42 @@ func (t *Team) PatchWorkspaceConfigurationsId(ctx context.Context, request gen.P
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var resp gen.PatchWorkspaceConfigurationsId200JSONResponse
-	if _, err := t.do(ctx, http.MethodPatch, "/workspace-configurations/"+request.Id.String(), nil, request.Body, &resp); err != nil {
-		return nil, t.wrapError(err)
+	id, err := uuid.Parse(request.Id.String())
+	if err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", fmt.Errorf("invalid workspace id: %w", err))
 	}
-	return resp, nil
-}
 
-func (t *Team) do(ctx context.Context, method, suffix string, query url.Values, body any, out any) (int, error) {
-	path := joinPath(teamBasePath, suffix)
-	if len(query) == 0 {
-		query = nil
+	var configPtr *map[string]any
+	if request.Body.Config != nil {
+		converted, err := structToMap(*request.Body.Config)
+		if err != nil {
+			return nil, t.resourceSerializationError("workspace configuration", fmt.Errorf("invalid config: %w", err))
+		}
+		configPtr = &converted
 	}
-	return t.client.Do(ctx, method, path, query, body, out)
+
+	input := workspaceUpdateInput{
+		Title:       request.Body.Title,
+		Description: request.Body.Description,
+		Config:      configPtr,
+	}
+
+	updated, err := t.workspaceService.UpdateWorkspaceConfiguration(ctx, id, input)
+	if err != nil {
+		return nil, t.handleResourceError(err)
+	}
+
+	payload := buildWorkspacePayload(updated)
+	if err := t.workspaceValidator.ValidateWorkspace(payload); err != nil {
+		return nil, t.resourceValidationError("workspace configuration", err)
+	}
+
+	var resp gen.PatchWorkspaceConfigurationsId200JSONResponse
+	if err := decodePayload(payload, &resp); err != nil {
+		return nil, t.resourceSerializationError("workspace configuration", err)
+	}
+
+	return resp, nil
 }
 
 func (t *Team) wrapError(err error) error {
@@ -1356,12 +2018,6 @@ func (t *Team) wrapError(err error) error {
 	detail := strings.TrimSpace(err.Error())
 	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), detail, nil)
 	return NewProblemError(problem, err)
-}
-
-func (t *Team) unexpectedStatus(status int) error {
-	detail := fmt.Sprintf("upstream returned unexpected status %d", status)
-	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), detail, nil)
-	return NewProblemError(problem, nil)
 }
 
 func problemFromPlatform(err *platform.Error) gen.Problem {
@@ -1427,15 +2083,15 @@ func problemFromPlatform(err *platform.Error) gen.Problem {
 	return problem
 }
 
-func joinPath(prefix, suffix string) string {
-	if suffix == "" {
-		return prefix
+func titleCase(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "Resource"
 	}
-	if strings.HasSuffix(prefix, "/") {
-		prefix = strings.TrimRight(prefix, "/")
+	runes := []rune(trimmed)
+	first := strings.ToUpper(string(runes[0]))
+	if len(runes) == 1 {
+		return first
 	}
-	if !strings.HasPrefix(suffix, "/") {
-		suffix = "/" + suffix
-	}
-	return prefix + suffix
+	return first + string(runes[1:])
 }
