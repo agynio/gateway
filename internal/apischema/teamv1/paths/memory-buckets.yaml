@@ -1,12 +1,7 @@
 get:
-  tags: [MCP Servers]
-  summary: List MCP servers
+  tags: [MemoryBuckets]
+  summary: List memory buckets
   parameters:
-    - in: query
-      name: q
-      schema:
-        type: string
-      description: Free-text search (title/description/id).
     - in: query
       name: page
       schema:
@@ -26,24 +21,24 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+            $ref: '../components/schemas/PaginatedMemoryBuckets.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'
 post:
-  tags: [MCP Servers]
-  summary: Create MCP server
+  tags: [MemoryBuckets]
+  summary: Create memory bucket
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+          $ref: '../components/schemas/MemoryBucketCreateRequest.yaml'
   responses:
     '201':
       description: Created
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/McpServer.yaml'
+            $ref: '../components/schemas/MemoryBucket.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'

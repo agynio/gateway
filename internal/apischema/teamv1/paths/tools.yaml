@@ -1,12 +1,12 @@
 get:
-  tags: [MCP Servers]
-  summary: List MCP servers
+  tags: [Tools]
+  summary: List tools
   parameters:
     - in: query
-      name: q
+      name: type
       schema:
-        type: string
-      description: Free-text search (title/description/id).
+        $ref: '../components/schemas/ToolType.yaml'
+      description: Filter by tool type
     - in: query
       name: page
       schema:
@@ -26,24 +26,24 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+            $ref: '../components/schemas/PaginatedTools.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'
 post:
-  tags: [MCP Servers]
-  summary: Create MCP server
+  tags: [Tools]
+  summary: Create tool
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+          $ref: '../components/schemas/ToolCreateRequest.yaml'
   responses:
     '201':
       description: Created
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/McpServer.yaml'
+            $ref: '../components/schemas/Tool.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'

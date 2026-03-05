@@ -15,12 +15,12 @@ The OpenAPI 3.0 definition lives in [`spec/openapi.yaml`](spec/openapi.yaml). Ge
 ## Quickstart
 
 ```bash
-PLATFORM_BASE_URL="https://platform.example.com" \
+PLATFORM_BASE_URL="https://api.agyn.dev:8080" \
 PLATFORM_AUTH_TOKEN="<token>" \
 go run ./cmd/gateway
 ```
 
-All Team Management endpoints are served under the `/team/v1` prefix and proxy to the configured platform server.
+The gateway forwards `/health` and the `/api/*` surface directly to the configured platform server. The existing Team Management API remains available under `/team/v1` for backwards compatibility.
 
 Enable optional response validation middleware by exporting `OPENAPI_VALIDATE_RESPONSE=true` before starting the server.
 
@@ -35,7 +35,7 @@ Run the gateway container locally by supplying the required platform settings:
 
 ```bash
 docker run --rm -p 8080:8080 \
-  -e PLATFORM_BASE_URL="https://platform.example.com" \
+  -e PLATFORM_BASE_URL="https://api.agyn.dev:8080" \
   -e PLATFORM_AUTH_TOKEN="<token>" \
   ghcr.io/agynio/gateway:main
 ```
@@ -50,7 +50,7 @@ Install the chart by providing the target platform URL (required) and optionally
 helm install gateway oci://ghcr.io/agynio/charts/gateway \
   --version 0.1.0 \
   --namespace gateway --create-namespace \
-  --set gateway.platformBaseUrl="https://platform.example.com" \
+  --set gateway.platformBaseUrl="https://api.agyn.dev:8080" \
   --set gateway.authToken.existingSecret=gateway-auth \
   --set gateway.authToken.existingSecretKey=token
 ```

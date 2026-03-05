@@ -1,12 +1,29 @@
 get:
-  tags: [MCP Servers]
-  summary: List MCP servers
+  tags: [Attachments]
+  summary: List attachments
   parameters:
     - in: query
-      name: q
+      name: sourceType
+      schema:
+        $ref: '../components/schemas/EntityType.yaml'
+    - in: query
+      name: sourceId
       schema:
         type: string
-      description: Free-text search (title/description/id).
+        format: uuid
+    - in: query
+      name: targetType
+      schema:
+        $ref: '../components/schemas/EntityType.yaml'
+    - in: query
+      name: targetId
+      schema:
+        type: string
+        format: uuid
+    - in: query
+      name: kind
+      schema:
+        $ref: '../components/schemas/AttachmentKind.yaml'
     - in: query
       name: page
       schema:
@@ -26,24 +43,24 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+            $ref: '../components/schemas/PaginatedAttachments.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'
 post:
-  tags: [MCP Servers]
-  summary: Create MCP server
+  tags: [Attachments]
+  summary: Create attachment (relation)
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+          $ref: '../components/schemas/AttachmentCreateRequest.yaml'
   responses:
     '201':
       description: Created
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/McpServer.yaml'
+            $ref: '../components/schemas/Attachment.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'

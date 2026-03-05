@@ -221,8 +221,10 @@ type PostAttachmentsJSONBodyKind string
 
 // GetMcpServersParams defines parameters for GetMcpServers.
 type GetMcpServersParams struct {
-	Page    *int `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+	// Q Free-text search (title/description/id).
+	Q       *string `form:"q,omitempty" json:"q,omitempty"`
+	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
 // PostMcpServersJSONBody defines parameters for PostMcpServers.
@@ -273,8 +275,10 @@ type PatchMcpServersIdJSONBody struct {
 
 // GetMemoryBucketsParams defines parameters for GetMemoryBuckets.
 type GetMemoryBucketsParams struct {
-	Page    *int `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+	// Q Free-text search (title/description/id).
+	Q       *string `form:"q,omitempty" json:"q,omitempty"`
+	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
 // PostMemoryBucketsJSONBody defines parameters for PostMemoryBuckets.
@@ -305,6 +309,9 @@ type PatchMemoryBucketsIdJSONBodyConfigScope string
 
 // GetToolsParams defines parameters for GetTools.
 type GetToolsParams struct {
+	// Q Free-text search (name/description/id).
+	Q *string `form:"q,omitempty" json:"q,omitempty"`
+
 	// Type Filter by tool type
 	Type    *GetToolsParamsType `form:"type,omitempty" json:"type,omitempty"`
 	Page    *int                `form:"page,omitempty" json:"page,omitempty"`
@@ -334,8 +341,10 @@ type PatchToolsIdJSONBody struct {
 
 // GetWorkspaceConfigurationsParams defines parameters for GetWorkspaceConfigurations.
 type GetWorkspaceConfigurationsParams struct {
-	Page    *int `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
+	// Q Free-text search (title/description/id).
+	Q       *string `form:"q,omitempty" json:"q,omitempty"`
+	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
 // PostWorkspaceConfigurationsJSONBody defines parameters for PostWorkspaceConfigurations.
@@ -992,6 +1001,14 @@ func (siw *ServerInterfaceWrapper) GetMcpServers(w http.ResponseWriter, r *http.
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetMcpServersParams
 
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
+
 	// ------------- Optional query parameter "page" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
@@ -1116,6 +1133,14 @@ func (siw *ServerInterfaceWrapper) GetMemoryBuckets(w http.ResponseWriter, r *ht
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetMemoryBucketsParams
 
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
+
 	// ------------- Optional query parameter "page" -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
@@ -1239,6 +1264,14 @@ func (siw *ServerInterfaceWrapper) GetTools(w http.ResponseWriter, r *http.Reque
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetToolsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
 
 	// ------------- Optional query parameter "type" -------------
 
@@ -1371,6 +1404,14 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurations(w http.ResponseWri
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWorkspaceConfigurationsParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
 
 	// ------------- Optional query parameter "page" -------------
 

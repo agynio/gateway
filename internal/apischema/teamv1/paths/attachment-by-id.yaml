@@ -1,0 +1,10 @@
+delete:
+  tags: [Attachments]
+  summary: Delete attachment
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '204':
+      description: No Content
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'

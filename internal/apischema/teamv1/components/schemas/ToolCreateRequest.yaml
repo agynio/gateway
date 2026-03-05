@@ -1,0 +1,7 @@
+type: object
+properties:
+  type: { $ref: './ToolType.yaml' }
+  name: { type: string }
+  description: { type: string }
+  config: { type: object }
+required: [type]

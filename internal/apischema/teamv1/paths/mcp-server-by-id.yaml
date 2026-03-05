@@ -1,0 +1,44 @@
+get:
+  tags: [MCP Servers]
+  summary: Get MCP server by ID
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/McpServer.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+patch:
+  tags: [MCP Servers]
+  summary: Update MCP server (partial)
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/McpServerUpdateRequest.yaml'
+  responses:
+    '200':
+      description: Updated
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/McpServer.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+delete:
+  tags: [MCP Servers]
+  summary: Delete MCP server
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '204':
+      description: No Content
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'

@@ -1,12 +1,12 @@
 get:
-  tags: [MCP Servers]
-  summary: List MCP servers
+  tags: [Agents]
+  summary: List agents
   parameters:
     - in: query
       name: q
       schema:
         type: string
-      description: Free-text search (title/description/id).
+      description: Free-text search (name/role).
     - in: query
       name: page
       schema:
@@ -26,24 +26,24 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+            $ref: '../components/schemas/PaginatedAgents.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'
 post:
-  tags: [MCP Servers]
-  summary: Create MCP server
+  tags: [Agents]
+  summary: Create agent
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+          $ref: '../components/schemas/AgentCreateRequest.yaml'
   responses:
     '201':
       description: Created
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/McpServer.yaml'
+            $ref: '../components/schemas/Agent.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'

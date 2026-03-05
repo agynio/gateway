@@ -1,0 +1,10 @@
+allOf:
+  - $ref: './EntityMeta.yaml'
+  - type: object
+    properties:
+      kind: { $ref: './AttachmentKind.yaml' }
+      sourceType: { $ref: './EntityType.yaml' }
+      sourceId: { type: string, format: uuid }
+      targetType: { $ref: './EntityType.yaml' }
+      targetId: { type: string, format: uuid }
+    required: [kind, sourceType, sourceId, targetType, targetId]

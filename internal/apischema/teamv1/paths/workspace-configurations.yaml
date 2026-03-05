@@ -1,12 +1,7 @@
 get:
-  tags: [MCP Servers]
-  summary: List MCP servers
+  tags: [WorkspaceConfigurations]
+  summary: List workspace configurations
   parameters:
-    - in: query
-      name: q
-      schema:
-        type: string
-      description: Free-text search (title/description/id).
     - in: query
       name: page
       schema:
@@ -26,24 +21,24 @@ get:
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/PaginatedMcpServers.yaml'
+            $ref: '../components/schemas/PaginatedWorkspaceConfigurations.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'
 post:
-  tags: [MCP Servers]
-  summary: Create MCP server
+  tags: [WorkspaceConfigurations]
+  summary: Create workspace configuration
   requestBody:
     required: true
     content:
       application/json:
         schema:
-          $ref: '../components/schemas/McpServerCreateRequest.yaml'
+          $ref: '../components/schemas/WorkspaceConfigurationCreateRequest.yaml'
   responses:
     '201':
       description: Created
       content:
         application/json:
           schema:
-            $ref: '../components/schemas/McpServer.yaml'
+            $ref: '../components/schemas/WorkspaceConfiguration.yaml'
     default:
       $ref: '../components/responses/ProblemResponse.yaml'

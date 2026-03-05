@@ -1,0 +1,44 @@
+get:
+  tags: [WorkspaceConfigurations]
+  summary: Get workspace configuration by ID
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '200':
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/WorkspaceConfiguration.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+patch:
+  tags: [WorkspaceConfigurations]
+  summary: Update workspace configuration (partial)
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: '../components/schemas/WorkspaceConfigurationUpdateRequest.yaml'
+  responses:
+    '200':
+      description: Updated
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/WorkspaceConfiguration.yaml'
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'
+delete:
+  tags: [WorkspaceConfigurations]
+  summary: Delete workspace configuration
+  parameters:
+    - $ref: '../components/parameters/IdPath.yaml'
+  responses:
+    '204':
+      description: No Content
+    default:
+      $ref: '../components/responses/ProblemResponse.yaml'

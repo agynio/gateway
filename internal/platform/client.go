@@ -68,6 +68,35 @@ func NewClient(cfg *Config) (*Client, error) {
 	}, nil
 }
 
+// BaseURL returns a defensive copy of the configured platform base URL.
+func (c *Client) BaseURL() *url.URL {
+	if c == nil {
+		return nil
+	}
+	return cloneURL(c.baseURL)
+}
+
+// DefaultHeaders returns a defensive copy of the default headers applied to each request.
+func (c *Client) DefaultHeaders() http.Header {
+	if c == nil {
+		return nil
+	}
+
+	cloned := make(http.Header, len(c.defaultHeaders))
+	for key, values := range c.defaultHeaders {
+		cloned[key] = append([]string(nil), values...)
+	}
+	return cloned
+}
+
+// HTTPClient exposes the underlying HTTP client used for upstream calls.
+func (c *Client) HTTPClient() HTTPClient {
+	if c == nil {
+		return nil
+	}
+	return c.httpClient
+}
+
 // Do performs an HTTP request against the platform API, decoding a successful JSON response into out.
 func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any, out any) (int, error) {
 	if ctx == nil {

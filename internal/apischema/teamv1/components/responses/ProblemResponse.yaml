@@ -1,0 +1,5 @@
+description: RFC 7807 problem response
+content:
+  application/problem+json:
+    schema:
+      $ref: '../schemas/Problem.yaml'
