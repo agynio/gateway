@@ -76,6 +76,13 @@ func main() {
 
 	root.Mount(handlers.TeamBasePath(), teamRouter)
 
+	proxyHandler := handlers.NewUpstreamProxy(client)
+	root.Handle("/health", proxyHandler)
+	root.Route("/api", func(r chi.Router) {
+		r.Handle("/", proxyHandler)
+		r.Handle("/*", proxyHandler)
+	})
+
 	addr := defaultAddr
 	if v := strings.TrimSpace(os.Getenv("ADDR")); v != "" {
 		addr = v
