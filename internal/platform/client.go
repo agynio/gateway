@@ -97,6 +97,14 @@ func (c *Client) HTTPClient() HTTPClient {
 	return c.httpClient
 }
 
+// Retries returns the configured retry count for upstream requests.
+func (c *Client) Retries() int {
+	if c == nil {
+		return 0
+	}
+	return c.retries
+}
+
 // Do performs an HTTP request against the platform API, decoding a successful JSON response into out.
 func (c *Client) Do(ctx context.Context, method, path string, query url.Values, body any, out any) (int, error) {
 	if ctx == nil {

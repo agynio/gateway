@@ -196,11 +196,12 @@ func parseTeamMetadata(config map[string]any, expectedResource string) (teamMeta
 }
 
 type graphService struct {
-	client PlatformClient
+	client       PlatformClient
+	graphRetries int
 }
 
-func newGraphService(client PlatformClient) graphService {
-	return graphService{client: client}
+func newGraphService(client PlatformClient, graphRetries int) graphService {
+	return graphService{client: client, graphRetries: normalizeGraphRetries(graphRetries)}
 }
 
 func (s graphService) fetchGraph(ctx context.Context) (*graphDocument, error) {
@@ -216,11 +217,9 @@ func (s graphService) fetchGraph(ctx context.Context) (*graphDocument, error) {
 }
 
 func (s graphService) persistGraph(ctx context.Context, graph *graphDocument) (*graphDocument, error) {
-	if graph.Name == "" {
-		graph.Name = "main"
-	}
+	payload := newGraphWriteDocument(graph)
 	var updated graphDocument
-	status, err := s.client.Do(ctx, http.MethodPost, agentGraphPath, nil, graph, &updated)
+	status, err := s.client.Do(ctx, http.MethodPost, agentGraphPath, nil, &payload, &updated)
 	if err != nil {
 		return nil, err
 	}
@@ -284,8 +283,8 @@ type toolService struct {
 	graph graphService
 }
 
-func newToolService(client PlatformClient) *toolService {
-	return &toolService{graph: newGraphService(client)}
+func newToolService(client PlatformClient, graphRetries int) *toolService {
+	return &toolService{graph: newGraphService(client, graphRetries)}
 }
 
 type toolListParams struct {
@@ -399,8 +398,8 @@ func (s *toolService) CreateTool(ctx context.Context, input toolCreateInput) (to
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		node, buildErr := buildToolNode(newID, input, now)
 		if buildErr != nil {
@@ -412,7 +411,7 @@ func (s *toolService) CreateTool(ctx context.Context, input toolCreateInput) (to
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return toolResource{}, err
@@ -442,8 +441,8 @@ func (s *toolService) UpdateTool(ctx context.Context, id uuid.UUID, input toolUp
 	if err != nil {
 		return toolResource{}, err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -479,7 +478,7 @@ func (s *toolService) UpdateTool(ctx context.Context, id uuid.UUID, input toolUp
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return toolResource{}, err
@@ -510,8 +509,8 @@ func (s *toolService) DeleteTool(ctx context.Context, id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -528,7 +527,7 @@ func (s *toolService) DeleteTool(ctx context.Context, id uuid.UUID) error {
 		copyGraph := working
 		if _, persistErr := s.graph.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return err
@@ -738,8 +737,8 @@ type mcpServerService struct {
 	graph graphService
 }
 
-func newMcpServerService(client PlatformClient) *mcpServerService {
-	return &mcpServerService{graph: newGraphService(client)}
+func newMcpServerService(client PlatformClient, graphRetries int) *mcpServerService {
+	return &mcpServerService{graph: newGraphService(client, graphRetries)}
 }
 
 type mcpServerListParams struct {
@@ -850,8 +849,8 @@ func (s *mcpServerService) CreateMcpServer(ctx context.Context, input mcpServerC
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		node := buildMcpServerNode(newID, input, now)
 		working.Nodes = append(working.Nodes, node)
@@ -860,7 +859,7 @@ func (s *mcpServerService) CreateMcpServer(ctx context.Context, input mcpServerC
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return mcpServerResource{}, err
@@ -890,8 +889,8 @@ func (s *mcpServerService) UpdateMcpServer(ctx context.Context, id uuid.UUID, in
 	if err != nil {
 		return mcpServerResource{}, err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -931,7 +930,7 @@ func (s *mcpServerService) UpdateMcpServer(ctx context.Context, id uuid.UUID, in
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return mcpServerResource{}, err
@@ -961,8 +960,8 @@ func (s *mcpServerService) DeleteMcpServer(ctx context.Context, id uuid.UUID) er
 	if err != nil {
 		return err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -982,7 +981,7 @@ func (s *mcpServerService) DeleteMcpServer(ctx context.Context, id uuid.UUID) er
 		copyGraph := working
 		if _, persistErr := s.graph.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return err
@@ -1175,8 +1174,8 @@ type workspaceService struct {
 	graph graphService
 }
 
-func newWorkspaceService(client PlatformClient) *workspaceService {
-	return &workspaceService{graph: newGraphService(client)}
+func newWorkspaceService(client PlatformClient, graphRetries int) *workspaceService {
+	return &workspaceService{graph: newGraphService(client, graphRetries)}
 }
 
 type workspaceListParams struct {
@@ -1287,8 +1286,8 @@ func (s *workspaceService) CreateWorkspaceConfiguration(ctx context.Context, inp
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		node := buildWorkspaceNode(newID, input, now)
 		working.Nodes = append(working.Nodes, node)
@@ -1297,7 +1296,7 @@ func (s *workspaceService) CreateWorkspaceConfiguration(ctx context.Context, inp
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return workspaceResource{}, err
@@ -1327,8 +1326,8 @@ func (s *workspaceService) UpdateWorkspaceConfiguration(ctx context.Context, id 
 	if err != nil {
 		return workspaceResource{}, err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -1368,7 +1367,7 @@ func (s *workspaceService) UpdateWorkspaceConfiguration(ctx context.Context, id 
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return workspaceResource{}, err
@@ -1398,8 +1397,8 @@ func (s *workspaceService) DeleteWorkspaceConfiguration(ctx context.Context, id 
 	if err != nil {
 		return err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -1419,7 +1418,7 @@ func (s *workspaceService) DeleteWorkspaceConfiguration(ctx context.Context, id 
 		copyGraph := working
 		if _, persistErr := s.graph.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return err
@@ -1611,8 +1610,8 @@ type memoryBucketService struct {
 	graph graphService
 }
 
-func newMemoryBucketService(client PlatformClient) *memoryBucketService {
-	return &memoryBucketService{graph: newGraphService(client)}
+func newMemoryBucketService(client PlatformClient, graphRetries int) *memoryBucketService {
+	return &memoryBucketService{graph: newGraphService(client, graphRetries)}
 }
 
 type memoryBucketListParams struct {
@@ -1723,8 +1722,8 @@ func (s *memoryBucketService) CreateMemoryBucket(ctx context.Context, input memo
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		node := buildMemoryBucketNode(newID, input, now)
 		working.Nodes = append(working.Nodes, node)
@@ -1733,7 +1732,7 @@ func (s *memoryBucketService) CreateMemoryBucket(ctx context.Context, input memo
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return memoryBucketResource{}, err
@@ -1763,8 +1762,8 @@ func (s *memoryBucketService) UpdateMemoryBucket(ctx context.Context, id uuid.UU
 	if err != nil {
 		return memoryBucketResource{}, err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -1804,7 +1803,7 @@ func (s *memoryBucketService) UpdateMemoryBucket(ctx context.Context, id uuid.UU
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return memoryBucketResource{}, err
@@ -1834,8 +1833,8 @@ func (s *memoryBucketService) DeleteMemoryBucket(ctx context.Context, id uuid.UU
 	if err != nil {
 		return err
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -1855,7 +1854,7 @@ func (s *memoryBucketService) DeleteMemoryBucket(ctx context.Context, id uuid.UU
 		copyGraph := working
 		if _, persistErr := s.graph.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return err
@@ -2047,8 +2046,8 @@ type attachmentService struct {
 	graph graphService
 }
 
-func newAttachmentService(client PlatformClient) *attachmentService {
-	return &attachmentService{graph: newGraphService(client)}
+func newAttachmentService(client PlatformClient, graphRetries int) *attachmentService {
+	return &attachmentService{graph: newGraphService(client, graphRetries)}
 }
 
 type attachmentListParams struct {
@@ -2292,8 +2291,8 @@ func (s *attachmentService) CreateAttachment(ctx context.Context, input attachme
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 
 		edge := graphEdge{
@@ -2311,7 +2310,7 @@ func (s *attachmentService) CreateAttachment(ctx context.Context, input attachme
 		updated, persistErr := s.graph.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return attachmentResource{}, err
@@ -2371,8 +2370,8 @@ func (s *attachmentService) DeleteAttachment(ctx context.Context, id uuid.UUID) 
 	if !found {
 		return newResourceError(http.StatusNotFound, fmt.Sprintf("attachment %s not found", id), nil)
 	}
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graph.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		filteredEdges := make([]graphEdge, 0, len(working.Edges))
 		for _, edge := range working.Edges {
@@ -2387,7 +2386,7 @@ func (s *attachmentService) DeleteAttachment(ctx context.Context, id uuid.UUID) 
 		copyGraph := working
 		if _, persistErr := s.graph.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.graph.fetchGraph(ctx)
 					if err != nil {
 						return err

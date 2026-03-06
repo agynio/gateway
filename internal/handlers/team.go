@@ -29,6 +29,10 @@ type PlatformClient interface {
 	Do(ctx context.Context, method, path string, query url.Values, body any, out any) (int, error)
 }
 
+type platformRetryProvider interface {
+	Retries() int
+}
+
 type Team struct {
 	client PlatformClient
 
@@ -50,6 +54,7 @@ func NewTeam(client PlatformClient) *Team {
 	if client == nil {
 		panic("platform client is required")
 	}
+	graphRetries := graphMutationRetries(client)
 	spec, err := loadTeamSpec()
 	if err != nil {
 		panic(fmt.Sprintf("load team spec: %v", err))
@@ -80,17 +85,17 @@ func NewTeam(client PlatformClient) *Team {
 	}
 	return &Team{
 		client:                client,
-		agentService:          newAgentService(client),
+		agentService:          newAgentService(client, graphRetries),
 		agentValidator:        agentValidator,
-		toolService:           newToolService(client),
+		toolService:           newToolService(client, graphRetries),
 		toolValidator:         toolValidator,
-		mcpServerService:      newMcpServerService(client),
+		mcpServerService:      newMcpServerService(client, graphRetries),
 		mcpServerValidator:    mcpValidator,
-		workspaceService:      newWorkspaceService(client),
+		workspaceService:      newWorkspaceService(client, graphRetries),
 		workspaceValidator:    workspaceValidator,
-		memoryBucketService:   newMemoryBucketService(client),
+		memoryBucketService:   newMemoryBucketService(client, graphRetries),
 		memoryBucketValidator: memoryValidator,
-		attachmentService:     newAttachmentService(client),
+		attachmentService:     newAttachmentService(client, graphRetries),
 		attachmentValidator:   attachmentValidator,
 	}
 }
@@ -623,11 +628,12 @@ type agentListResult struct {
 }
 
 type agentService struct {
-	client PlatformClient
+	client       PlatformClient
+	graphRetries int
 }
 
-func newAgentService(client PlatformClient) *agentService {
-	return &agentService{client: client}
+func newAgentService(client PlatformClient, graphRetries int) *agentService {
+	return &agentService{client: client, graphRetries: normalizeGraphRetries(graphRetries)}
 }
 
 func (s *agentService) ListAgents(ctx context.Context, params agentListParams) (agentListResult, error) {
@@ -705,8 +711,8 @@ func (s *agentService) CreateAgent(ctx context.Context, input agentCreateInput) 
 
 	newID := uuid.New()
 	now := time.Now().UTC()
-
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		node := buildAgentNode(newID, input, now)
 		working.Nodes = append(working.Nodes, node)
@@ -715,7 +721,7 @@ func (s *agentService) CreateAgent(ctx context.Context, input agentCreateInput) 
 		updated, persistErr := s.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.fetchGraph(ctx)
 					if err != nil {
 						return agentResource{}, err
@@ -746,7 +752,8 @@ func (s *agentService) UpdateAgent(ctx context.Context, id uuid.UUID, input agen
 		return agentResource{}, err
 	}
 
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -777,7 +784,7 @@ func (s *agentService) UpdateAgent(ctx context.Context, id uuid.UUID, input agen
 		updated, persistErr := s.persistGraph(ctx, &copyGraph)
 		if persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.fetchGraph(ctx)
 					if err != nil {
 						return agentResource{}, err
@@ -808,7 +815,8 @@ func (s *agentService) DeleteAgent(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	for attempt := 0; attempt < 2; attempt++ {
+	maxAttempts := graphMutationAttempts(s.graphRetries)
+	for attempt := 0; attempt < maxAttempts; attempt++ {
 		working := graph.Clone()
 		idx := findNodeIndex(working.Nodes, id.String())
 		if idx == -1 {
@@ -825,7 +833,7 @@ func (s *agentService) DeleteAgent(ctx context.Context, id uuid.UUID) error {
 		copyGraph := working
 		if _, persistErr := s.persistGraph(ctx, &copyGraph); persistErr != nil {
 			if conflict, ok := isConflictError(persistErr); ok {
-				if attempt == 0 {
+				if isVersionConflict(conflict) && attempt < maxAttempts-1 {
 					graph, err = s.fetchGraph(ctx)
 					if err != nil {
 						return err
@@ -855,11 +863,9 @@ func (s *agentService) fetchGraph(ctx context.Context) (*graphDocument, error) {
 }
 
 func (s *agentService) persistGraph(ctx context.Context, graph *graphDocument) (*graphDocument, error) {
-	if graph.Name == "" {
-		graph.Name = "main"
-	}
+	payload := newGraphWriteDocument(graph)
 	var updated graphDocument
-	status, err := s.client.Do(ctx, http.MethodPost, agentGraphPath, nil, graph, &updated)
+	status, err := s.client.Do(ctx, http.MethodPost, agentGraphPath, nil, &payload, &updated)
 	if err != nil {
 		return nil, err
 	}
@@ -903,6 +909,14 @@ type graphDocument struct {
 	Nodes     []graphNode     `json:"nodes"`
 	Edges     []graphEdge     `json:"edges"`
 	Variables []graphVariable `json:"variables,omitempty"`
+}
+
+type graphWriteDocument struct {
+	Name      string          `json:"name"`
+	Version   int             `json:"version"`
+	Nodes     []graphNode     `json:"nodes"`
+	Edges     []graphEdge     `json:"edges"`
+	Variables []graphVariable `json:"variables"`
 }
 
 func (g *graphDocument) Clone() graphDocument {
@@ -1247,6 +1261,85 @@ func isConflictError(err error) (*platform.Error, bool) {
 		return platformErr, true
 	}
 	return nil, false
+}
+
+func isVersionConflict(conflict *platform.Error) bool {
+	if conflict == nil || conflict.Problem == nil {
+		return false
+	}
+	if strings.EqualFold(conflict.Problem.Type, "VERSION_CONFLICT") {
+		return true
+	}
+	if strings.EqualFold(conflict.Problem.Title, "VERSION_CONFLICT") {
+		return true
+	}
+	if conflict.Problem.Detail != nil {
+		return strings.EqualFold(strings.TrimSpace(*conflict.Problem.Detail), "VERSION_CONFLICT")
+	}
+	return false
+}
+
+const defaultGraphMutationRetries = 2
+
+func graphMutationRetries(client PlatformClient) int {
+	if client == nil {
+		return defaultGraphMutationRetries
+	}
+	provider, ok := client.(platformRetryProvider)
+	if !ok {
+		return defaultGraphMutationRetries
+	}
+	retries := provider.Retries()
+	if retries < 0 {
+		return defaultGraphMutationRetries
+	}
+	return retries
+}
+
+func normalizeGraphRetries(retries int) int {
+	if retries < 0 {
+		return 0
+	}
+	return retries
+}
+
+func graphMutationAttempts(retries int) int {
+	normalized := normalizeGraphRetries(retries)
+	return normalized + 1
+}
+
+func newGraphWriteDocument(graph *graphDocument) graphWriteDocument {
+	if graph == nil {
+		return graphWriteDocument{
+			Name:      "main",
+			Nodes:     []graphNode{},
+			Edges:     []graphEdge{},
+			Variables: []graphVariable{},
+		}
+	}
+	name := strings.TrimSpace(graph.Name)
+	if name == "" {
+		name = "main"
+	}
+	nodes := graph.Nodes
+	if nodes == nil {
+		nodes = []graphNode{}
+	}
+	edges := graph.Edges
+	if edges == nil {
+		edges = []graphEdge{}
+	}
+	variables := graph.Variables
+	if variables == nil {
+		variables = []graphVariable{}
+	}
+	return graphWriteDocument{
+		Name:      name,
+		Version:   graph.Version,
+		Nodes:     nodes,
+		Edges:     edges,
+		Variables: variables,
+	}
 }
 
 type agentValidator struct {
