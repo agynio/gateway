@@ -23,11 +23,12 @@ type HTTPClient interface {
 
 // Client provides typed access to the platform HTTP API.
 type Client struct {
-	baseURL        *url.URL
-	httpClient     HTTPClient
-	retries        int
-	defaultHeaders http.Header
-	retryWait      time.Duration
+	baseURL           *url.URL
+	httpClient        HTTPClient
+	retries           int
+	retriesConfigured bool
+	defaultHeaders    http.Header
+	retryWait         time.Duration
 }
 
 // NewClient constructs a Client from the provided configuration.
@@ -54,17 +55,22 @@ func NewClient(cfg *Config) (*Client, error) {
 		timeout = defaultTimeout
 	}
 
-	retries := cfg.Retries
+	retriesConfigured := cfg.RetriesConfigured
+	retries := defaultRetries
+	if retriesConfigured {
+		retries = cfg.Retries
+	}
 	if retries < 0 {
-		retries = defaultRetries
+		return nil, fmt.Errorf("retries must be >= 0")
 	}
 
 	return &Client{
-		baseURL:        baseURL,
-		httpClient:     &http.Client{Timeout: timeout},
-		retries:        retries,
-		defaultHeaders: headers,
-		retryWait:      defaultRetryWait,
+		baseURL:           baseURL,
+		httpClient:        &http.Client{Timeout: timeout},
+		retries:           retries,
+		retriesConfigured: retriesConfigured,
+		defaultHeaders:    headers,
+		retryWait:         defaultRetryWait,
 	}, nil
 }
 
@@ -95,6 +101,22 @@ func (c *Client) HTTPClient() HTTPClient {
 		return nil
 	}
 	return c.httpClient
+}
+
+// Retries returns the configured retry count for upstream requests.
+func (c *Client) Retries() int {
+	if c == nil {
+		return 0
+	}
+	return c.retries
+}
+
+// RetriesConfigured reports whether retries were explicitly configured.
+func (c *Client) RetriesConfigured() bool {
+	if c == nil {
+		return false
+	}
+	return c.retriesConfigured
 }
 
 // Do performs an HTTP request against the platform API, decoding a successful JSON response into out.

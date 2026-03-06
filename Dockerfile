@@ -35,6 +35,7 @@ WORKDIR /app
 LABEL org.opencontainers.image.source="https://github.com/agynio/gateway"
 
 COPY --from=build /out/gateway ./gateway
+COPY --from=build /src/spec ./spec
 
 EXPOSE 8080
 

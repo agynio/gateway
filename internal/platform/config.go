@@ -18,11 +18,12 @@ const (
 
 // Config holds the runtime configuration for communicating with the platform service.
 type Config struct {
-	BaseURL   *url.URL
-	Timeout   time.Duration
-	Retries   int
-	AuthToken string
-	Headers   http.Header
+	BaseURL           *url.URL
+	Timeout           time.Duration
+	Retries           int
+	RetriesConfigured bool
+	AuthToken         string
+	Headers           http.Header
 }
 
 // LoadConfigFromEnv constructs a Config instance from environment variables.
@@ -53,14 +54,17 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 
 	retries := defaultRetries
+	retriesConfigured := false
 	if rawRetries := strings.TrimSpace(os.Getenv("PLATFORM_RETRIES")); rawRetries != "" {
 		value, err := strconv.Atoi(rawRetries)
 		if err != nil {
 			return nil, fmt.Errorf("parse PLATFORM_RETRIES: %w", err)
 		}
-		if value >= 0 {
-			retries = value
+		if value < 0 {
+			return nil, fmt.Errorf("PLATFORM_RETRIES must be >= 0")
 		}
+		retries = value
+		retriesConfigured = true
 	}
 
 	headers := make(http.Header)
@@ -81,10 +85,11 @@ func LoadConfigFromEnv() (*Config, error) {
 	authToken := strings.TrimSpace(os.Getenv("PLATFORM_AUTH_TOKEN"))
 
 	return &Config{
-		BaseURL:   parsedURL,
-		Timeout:   timeout,
-		Retries:   retries,
-		AuthToken: authToken,
-		Headers:   headers,
+		BaseURL:           parsedURL,
+		Timeout:           timeout,
+		Retries:           retries,
+		RetriesConfigured: retriesConfigured,
+		AuthToken:         authToken,
+		Headers:           headers,
 	}, nil
 }

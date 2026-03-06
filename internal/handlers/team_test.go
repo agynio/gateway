@@ -29,9 +29,11 @@ type stubCall struct {
 }
 
 type stubPlatformClient struct {
-	t     *testing.T
-	calls []stubCall
-	idx   int
+	t                 *testing.T
+	calls             []stubCall
+	idx               int
+	retries           int
+	retriesConfigured bool
 }
 
 func (s *stubPlatformClient) Expect(call stubCall) {
@@ -94,6 +96,20 @@ func (s *stubPlatformClient) Do(_ context.Context, method, path string, query ur
 	return status, err
 }
 
+func (s *stubPlatformClient) Retries() int {
+	if s == nil {
+		return 0
+	}
+	return s.retries
+}
+
+func (s *stubPlatformClient) RetriesConfigured() bool {
+	if s == nil {
+		return false
+	}
+	return s.retriesConfigured
+}
+
 func (s *stubPlatformClient) AssertDone() {
 	if s.idx != len(s.calls) {
 		s.t.Fatalf("expected %d calls, got %d", len(s.calls), s.idx)
@@ -117,6 +133,29 @@ func newGraphDocument(nodes []graphNode, edges []graphEdge, variables []graphVar
 		Nodes:     nodes,
 		Edges:     edges,
 		Variables: variables,
+	}
+}
+
+func mustGraphWriteDocument(t *testing.T, body any) *graphWriteDocument {
+	t.Helper()
+	doc, ok := body.(*graphWriteDocument)
+	if !ok {
+		t.Fatalf("unexpected body type: %T", body)
+	}
+	return doc
+}
+
+func graphResponseFromWrite(write *graphWriteDocument, updatedAt time.Time) graphDocument {
+	if write == nil {
+		return graphDocument{UpdatedAt: updatedAt}
+	}
+	return graphDocument{
+		Name:      write.Name,
+		Version:   write.Version,
+		UpdatedAt: updatedAt,
+		Nodes:     write.Nodes,
+		Edges:     write.Edges,
+		Variables: write.Variables,
 	}
 }
 
@@ -221,10 +260,7 @@ func TestTeamPostAgents(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		BodyAssert: func(body any) {
-			doc, ok := body.(*graphDocument)
-			if !ok {
-				t.Fatalf("unexpected body type: %T", body)
-			}
+			doc := mustGraphWriteDocument(t, body)
 			if len(doc.Nodes) != 1 {
 				t.Fatalf("expected 1 node, got %d", len(doc.Nodes))
 			}
@@ -288,8 +324,8 @@ func TestTeamPostAgents(t *testing.T) {
 }
 
 func TestTeamPostAgentsConflictRetry(t *testing.T) {
-	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Detail: ptr("conflict")}}
-	stub := &stubPlatformClient{t: t}
+	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Type: "VERSION_CONFLICT", Detail: ptr("conflict")}}
+	stub := &stubPlatformClient{t: t, retries: 2, retriesConfigured: true}
 	stub.Expect(stubCall{
 		Method:       http.MethodGet,
 		Path:         "/api/graph",
@@ -311,10 +347,7 @@ func TestTeamPostAgentsConflictRetry(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		BodyAssert: func(body any) {
-			doc, ok := body.(*graphDocument)
-			if !ok {
-				t.Fatalf("unexpected body type: %T", body)
-			}
+			doc := mustGraphWriteDocument(t, body)
 			if len(doc.Nodes) != 1 {
 				t.Fatalf("expected 1 node, got %d", len(doc.Nodes))
 			}
@@ -339,6 +372,39 @@ func TestTeamPostAgentsConflictRetry(t *testing.T) {
 	}
 
 	stub.AssertDone()
+}
+
+func TestTeamPostAgentsConflictNoRetry(t *testing.T) {
+	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Type: "VERSION_CONFLICT", Detail: ptr("conflict")}}
+	stub := &stubPlatformClient{t: t, retries: 0, retriesConfigured: true}
+	stub.Expect(stubCall{
+		Method:       http.MethodGet,
+		Path:         "/api/graph",
+		ResponseJSON: `{"name":"main","version":1,"updatedAt":"2024-01-01T00:00:00Z","nodes":[],"edges":[]}`,
+	})
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		Err:    conflictErr,
+		Status: http.StatusConflict,
+	})
+
+	h := NewTeam(stub)
+	body := &gen.PostAgentsJSONRequestBody{}
+	body.Config.Model = ptr("gpt")
+
+	if _, err := h.PostAgents(context.Background(), gen.PostAgentsRequestObject{Body: body}); err == nil {
+		t.Fatalf("expected error")
+	}
+
+	stub.AssertDone()
+}
+
+func TestGraphMutationRetriesUnset(t *testing.T) {
+	stub := &stubPlatformClient{t: t}
+	if got := graphMutationRetries(stub); got != defaultGraphMutationRetries {
+		t.Fatalf("unexpected retries: %d", got)
+	}
 }
 
 func TestTeamGetAgentsPlatformError(t *testing.T) {
@@ -481,10 +547,7 @@ func TestTeamPostTools(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody, ok := body.(*graphDocument)
-			if !ok {
-				t.Fatalf("unexpected body type: %T", body)
-			}
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Nodes) != 1 {
 				t.Fatalf("expected 1 node, got %d", len(graphBody.Nodes))
 			}
@@ -527,7 +590,7 @@ func TestTeamPostTools(t *testing.T) {
 			if configValue["enabled"] != true {
 				t.Fatalf("unexpected config payload: %v", configValue)
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))), nil
 		},
 	})
 
@@ -603,7 +666,7 @@ func TestTeamPatchTools(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody := body.(*graphDocument)
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Nodes) != 1 {
 				t.Fatalf("expected 1 node, got %d", len(graphBody.Nodes))
 			}
@@ -629,7 +692,7 @@ func TestTeamPatchTools(t *testing.T) {
 			if updated == originalUpdated {
 				t.Fatalf("updatedAt not refreshed")
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -709,7 +772,7 @@ func TestTeamDeleteTools(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody := body.(*graphDocument)
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Nodes) != 0 {
 				t.Fatalf("expected tool node removed")
 			}
@@ -721,7 +784,7 @@ func TestTeamDeleteTools(t *testing.T) {
 					t.Fatalf("attachment variable not removed: %v", variable)
 				}
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -776,7 +839,7 @@ func TestTeamPostAttachments(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody := body.(*graphDocument)
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Edges) != 1 {
 				t.Fatalf("expected 1 edge, got %d", len(graphBody.Edges))
 			}
@@ -805,7 +868,7 @@ func TestTeamPostAttachments(t *testing.T) {
 			if !foundCreated || !foundUpdated {
 				t.Fatalf("attachment timestamps missing: %v", graphBody.Variables)
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -942,7 +1005,7 @@ func TestTeamDeleteAttachments(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody := body.(*graphDocument)
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Edges) != 0 {
 				t.Fatalf("expected edges removed")
 			}
@@ -951,7 +1014,7 @@ func TestTeamDeleteAttachments(t *testing.T) {
 					t.Fatalf("attachment variable not removed: %v", variable)
 				}
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -979,7 +1042,7 @@ func TestTeamPostMcpServers(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			graphBody := body.(*graphDocument)
+			graphBody := mustGraphWriteDocument(t, body)
 			if len(graphBody.Nodes) != 1 {
 				t.Fatalf("expected node appended")
 			}
@@ -998,7 +1061,7 @@ func TestTeamPostMcpServers(t *testing.T) {
 			if meta[teamMetadataResourceField] != mcpServerMetadataResource {
 				t.Fatalf("metadata resource mismatch: %v", meta)
 			}
-			return http.StatusOK, mustMarshalGraph(t, graphBody.Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))), nil
 		},
 	})
 
@@ -1058,7 +1121,8 @@ func TestTeamPatchMcpServers(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			node := body.(*graphDocument).Nodes[0]
+			graphBody := mustGraphWriteDocument(t, body)
+			node := graphBody.Nodes[0]
 			if node.Config["title"] != "Updated" {
 				t.Fatalf("title not updated: %v", node.Config["title"])
 			}
@@ -1066,7 +1130,7 @@ func TestTeamPatchMcpServers(t *testing.T) {
 			if config["command"] != "./start" {
 				t.Fatalf("config not updated: %v", config)
 			}
-			return http.StatusOK, mustMarshalGraph(t, body.(*graphDocument).Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -1122,7 +1186,8 @@ func TestTeamPostWorkspaceConfigurations(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			node := body.(*graphDocument).Nodes[0]
+			graphBody := mustGraphWriteDocument(t, body)
+			node := graphBody.Nodes[0]
 			if node.Template != workspaceTemplateName {
 				t.Fatalf("unexpected template: %s", node.Template)
 			}
@@ -1134,7 +1199,7 @@ func TestTeamPostWorkspaceConfigurations(t *testing.T) {
 			if meta[teamMetadataResourceField] != workspaceMetadataResource {
 				t.Fatalf("metadata mismatch: %v", meta)
 			}
-			return http.StatusOK, mustMarshalGraph(t, body.(*graphDocument).Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))), nil
 		},
 	})
 
@@ -1192,11 +1257,12 @@ func TestTeamPatchWorkspaceConfigurations(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			node := body.(*graphDocument).Nodes[0]
+			graphBody := mustGraphWriteDocument(t, body)
+			node := graphBody.Nodes[0]
 			if node.Config["title"] != "Prod" {
 				t.Fatalf("title not updated")
 			}
-			return http.StatusOK, mustMarshalGraph(t, body.(*graphDocument).Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 
@@ -1235,7 +1301,8 @@ func TestTeamPostMemoryBuckets(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			node := body.(*graphDocument).Nodes[0]
+			graphBody := mustGraphWriteDocument(t, body)
+			node := graphBody.Nodes[0]
 			if node.Template != memoryBucketTemplateName {
 				t.Fatalf("unexpected template: %s", node.Template)
 			}
@@ -1243,7 +1310,7 @@ func TestTeamPostMemoryBuckets(t *testing.T) {
 			if meta[teamMetadataResourceField] != memoryBucketMetadataResource {
 				t.Fatalf("metadata mismatch: %v", meta)
 			}
-			return http.StatusOK, mustMarshalGraph(t, body.(*graphDocument).Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC))), nil
 		},
 	})
 
@@ -1306,12 +1373,13 @@ func TestTeamPatchMemoryBuckets(t *testing.T) {
 		Method: http.MethodPost,
 		Path:   "/api/graph",
 		Responder: func(body any) (int, string, error) {
-			node := body.(*graphDocument).Nodes[0]
+			graphBody := mustGraphWriteDocument(t, body)
+			node := graphBody.Nodes[0]
 			config := node.Config["config"].(map[string]any)
 			if config["collectionPrefix"] != "sessions" {
 				t.Fatalf("config not updated: %v", config)
 			}
-			return http.StatusOK, mustMarshalGraph(t, body.(*graphDocument).Clone()), nil
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
 		},
 	})
 

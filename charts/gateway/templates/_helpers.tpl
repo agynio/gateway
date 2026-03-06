@@ -14,11 +14,11 @@
 {{- end }}
 {{- $env = append $env $authVar -}}
 
-{{- $timeout := printf "%d" (default 10000 .Values.gateway.timeoutMs) -}}
-{{- $env = append $env (dict "name" "PLATFORM_TIMEOUT_MS" "value" $timeout) -}}
+{{- $timeout := int (default 10000 .Values.gateway.timeoutMs) -}}
+{{- $env = append $env (dict "name" "PLATFORM_TIMEOUT_MS" "value" (printf "%d" $timeout)) -}}
 
-{{- $retries := printf "%d" (default 2 .Values.gateway.retries) -}}
-{{- $env = append $env (dict "name" "PLATFORM_RETRIES" "value" $retries) -}}
+{{- $retries := int (default 2 .Values.gateway.retries) -}}
+{{- $env = append $env (dict "name" "PLATFORM_RETRIES" "value" (printf "%d" $retries)) -}}
 
 {{- $headers := default "" .Values.gateway.requestHeadersJson -}}
 {{- $env = append $env (dict "name" "PLATFORM_REQUEST_HEADERS_JSON" "value" $headers) -}}
