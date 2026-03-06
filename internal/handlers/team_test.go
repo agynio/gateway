@@ -29,10 +29,11 @@ type stubCall struct {
 }
 
 type stubPlatformClient struct {
-	t       *testing.T
-	calls   []stubCall
-	idx     int
-	retries int
+	t                 *testing.T
+	calls             []stubCall
+	idx               int
+	retries           int
+	retriesConfigured bool
 }
 
 func (s *stubPlatformClient) Expect(call stubCall) {
@@ -97,12 +98,16 @@ func (s *stubPlatformClient) Do(_ context.Context, method, path string, query ur
 
 func (s *stubPlatformClient) Retries() int {
 	if s == nil {
-		return defaultGraphMutationRetries
+		return 0
 	}
-	if s.retries != 0 {
-		return s.retries
+	return s.retries
+}
+
+func (s *stubPlatformClient) RetriesConfigured() bool {
+	if s == nil {
+		return false
 	}
-	return defaultGraphMutationRetries
+	return s.retriesConfigured
 }
 
 func (s *stubPlatformClient) AssertDone() {
@@ -320,7 +325,7 @@ func TestTeamPostAgents(t *testing.T) {
 
 func TestTeamPostAgentsConflictRetry(t *testing.T) {
 	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Type: "VERSION_CONFLICT", Detail: ptr("conflict")}}
-	stub := &stubPlatformClient{t: t}
+	stub := &stubPlatformClient{t: t, retries: 2, retriesConfigured: true}
 	stub.Expect(stubCall{
 		Method:       http.MethodGet,
 		Path:         "/api/graph",
@@ -367,6 +372,39 @@ func TestTeamPostAgentsConflictRetry(t *testing.T) {
 	}
 
 	stub.AssertDone()
+}
+
+func TestTeamPostAgentsConflictNoRetry(t *testing.T) {
+	conflictErr := &platform.Error{Status: http.StatusConflict, Problem: &platform.Problem{Type: "VERSION_CONFLICT", Detail: ptr("conflict")}}
+	stub := &stubPlatformClient{t: t, retries: 0, retriesConfigured: true}
+	stub.Expect(stubCall{
+		Method:       http.MethodGet,
+		Path:         "/api/graph",
+		ResponseJSON: `{"name":"main","version":1,"updatedAt":"2024-01-01T00:00:00Z","nodes":[],"edges":[]}`,
+	})
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		Err:    conflictErr,
+		Status: http.StatusConflict,
+	})
+
+	h := NewTeam(stub)
+	body := &gen.PostAgentsJSONRequestBody{}
+	body.Config.Model = ptr("gpt")
+
+	if _, err := h.PostAgents(context.Background(), gen.PostAgentsRequestObject{Body: body}); err == nil {
+		t.Fatalf("expected error")
+	}
+
+	stub.AssertDone()
+}
+
+func TestGraphMutationRetriesUnset(t *testing.T) {
+	stub := &stubPlatformClient{t: t}
+	if got := graphMutationRetries(stub); got != defaultGraphMutationRetries {
+		t.Fatalf("unexpected retries: %d", got)
+	}
 }
 
 func TestTeamGetAgentsPlatformError(t *testing.T) {

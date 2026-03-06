@@ -28,6 +28,9 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if cfg.Retries != 3 {
 		t.Fatalf("unexpected retries: %d", cfg.Retries)
 	}
+	if !cfg.RetriesConfigured {
+		t.Fatalf("expected retries to be configured")
+	}
 
 	if cfg.AuthToken != "secret" {
 		t.Fatalf("unexpected auth token: %s", cfg.AuthToken)
@@ -35,6 +38,39 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if cfg.Headers.Get("X-Test") != "ok" {
 		t.Fatalf("unexpected header: %v", cfg.Headers)
+	}
+}
+
+func TestLoadConfigFromEnvRetriesZero(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("PLATFORM_RETRIES", "0")
+
+	cfg, err := LoadConfigFromEnv()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.Retries != 0 {
+		t.Fatalf("unexpected retries: %d", cfg.Retries)
+	}
+	if !cfg.RetriesConfigured {
+		t.Fatalf("expected retries to be configured")
+	}
+}
+
+func TestLoadConfigFromEnvRetriesUnset(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+
+	cfg, err := LoadConfigFromEnv()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.Retries != defaultRetries {
+		t.Fatalf("unexpected retries: %d", cfg.Retries)
+	}
+	if cfg.RetriesConfigured {
+		t.Fatalf("expected retries to be unset")
 	}
 }
 

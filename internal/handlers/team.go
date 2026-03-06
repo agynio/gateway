@@ -31,6 +31,7 @@ type PlatformClient interface {
 
 type platformRetryProvider interface {
 	Retries() int
+	RetriesConfigured() bool
 }
 
 type Team struct {
@@ -1287,6 +1288,9 @@ func graphMutationRetries(client PlatformClient) int {
 	}
 	provider, ok := client.(platformRetryProvider)
 	if !ok {
+		return defaultGraphMutationRetries
+	}
+	if !provider.RetriesConfigured() {
 		return defaultGraphMutationRetries
 	}
 	retries := provider.Retries()
