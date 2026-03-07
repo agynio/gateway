@@ -905,6 +905,98 @@ func TestTeamPostAttachments(t *testing.T) {
 	stub.AssertDone()
 }
 
+func TestTeamPostAttachmentsMcpServerWorkspaceConfiguration(t *testing.T) {
+	stub := &stubPlatformClient{t: t}
+	mcpServerID := uuid.MustParse("abababab-abab-abab-abab-abababababab")
+	workspaceID := uuid.MustParse("cdcdcdcd-cdcd-cdcd-cdcd-cdcdcdcdcdcd")
+	graph := newGraphDocument([]graphNode{
+		{
+			ID:       mcpServerID.String(),
+			Template: mcpServerTemplateName,
+		},
+		{
+			ID:       workspaceID.String(),
+			Template: workspaceTemplateName,
+		},
+	}, nil, nil)
+
+	stub.Expect(stubCall{
+		Method:       http.MethodGet,
+		Path:         "/api/graph",
+		Status:       http.StatusOK,
+		ResponseJSON: mustMarshalGraph(t, graph),
+	})
+
+	stub.Expect(stubCall{
+		Method: http.MethodPost,
+		Path:   "/api/graph",
+		Responder: func(body any) (int, string, error) {
+			graphBody := mustGraphWriteDocument(t, body)
+			if len(graphBody.Edges) != 1 {
+				t.Fatalf("expected 1 edge, got %d", len(graphBody.Edges))
+			}
+			edge := graphBody.Edges[0]
+			if edge.Source != mcpServerID.String() || edge.Target != workspaceID.String() {
+				t.Fatalf("unexpected edge endpoints: %+v", edge)
+			}
+			if edge.SourceHandle != "workspace" || edge.TargetHandle != "$self" {
+				t.Fatalf("unexpected handles: %+v", edge)
+			}
+			if edge.ID == nil {
+				t.Fatalf("edge ID missing")
+			}
+			createdKey := attachmentCreatedAtKey(*edge.ID)
+			updatedKey := attachmentUpdatedAtKey(*edge.ID)
+			foundCreated := false
+			foundUpdated := false
+			for _, variable := range graphBody.Variables {
+				if variable.Key == createdKey {
+					foundCreated = true
+				}
+				if variable.Key == updatedKey {
+					foundUpdated = true
+				}
+			}
+			if !foundCreated || !foundUpdated {
+				t.Fatalf("attachment timestamps missing: %v", graphBody.Variables)
+			}
+			return http.StatusOK, mustMarshalGraph(t, graphResponseFromWrite(graphBody, graph.UpdatedAt)), nil
+		},
+	})
+
+	h := NewTeam(stub)
+
+	resp, err := h.PostAttachments(context.Background(), gen.PostAttachmentsRequestObject{
+		Body: &gen.PostAttachmentsJSONRequestBody{
+			Kind:     gen.PostAttachmentsJSONBodyKindMcpServerWorkspaceConfiguration,
+			SourceId: mcpServerID,
+			TargetId: workspaceID,
+		},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	created, ok := resp.(gen.PostAttachments201JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if string(created.Kind) != "mcpServer_workspaceConfiguration" {
+		t.Fatalf("unexpected kind: %s", created.Kind)
+	}
+	if created.SourceType != gen.PostAttachments201JSONResponseSourceType("mcpServer") {
+		t.Fatalf("unexpected source type: %s", created.SourceType)
+	}
+	if created.TargetType != gen.PostAttachments201JSONResponseTargetType("workspaceConfiguration") {
+		t.Fatalf("unexpected target type: %s", created.TargetType)
+	}
+	if created.CreatedAt.IsZero() {
+		t.Fatalf("expected createdAt")
+	}
+
+	stub.AssertDone()
+}
+
 func TestTeamGetAttachments(t *testing.T) {
 	stub := &stubPlatformClient{t: t}
 	agentID := uuid.MustParse("77777777-7777-7777-7777-777777777777")
