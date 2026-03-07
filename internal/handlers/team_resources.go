@@ -2109,10 +2109,10 @@ var supportedAttachmentKinds = map[string]attachmentKindConfig{
 	},
 	"mcpServer_workspaceConfiguration": {
 		Kind:         "mcpServer_workspaceConfiguration",
-		SourceType:   "workspaceConfiguration",
-		TargetType:   "mcpServer",
-		SourceHandle: "$self",
-		TargetHandle: "workspace",
+		SourceType:   "mcpServer",
+		TargetType:   "workspaceConfiguration",
+		SourceHandle: "workspace",
+		TargetHandle: "$self",
 	},
 }
 
