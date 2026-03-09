@@ -352,18 +352,18 @@ type GetWorkspaceConfigurationsParams struct {
 // PostWorkspaceConfigurationsJSONBody defines parameters for PostWorkspaceConfigurations.
 type PostWorkspaceConfigurationsJSONBody struct {
 	Config struct {
-		CpuLimit   *string `json:"cpu_limit,omitempty"`
-		EnableDinD *bool   `json:"enableDinD,omitempty"`
+		CpuLimit   *PostWorkspaceConfigurationsJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                `json:"enableDinD,omitempty"`
 		Env        *[]struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
 		} `json:"env,omitempty"`
-		Image         *string                                            `json:"image,omitempty"`
-		InitialScript *string                                            `json:"initialScript,omitempty"`
-		MemoryLimit   *string                                            `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                            `json:"nix,omitempty"`
-		Platform      *PostWorkspaceConfigurationsJSONBodyConfigPlatform `json:"platform,omitempty"`
-		TtlSeconds    *int                                               `json:"ttlSeconds,omitempty"`
+		Image         *string                                                 `json:"image,omitempty"`
+		InitialScript *string                                                 `json:"initialScript,omitempty"`
+		MemoryLimit   *PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                 `json:"nix,omitempty"`
+		Platform      *PostWorkspaceConfigurationsJSONBodyConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                    `json:"ttlSeconds,omitempty"`
 		Volumes       *struct {
 			Enabled   *bool   `json:"enabled,omitempty"`
 			MountPath *string `json:"mountPath,omitempty"`
@@ -373,24 +373,46 @@ type PostWorkspaceConfigurationsJSONBody struct {
 	Title       *string `json:"title,omitempty"`
 }
 
+// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 = float32
+
+// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 = string
+
+// PostWorkspaceConfigurationsJSONBody_Config_CpuLimit defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBody_Config_CpuLimit struct {
+	union json.RawMessage
+}
+
+// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 = float32
+
+// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 = string
+
+// PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit defines parameters for PostWorkspaceConfigurations.
+type PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit struct {
+	union json.RawMessage
+}
+
 // PostWorkspaceConfigurationsJSONBodyConfigPlatform defines parameters for PostWorkspaceConfigurations.
 type PostWorkspaceConfigurationsJSONBodyConfigPlatform string
 
 // PatchWorkspaceConfigurationsIdJSONBody defines parameters for PatchWorkspaceConfigurationsId.
 type PatchWorkspaceConfigurationsIdJSONBody struct {
 	Config *struct {
-		CpuLimit   *string `json:"cpu_limit,omitempty"`
-		EnableDinD *bool   `json:"enableDinD,omitempty"`
+		CpuLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                   `json:"enableDinD,omitempty"`
 		Env        *[]struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
 		} `json:"env,omitempty"`
-		Image         *string                                               `json:"image,omitempty"`
-		InitialScript *string                                               `json:"initialScript,omitempty"`
-		MemoryLimit   *string                                               `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                               `json:"nix,omitempty"`
-		Platform      *PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform `json:"platform,omitempty"`
-		TtlSeconds    *int                                                  `json:"ttlSeconds,omitempty"`
+		Image         *string                                                    `json:"image,omitempty"`
+		InitialScript *string                                                    `json:"initialScript,omitempty"`
+		MemoryLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                    `json:"nix,omitempty"`
+		Platform      *PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                       `json:"ttlSeconds,omitempty"`
 		Volumes       *struct {
 			Enabled   *bool   `json:"enabled,omitempty"`
 			MountPath *string `json:"mountPath,omitempty"`
@@ -398,6 +420,28 @@ type PatchWorkspaceConfigurationsIdJSONBody struct {
 	} `json:"config,omitempty"`
 	Description *string `json:"description,omitempty"`
 	Title       *string `json:"title,omitempty"`
+}
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 = float32
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 = string
+
+// PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit struct {
+	union json.RawMessage
+}
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 = float32
+
+// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 = string
+
+// PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit defines parameters for PatchWorkspaceConfigurationsId.
+type PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit struct {
+	union json.RawMessage
 }
 
 // PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform defines parameters for PatchWorkspaceConfigurationsId.
@@ -2798,18 +2842,18 @@ type GetWorkspaceConfigurationsResponseObject interface {
 type GetWorkspaceConfigurations200JSONResponse struct {
 	Items []struct {
 		Config struct {
-			CpuLimit   *string `json:"cpu_limit,omitempty"`
-			EnableDinD *bool   `json:"enableDinD,omitempty"`
+			CpuLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_CpuLimit `json:"cpu_limit,omitempty"`
+			EnableDinD *bool                                                            `json:"enableDinD,omitempty"`
 			Env        *[]struct {
 				Name  string `json:"name"`
 				Value string `json:"value"`
 			} `json:"env,omitempty"`
-			Image         *string                                                       `json:"image,omitempty"`
-			InitialScript *string                                                       `json:"initialScript,omitempty"`
-			MemoryLimit   *string                                                       `json:"memory_limit,omitempty"`
-			Nix           *map[string]interface{}                                       `json:"nix,omitempty"`
-			Platform      *GetWorkspaceConfigurations200JSONResponseItemsConfigPlatform `json:"platform,omitempty"`
-			TtlSeconds    *int                                                          `json:"ttlSeconds,omitempty"`
+			Image         *string                                                             `json:"image,omitempty"`
+			InitialScript *string                                                             `json:"initialScript,omitempty"`
+			MemoryLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_MemoryLimit `json:"memory_limit,omitempty"`
+			Nix           *map[string]interface{}                                             `json:"nix,omitempty"`
+			Platform      *GetWorkspaceConfigurations200JSONResponseItemsConfigPlatform       `json:"platform,omitempty"`
+			TtlSeconds    *int                                                                `json:"ttlSeconds,omitempty"`
 			Volumes       *struct {
 				Enabled   *bool   `json:"enabled,omitempty"`
 				MountPath *string `json:"mountPath,omitempty"`
@@ -2861,18 +2905,18 @@ type PostWorkspaceConfigurationsResponseObject interface {
 
 type PostWorkspaceConfigurations201JSONResponse struct {
 	Config struct {
-		CpuLimit   *string `json:"cpu_limit,omitempty"`
-		EnableDinD *bool   `json:"enableDinD,omitempty"`
+		CpuLimit   *PostWorkspaceConfigurations201JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                       `json:"enableDinD,omitempty"`
 		Env        *[]struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
 		} `json:"env,omitempty"`
-		Image         *string                                                   `json:"image,omitempty"`
-		InitialScript *string                                                   `json:"initialScript,omitempty"`
-		MemoryLimit   *string                                                   `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                   `json:"nix,omitempty"`
-		Platform      *PostWorkspaceConfigurations201JSONResponseConfigPlatform `json:"platform,omitempty"`
-		TtlSeconds    *int                                                      `json:"ttlSeconds,omitempty"`
+		Image         *string                                                        `json:"image,omitempty"`
+		InitialScript *string                                                        `json:"initialScript,omitempty"`
+		MemoryLimit   *PostWorkspaceConfigurations201JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                        `json:"nix,omitempty"`
+		Platform      *PostWorkspaceConfigurations201JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                           `json:"ttlSeconds,omitempty"`
 		Volumes       *struct {
 			Enabled   *bool   `json:"enabled,omitempty"`
 			MountPath *string `json:"mountPath,omitempty"`
@@ -2954,18 +2998,18 @@ type GetWorkspaceConfigurationsIdResponseObject interface {
 
 type GetWorkspaceConfigurationsId200JSONResponse struct {
 	Config struct {
-		CpuLimit   *string `json:"cpu_limit,omitempty"`
-		EnableDinD *bool   `json:"enableDinD,omitempty"`
+		CpuLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                        `json:"enableDinD,omitempty"`
 		Env        *[]struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
 		} `json:"env,omitempty"`
-		Image         *string                                                    `json:"image,omitempty"`
-		InitialScript *string                                                    `json:"initialScript,omitempty"`
-		MemoryLimit   *string                                                    `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                    `json:"nix,omitempty"`
-		Platform      *GetWorkspaceConfigurationsId200JSONResponseConfigPlatform `json:"platform,omitempty"`
-		TtlSeconds    *int                                                       `json:"ttlSeconds,omitempty"`
+		Image         *string                                                         `json:"image,omitempty"`
+		InitialScript *string                                                         `json:"initialScript,omitempty"`
+		MemoryLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                         `json:"nix,omitempty"`
+		Platform      *GetWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                            `json:"ttlSeconds,omitempty"`
 		Volumes       *struct {
 			Enabled   *bool   `json:"enabled,omitempty"`
 			MountPath *string `json:"mountPath,omitempty"`
@@ -3014,18 +3058,18 @@ type PatchWorkspaceConfigurationsIdResponseObject interface {
 
 type PatchWorkspaceConfigurationsId200JSONResponse struct {
 	Config struct {
-		CpuLimit   *string `json:"cpu_limit,omitempty"`
-		EnableDinD *bool   `json:"enableDinD,omitempty"`
+		CpuLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
+		EnableDinD *bool                                                          `json:"enableDinD,omitempty"`
 		Env        *[]struct {
 			Name  string `json:"name"`
 			Value string `json:"value"`
 		} `json:"env,omitempty"`
-		Image         *string                                                      `json:"image,omitempty"`
-		InitialScript *string                                                      `json:"initialScript,omitempty"`
-		MemoryLimit   *string                                                      `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                      `json:"nix,omitempty"`
-		Platform      *PatchWorkspaceConfigurationsId200JSONResponseConfigPlatform `json:"platform,omitempty"`
-		TtlSeconds    *int                                                         `json:"ttlSeconds,omitempty"`
+		Image         *string                                                           `json:"image,omitempty"`
+		InitialScript *string                                                           `json:"initialScript,omitempty"`
+		MemoryLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
+		Nix           *map[string]interface{}                                           `json:"nix,omitempty"`
+		Platform      *PatchWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
+		TtlSeconds    *int                                                              `json:"ttlSeconds,omitempty"`
 		Volumes       *struct {
 			Enabled   *bool   `json:"enabled,omitempty"`
 			MountPath *string `json:"mountPath,omitempty"`
