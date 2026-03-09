@@ -91,6 +91,7 @@ const (
 // Defines values for GetToolsParamsType.
 const (
 	GetToolsParamsTypeCallAgent        GetToolsParamsType = "call_agent"
+	GetToolsParamsTypeFinish           GetToolsParamsType = "finish"
 	GetToolsParamsTypeGithubCloneRepo  GetToolsParamsType = "github_clone_repo"
 	GetToolsParamsTypeManage           GetToolsParamsType = "manage"
 	GetToolsParamsTypeMemory           GetToolsParamsType = "memory"
@@ -103,6 +104,7 @@ const (
 // Defines values for PostToolsJSONBodyType.
 const (
 	PostToolsJSONBodyTypeCallAgent        PostToolsJSONBodyType = "call_agent"
+	PostToolsJSONBodyTypeFinish           PostToolsJSONBodyType = "finish"
 	PostToolsJSONBodyTypeGithubCloneRepo  PostToolsJSONBodyType = "github_clone_repo"
 	PostToolsJSONBodyTypeManage           PostToolsJSONBodyType = "manage"
 	PostToolsJSONBodyTypeMemory           PostToolsJSONBodyType = "memory"
