@@ -266,6 +266,7 @@ var toolTemplateByType = map[string]string{
 	"remind_me":          "remindMeTool",
 	"github_clone_repo":  "githubCloneRepoTool",
 	"call_agent":         "callAgentTool",
+	"finish":             "finishTool",
 }
 
 var toolTypeByTemplate = map[string]string{
@@ -277,6 +278,7 @@ var toolTypeByTemplate = map[string]string{
 	"remindMeTool":         "remind_me",
 	"githubCloneRepoTool":  "github_clone_repo",
 	"callAgentTool":        "call_agent",
+	"finishTool":           "finish",
 }
 
 type toolService struct {

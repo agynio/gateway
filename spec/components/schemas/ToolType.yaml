@@ -8,3 +8,4 @@ enum:
   - remind_me
   - github_clone_repo
   - call_agent
+  - finish

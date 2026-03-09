@@ -5,14 +5,8 @@ properties:
     type: array
     items: { $ref: './WorkspaceEnvItem.yaml' }
   initialScript: { type: string }
-  cpu_limit:
-    oneOf:
-      - { type: number }
-      - { type: string }
-  memory_limit:
-    oneOf:
-      - { type: number }
-      - { type: string }
+  cpu_limit: { type: string }
+  memory_limit: { type: string }
   platform: { $ref: './WorkspacePlatform.yaml' }
   enableDinD: { type: boolean, default: false }
   ttlSeconds: { type: integer, minimum: 0, default: 86400 }
