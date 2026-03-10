@@ -49,13 +49,6 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) Upload(ctx context.Context, filename, contentType string, sizeBytes int64, body io.Reader) (UploadResult, error) {
-	if ctx == nil {
-		panic("context is required")
-	}
-	if body == nil {
-		panic("upload body is required")
-	}
-
 	stream, err := c.client.UploadFile(ctx)
 	if err != nil {
 		return UploadResult{}, err
