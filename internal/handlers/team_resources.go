@@ -2443,6 +2443,7 @@ func attachmentFromEdge(edge graphEdge, nodes map[string]graphNode, vars map[str
 	if edge.ID == nil {
 		return attachmentResource{}, false, nil
 	}
+	rawEdgeID := *edge.ID
 
 	sourceNode, ok := nodes[edge.Source]
 	if !ok {
@@ -2473,22 +2474,23 @@ func attachmentFromEdge(edge graphEdge, nodes map[string]graphNode, vars map[str
 		return attachmentResource{}, false, nil
 	}
 
-	createdKey := attachmentCreatedAtKey(*edge.ID)
+	createdKey := attachmentCreatedAtKey(rawEdgeID)
 	createdValue, ok := vars[createdKey]
-	if !ok {
-		return attachmentResource{}, false, fmt.Errorf("attachment %s missing createdAt", *edge.ID)
+	createdAt := time.Time{}
+	if ok && strings.TrimSpace(createdValue) != "" {
+		parsed, err := time.Parse(time.RFC3339Nano, createdValue)
+		if err != nil {
+			return attachmentResource{}, false, fmt.Errorf("attachment %s invalid createdAt: %w", rawEdgeID, err)
+		}
+		createdAt = parsed.UTC()
 	}
-	createdAt, err := time.Parse(time.RFC3339Nano, createdValue)
-	if err != nil {
-		return attachmentResource{}, false, fmt.Errorf("attachment %s invalid createdAt: %w", *edge.ID, err)
-	}
-	createdAt = createdAt.UTC()
 
 	var updatedAtPtr *time.Time
-	if updatedValue, ok := vars[attachmentUpdatedAtKey(*edge.ID)]; ok && strings.TrimSpace(updatedValue) != "" {
+	updatedValue, ok := vars[attachmentUpdatedAtKey(rawEdgeID)]
+	if ok && strings.TrimSpace(updatedValue) != "" {
 		parsed, err := time.Parse(time.RFC3339Nano, updatedValue)
 		if err != nil {
-			return attachmentResource{}, false, fmt.Errorf("attachment %s invalid updatedAt: %w", *edge.ID, err)
+			return attachmentResource{}, false, fmt.Errorf("attachment %s invalid updatedAt: %w", rawEdgeID, err)
 		}
 		parsed = parsed.UTC()
 		updatedAtPtr = &parsed
@@ -2504,7 +2506,7 @@ func attachmentFromEdge(edge graphEdge, nodes map[string]graphNode, vars map[str
 	}
 
 	return attachmentResource{
-		ID:         uuid.MustParse(*edge.ID),
+		ID:         attachmentIDFromEdge(rawEdgeID),
 		Kind:       cfg.Kind,
 		SourceType: cfg.SourceType,
 		SourceID:   sourceID,
@@ -2513,6 +2515,14 @@ func attachmentFromEdge(edge graphEdge, nodes map[string]graphNode, vars map[str
 		CreatedAt:  createdAt,
 		UpdatedAt:  updatedAtPtr,
 	}, true, nil
+}
+
+func attachmentIDFromEdge(rawID string) uuid.UUID {
+	parsed, err := uuid.Parse(rawID)
+	if err == nil {
+		return parsed
+	}
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(rawID))
 }
 
 func entityTypeForTemplate(template string) (string, error) {
