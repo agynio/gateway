@@ -7,6 +7,7 @@ import (
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("FILES_BASE_URL", "https://files.example.com")
 	t.Setenv("PLATFORM_TIMEOUT_MS", "1500")
 	t.Setenv("PLATFORM_RETRIES", "3")
 	t.Setenv("PLATFORM_AUTH_TOKEN", "secret")
@@ -19,6 +20,13 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.BaseURL.String(); got != "https://api.example.com/team" {
 		t.Fatalf("unexpected baseURL: %s", got)
+	}
+
+	if cfg.FilesBaseURL == nil {
+		t.Fatal("expected files base URL to be set")
+	}
+	if got := cfg.FilesBaseURL.String(); got != "https://files.example.com" {
+		t.Fatalf("unexpected files baseURL: %s", got)
 	}
 
 	if cfg.Timeout != 1500*time.Millisecond {
@@ -71,6 +79,19 @@ func TestLoadConfigFromEnvRetriesUnset(t *testing.T) {
 	}
 	if cfg.RetriesConfigured {
 		t.Fatalf("expected retries to be unset")
+	}
+
+	if cfg.FilesBaseURL != nil {
+		t.Fatalf("expected files base URL to be unset")
+	}
+}
+
+func TestLoadConfigFromEnvInvalidFilesBaseURL(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("FILES_BASE_URL", "files.example.com")
+
+	if _, err := LoadConfigFromEnv(); err == nil {
+		t.Fatalf("expected error when FILES_BASE_URL is invalid")
 	}
 }
 
