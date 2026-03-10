@@ -33,6 +33,12 @@ jobs:
           go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.0
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      - name: Set up Buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: Generate gRPC stubs
+        run: buf generate buf.build/agynio/api --path agynio/api/files/v1
+
       - name: Spectral lint
         run: spectral lint spec/openapi.yaml
 

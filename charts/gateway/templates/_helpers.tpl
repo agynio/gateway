@@ -4,9 +4,9 @@
 {{- $baseURL := required "gateway.platformBaseUrl is required" (trimAll " \n\t" (default "" .Values.gateway.platformBaseUrl)) -}}
 {{- $env = append $env (dict "name" "PLATFORM_BASE_URL" "value" $baseURL) -}}
 
-{{- $filesBaseURL := trimAll " \n\t" (default "" .Values.gateway.filesBaseUrl) -}}
-{{- if $filesBaseURL }}
-{{- $env = append $env (dict "name" "FILES_BASE_URL" "value" $filesBaseURL) -}}
+{{- $filesGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.filesGrpcTarget) -}}
+{{- if $filesGrpcTarget }}
+{{- $env = append $env (dict "name" "FILES_GRPC_TARGET" "value" $filesGrpcTarget) -}}
 {{- end }}
 
 {{- $authSecret := trim (default "" .Values.gateway.authToken.existingSecret) -}}

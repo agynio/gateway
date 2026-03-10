@@ -19,7 +19,7 @@ const (
 // Config holds the runtime configuration for communicating with the platform service.
 type Config struct {
 	BaseURL           *url.URL
-	FilesBaseURL      *url.URL
+	FilesGRPCTarget   string
 	Timeout           time.Duration
 	Retries           int
 	RetriesConfigured bool
@@ -43,18 +43,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		return nil, fmt.Errorf("PLATFORM_BASE_URL must include scheme and host")
 	}
 
-	rawFilesBaseURL := strings.TrimSpace(os.Getenv("FILES_BASE_URL"))
-	var filesBaseURL *url.URL
-	if rawFilesBaseURL != "" {
-		parsedFilesURL, err := url.Parse(rawFilesBaseURL)
-		if err != nil {
-			return nil, fmt.Errorf("parse FILES_BASE_URL: %w", err)
-		}
-		if parsedFilesURL.Scheme == "" || parsedFilesURL.Host == "" {
-			return nil, fmt.Errorf("FILES_BASE_URL must include scheme and host")
-		}
-		filesBaseURL = parsedFilesURL
-	}
+	filesGRPCTarget := strings.TrimSpace(os.Getenv("FILES_GRPC_TARGET"))
 
 	timeout := defaultTimeout
 	if rawTimeout := strings.TrimSpace(os.Getenv("PLATFORM_TIMEOUT_MS")); rawTimeout != "" {
@@ -100,7 +89,7 @@ func LoadConfigFromEnv() (*Config, error) {
 
 	return &Config{
 		BaseURL:           parsedURL,
-		FilesBaseURL:      filesBaseURL,
+		FilesGRPCTarget:   filesGRPCTarget,
 		Timeout:           timeout,
 		Retries:           retries,
 		RetriesConfigured: retriesConfigured,

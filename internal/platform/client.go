@@ -31,43 +31,6 @@ type Client struct {
 	retryWait         time.Duration
 }
 
-type FilesTarget struct {
-	baseURL        *url.URL
-	defaultHeaders http.Header
-}
-
-func NewFilesTarget(baseURL *url.URL, headers http.Header) *FilesTarget {
-	if baseURL == nil {
-		panic("files base URL is required")
-	}
-
-	clonedURL := cloneURL(baseURL)
-	clonedHeaders := cloneHeaders(headers)
-	if clonedHeaders == nil {
-		clonedHeaders = make(http.Header)
-	}
-
-	return &FilesTarget{
-		baseURL:        clonedURL,
-		defaultHeaders: clonedHeaders,
-	}
-}
-
-func (t *FilesTarget) BaseURL() *url.URL {
-	if t == nil {
-		return nil
-	}
-	return cloneURL(t.baseURL)
-}
-
-func (t *FilesTarget) DefaultHeaders() http.Header {
-	if t == nil {
-		return nil
-	}
-
-	return cloneHeaders(t.defaultHeaders)
-}
-
 // NewClient constructs a Client from the provided configuration.
 func NewClient(cfg *Config) (*Client, error) {
 	if cfg == nil {

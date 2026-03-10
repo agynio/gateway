@@ -3,3 +3,4 @@
 dist/
 gateway.log
 gateway.pid
+gen/
