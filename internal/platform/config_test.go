@@ -7,7 +7,7 @@ import (
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
-	t.Setenv("FILES_GRPC_TARGET", "files:9090")
+	t.Setenv("FILES_GRPC_TARGET", "files:50051")
 	t.Setenv("PLATFORM_TIMEOUT_MS", "1500")
 	t.Setenv("PLATFORM_RETRIES", "3")
 	t.Setenv("PLATFORM_AUTH_TOKEN", "secret")
@@ -22,7 +22,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Fatalf("unexpected baseURL: %s", got)
 	}
 
-	if got := cfg.FilesGRPCTarget; got != "files:9090" {
+	if got := cfg.FilesGRPCTarget; got != "files:50051" {
 		t.Fatalf("unexpected files grpc target: %s", got)
 	}
 
