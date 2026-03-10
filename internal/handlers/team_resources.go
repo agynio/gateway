@@ -2494,8 +2494,6 @@ func attachmentFromEdge(edge graphEdge, nodes map[string]graphNode, vars map[str
 		}
 		parsed = parsed.UTC()
 		updatedAtPtr = &parsed
-	} else {
-		updatedAtPtr = ptr(time.Time{})
 	}
 
 	sourceID, err := uuid.Parse(edge.Source)
