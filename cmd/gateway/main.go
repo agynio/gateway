@@ -76,6 +76,16 @@ func main() {
 
 	root.Mount(handlers.TeamBasePath(), teamRouter)
 
+	if config.FilesBaseURL != nil {
+		filesTarget := platform.NewFilesTarget(config.FilesBaseURL, client.DefaultHeaders())
+		filesProxy := handlers.NewUpstreamProxy(filesTarget)
+		filesHandler := http.StripPrefix("/files/v1", filesProxy)
+		root.Route("/files/v1", func(r chi.Router) {
+			r.Handle("/", filesHandler)
+			r.Handle("/*", filesHandler)
+		})
+	}
+
 	proxyHandler := handlers.NewUpstreamProxy(client)
 	root.Handle("/health", proxyHandler)
 	root.Route("/api", func(r chi.Router) {

@@ -153,6 +153,7 @@ metrics:
 gateway:
   # Required: target platform server base URL
   platformBaseUrl: "https://api.agyn.dev:8080"
+  filesBaseUrl: ""
   timeoutMs: 10000
   retries: 2
   requestHeadersJson: ""
