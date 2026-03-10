@@ -42,9 +42,9 @@ func NewFilesTarget(baseURL *url.URL, headers http.Header) *FilesTarget {
 	}
 
 	clonedURL := cloneURL(baseURL)
-	clonedHeaders := make(http.Header, len(headers))
-	for key, values := range headers {
-		clonedHeaders[key] = append([]string(nil), values...)
+	clonedHeaders := cloneHeaders(headers)
+	if clonedHeaders == nil {
+		clonedHeaders = make(http.Header)
 	}
 
 	return &FilesTarget{
@@ -65,11 +65,7 @@ func (t *FilesTarget) DefaultHeaders() http.Header {
 		return nil
 	}
 
-	cloned := make(http.Header, len(t.defaultHeaders))
-	for key, values := range t.defaultHeaders {
-		cloned[key] = append([]string(nil), values...)
-	}
-	return cloned
+	return cloneHeaders(t.defaultHeaders)
 }
 
 // NewClient constructs a Client from the provided configuration.
@@ -79,10 +75,9 @@ func NewClient(cfg *Config) (*Client, error) {
 	}
 
 	baseURL := cloneURL(cfg.BaseURL)
-	headers := make(http.Header, len(cfg.Headers))
-	for key, values := range cfg.Headers {
-		cloned := append([]string(nil), values...)
-		headers[key] = cloned
+	headers := cloneHeaders(cfg.Headers)
+	if headers == nil {
+		headers = make(http.Header)
 	}
 
 	if token := strings.TrimSpace(cfg.AuthToken); token != "" {
@@ -129,11 +124,7 @@ func (c *Client) DefaultHeaders() http.Header {
 		return nil
 	}
 
-	cloned := make(http.Header, len(c.defaultHeaders))
-	for key, values := range c.defaultHeaders {
-		cloned[key] = append([]string(nil), values...)
-	}
-	return cloned
+	return cloneHeaders(c.defaultHeaders)
 }
 
 // HTTPClient exposes the underlying HTTP client used for upstream calls.
@@ -332,4 +323,15 @@ func cloneURL(u *url.URL) *url.URL {
 	}
 	cloned := *u
 	return &cloned
+}
+
+func cloneHeaders(headers http.Header) http.Header {
+	if headers == nil {
+		return nil
+	}
+	cloned := make(http.Header, len(headers))
+	for key, values := range headers {
+		cloned[key] = append([]string(nil), values...)
+	}
+	return cloned
 }
