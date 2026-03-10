@@ -82,6 +82,11 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to create files gRPC client: %v", err)
 		}
+		defer func() {
+			if err := filesClient.Close(); err != nil {
+				log.Printf("failed to close files gRPC client: %v", err)
+			}
+		}()
 		filesHandler := handlers.NewFilesHandler(filesClient)
 		root.Route("/files/v1", func(r chi.Router) {
 			r.Post("/files", filesHandler.Upload)

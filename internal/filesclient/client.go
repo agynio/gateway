@@ -2,6 +2,7 @@ package filesclient
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -32,7 +33,7 @@ func NewClient(target string) (*Client, error) {
 		return nil, fmt.Errorf("target is required")
 	}
 
-	conn, err := grpc.Dial(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -43,10 +44,11 @@ func NewClient(target string) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
+
 func (c *Client) Upload(ctx context.Context, filename, contentType string, sizeBytes int64, body io.Reader) (UploadResult, error) {
-	if c == nil || c.client == nil {
-		panic("files client is not initialized")
-	}
 	if ctx == nil {
 		panic("context is required")
 	}
@@ -79,7 +81,7 @@ func (c *Client) Upload(ctx context.Context, filename, contentType string, sizeB
 			}
 		}
 		if readErr != nil {
-			if readErr == io.EOF {
+			if errors.Is(readErr, io.EOF) {
 				break
 			}
 			return UploadResult{}, fmt.Errorf("read upload body: %w", readErr)

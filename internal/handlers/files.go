@@ -34,10 +34,6 @@ func NewFilesHandler(client FilesUploader) *FilesHandler {
 }
 
 func (h *FilesHandler) Upload(w http.ResponseWriter, r *http.Request) {
-	if h == nil || h.client == nil {
-		panic("files handler is not initialized")
-	}
-
 	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBytes)
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -61,7 +57,7 @@ func (h *FilesHandler) Upload(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeUploadFormError(w http.ResponseWriter, err error) {
-	status := http.StatusBadRequest
+	statusCode := http.StatusBadRequest
 	message := strings.TrimSpace(err.Error())
 	if message == "" {
 		message = "invalid upload request"
@@ -69,14 +65,14 @@ func writeUploadFormError(w http.ResponseWriter, err error) {
 
 	var maxErr *http.MaxBytesError
 	if errors.As(err, &maxErr) || errors.Is(err, multipart.ErrMessageTooLarge) {
-		status = http.StatusRequestEntityTooLarge
+		statusCode = http.StatusRequestEntityTooLarge
 	}
 
 	if errors.Is(err, http.ErrMissingFile) {
 		message = "file is required"
 	}
 
-	problem := NewProblem(status, http.StatusText(status), message, nil)
+	problem := NewProblem(statusCode, http.StatusText(statusCode), message, nil)
 	WriteProblem(w, problem)
 }
 
@@ -90,6 +86,9 @@ func writeUploadGRPCError(w http.ResponseWriter, err error) {
 	}
 
 	statusCode := http.StatusBadGateway
+	// UploadFile is expected to return InvalidArgument, ResourceExhausted, or
+	// Unavailable; other codes (NotFound, PermissionDenied, Unauthenticated,
+	// DeadlineExceeded) are treated as upstream failures.
 	switch grpcStatus.Code() {
 	case codes.InvalidArgument:
 		statusCode = http.StatusBadRequest
