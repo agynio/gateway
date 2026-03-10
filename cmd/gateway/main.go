@@ -13,6 +13,7 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 
+	"github.com/agynio/gateway/internal/filesclient"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
 	"github.com/agynio/gateway/internal/platform"
@@ -76,13 +77,19 @@ func main() {
 
 	root.Mount(handlers.TeamBasePath(), teamRouter)
 
-	if config.FilesBaseURL != nil {
-		filesTarget := platform.NewFilesTarget(config.FilesBaseURL, client.DefaultHeaders())
-		filesProxy := handlers.NewUpstreamProxy(filesTarget)
-		filesHandler := http.StripPrefix("/files/v1", filesProxy)
+	if config.FilesGRPCTarget != "" {
+		filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
+		if err != nil {
+			log.Fatalf("failed to create files gRPC client: %v", err)
+		}
+		defer func() {
+			if err := filesClient.Close(); err != nil {
+				log.Printf("failed to close files gRPC client: %v", err)
+			}
+		}()
+		filesHandler := handlers.NewFilesHandler(filesClient)
 		root.Route("/files/v1", func(r chi.Router) {
-			r.Handle("/", filesHandler)
-			r.Handle("/*", filesHandler)
+			r.Post("/files", filesHandler.Upload)
 		})
 	}
 
