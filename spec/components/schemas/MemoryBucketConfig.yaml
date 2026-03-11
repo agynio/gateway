@@ -3,6 +3,5 @@ properties:
   scope:
     type: string
     enum: [global, perThread]
-    default: global
   collectionPrefix: { type: string }
 additionalProperties: false

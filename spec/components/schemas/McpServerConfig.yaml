@@ -13,7 +13,7 @@ properties:
   restart:
     type: object
     properties:
-      maxAttempts: { type: integer, minimum: 1, default: 5 }
-      backoffMs: { type: integer, minimum: 1, default: 2000 }
+      maxAttempts: { type: integer, minimum: 1 }
+      backoffMs: { type: integer, minimum: 1 }
     additionalProperties: false
 additionalProperties: false
