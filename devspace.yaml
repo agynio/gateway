@@ -15,7 +15,7 @@ pipelines:
       echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
     fi
     echo "Patching gateway deployment for DevSpace..."
-    kubectl patch deployment gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
+    kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
     spec:
       template:
         spec:
