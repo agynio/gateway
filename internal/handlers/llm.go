@@ -35,6 +35,11 @@ type LLMHandler struct {
 	client LLMClient
 }
 
+const (
+	defaultPageSize = 20
+	maxPageSize     = 100
+)
+
 func NewLLMHandler(client LLMClient) *LLMHandler {
 	if client == nil {
 		panic("llm client is required")
@@ -67,17 +72,13 @@ type updateModelRequest struct {
 }
 
 type providerListResponse struct {
-	Items   []llmclient.LLMProvider `json:"items"`
-	Page    int                     `json:"page"`
-	PerPage int                     `json:"perPage"`
-	Total   int                     `json:"total"`
+	Items         []llmclient.LLMProvider `json:"items"`
+	NextPageToken string                  `json:"nextPageToken"`
 }
 
 type modelListResponse struct {
-	Items   []llmclient.Model `json:"items"`
-	Page    int               `json:"page"`
-	PerPage int               `json:"perPage"`
-	Total   int               `json:"total"`
+	Items         []llmclient.Model `json:"items"`
+	NextPageToken string            `json:"nextPageToken"`
 }
 
 func (h *LLMHandler) CreateProvider(w http.ResponseWriter, r *http.Request) {
@@ -203,32 +204,21 @@ func (h *LLMHandler) DeleteProvider(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LLMHandler) ListProviders(w http.ResponseWriter, r *http.Request) {
-	page, perPage, err := parsePagination(r)
+	pageSize, pageToken, err := parsePagination(r)
 	if err != nil {
 		writeLLMBadRequest(w, err)
 		return
 	}
 
-	pageToken := ""
-	if page > 1 {
-		pageToken = strconv.Itoa((page - 1) * perPage)
-	}
-
-	providers, _, err := h.client.ListProviders(r.Context(), int32(perPage), pageToken)
+	providers, nextToken, err := h.client.ListProviders(r.Context(), int32(pageSize), pageToken)
 	if err != nil {
 		writeLLMGRPCError(w, err)
 		return
 	}
 
-	if providers == nil {
-		providers = []llmclient.LLMProvider{}
-	}
-
 	writeLLMJSON(w, http.StatusOK, providerListResponse{
-		Items:   providers,
-		Page:    page,
-		PerPage: perPage,
-		Total:   -1,
+		Items:         providers,
+		NextPageToken: nextToken,
 	})
 }
 
@@ -355,61 +345,42 @@ func (h *LLMHandler) DeleteModel(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *LLMHandler) ListModels(w http.ResponseWriter, r *http.Request) {
-	page, perPage, err := parsePagination(r)
+	pageSize, pageToken, err := parsePagination(r)
 	if err != nil {
 		writeLLMBadRequest(w, err)
 		return
 	}
 
-	pageToken := ""
-	if page > 1 {
-		pageToken = strconv.Itoa((page - 1) * perPage)
-	}
-
 	providerID := strings.TrimSpace(r.URL.Query().Get("llmProviderId"))
-	models, _, err := h.client.ListModels(r.Context(), int32(perPage), pageToken, providerID)
+	models, nextToken, err := h.client.ListModels(r.Context(), int32(pageSize), pageToken, providerID)
 	if err != nil {
 		writeLLMGRPCError(w, err)
 		return
 	}
 
-	if models == nil {
-		models = []llmclient.Model{}
-	}
-
 	writeLLMJSON(w, http.StatusOK, modelListResponse{
-		Items:   models,
-		Page:    page,
-		PerPage: perPage,
-		Total:   -1,
+		Items:         models,
+		NextPageToken: nextToken,
 	})
 }
 
-func parsePagination(r *http.Request) (int, int, error) {
-	page := 1
-	perPage := 20
+func parsePagination(r *http.Request) (int, string, error) {
+	pageSize := defaultPageSize
+	pageToken := strings.TrimSpace(r.URL.Query().Get("pageToken"))
 
-	if raw := strings.TrimSpace(r.URL.Query().Get("page")); raw != "" {
+	if raw := strings.TrimSpace(r.URL.Query().Get("pageSize")); raw != "" {
 		parsed, err := strconv.Atoi(raw)
 		if err != nil || parsed < 1 {
-			return 0, 0, fmt.Errorf("page must be a positive integer")
+			return 0, "", fmt.Errorf("pageSize must be a positive integer")
 		}
-		page = parsed
+		pageSize = parsed
 	}
 
-	if raw := strings.TrimSpace(r.URL.Query().Get("perPage")); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 1 {
-			return 0, 0, fmt.Errorf("perPage must be a positive integer")
-		}
-		perPage = parsed
+	if pageSize > maxPageSize {
+		pageSize = maxPageSize
 	}
 
-	if perPage > 100 {
-		perPage = 100
-	}
-
-	return page, perPage, nil
+	return pageSize, pageToken, nil
 }
 
 func writeLLMGRPCError(w http.ResponseWriter, err error) {

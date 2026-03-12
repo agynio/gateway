@@ -9,6 +9,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
 	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
 	t.Setenv("FILES_GRPC_TARGET", "files:50051")
+	t.Setenv("LLM_GRPC_TARGET", "llm:50053")
+	t.Setenv("LLM_HTTP_BASE_URL", "https://llm.example.com")
 	t.Setenv("PLATFORM_TIMEOUT_MS", "1500")
 	t.Setenv("PLATFORM_RETRIES", "3")
 	t.Setenv("PLATFORM_AUTH_TOKEN", "secret")
@@ -29,6 +31,16 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.FilesGRPCTarget; got != "files:50051" {
 		t.Fatalf("unexpected files grpc target: %s", got)
+	}
+
+	if got := cfg.LLMGRPCTarget; got != "llm:50053" {
+		t.Fatalf("unexpected llm grpc target: %s", got)
+	}
+	if cfg.LLMHTTPBaseURL == nil {
+		t.Fatalf("expected llm http base url")
+	}
+	if got := cfg.LLMHTTPBaseURL.String(); got != "https://llm.example.com" {
+		t.Fatalf("unexpected llm http base url: %s", got)
 	}
 
 	if cfg.Timeout != 1500*time.Millisecond {
@@ -101,5 +113,34 @@ func TestLoadConfigFromEnvMissingTeamsGRPC(t *testing.T) {
 
 	if _, err := LoadConfigFromEnv(); err == nil {
 		t.Fatalf("expected error when TEAMS_GRPC_TARGET is missing")
+	}
+}
+
+func TestLoadConfigFromEnvLLMHTTPBaseURLEmpty(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
+	t.Setenv("LLM_GRPC_TARGET", "")
+	t.Setenv("LLM_HTTP_BASE_URL", "")
+
+	cfg, err := LoadConfigFromEnv()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cfg.LLMGRPCTarget != "" {
+		t.Fatalf("expected empty llm grpc target")
+	}
+	if cfg.LLMHTTPBaseURL != nil {
+		t.Fatalf("expected nil llm http base url")
+	}
+}
+
+func TestLoadConfigFromEnvLLMHTTPBaseURLInvalid(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
+	t.Setenv("LLM_HTTP_BASE_URL", "example.com")
+
+	if _, err := LoadConfigFromEnv(); err == nil {
+		t.Fatalf("expected error when LLM_HTTP_BASE_URL is invalid")
 	}
 }

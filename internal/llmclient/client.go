@@ -171,6 +171,9 @@ func (c *Client) ListProviders(ctx context.Context, pageSize int32, pageToken st
 		}
 		providers = append(providers, converted)
 	}
+	if providers == nil {
+		providers = []LLMProvider{}
+	}
 
 	return providers, resp.GetNextPageToken(), nil
 }
@@ -258,6 +261,9 @@ func (c *Client) ListModels(ctx context.Context, pageSize int32, pageToken, llmP
 			return nil, "", err
 		}
 		models = append(models, converted)
+	}
+	if models == nil {
+		models = []Model{}
 	}
 
 	return models, resp.GetNextPageToken(), nil

@@ -17,7 +17,6 @@ func NewLLMResponseProxy(llmHTTPBaseURL *url.URL) http.Handler {
 		req.URL.Host = llmHTTPBaseURL.Host
 		req.Host = llmHTTPBaseURL.Host
 		req.URL.Path = "/v1/responses"
-		req.URL.RawPath = "/v1/responses"
 	}
 
 	proxy := &httputil.ReverseProxy{
