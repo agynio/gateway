@@ -16,6 +16,7 @@ import (
 	"github.com/agynio/gateway/internal/filesclient"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
+	"github.com/agynio/gateway/internal/llmclient"
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/teamsclient"
 )
@@ -100,6 +101,48 @@ func main() {
 		filesHandler := handlers.NewFilesHandler(filesClient)
 		root.Route("/files/v1", func(r chi.Router) {
 			r.Post("/files", filesHandler.Upload)
+		})
+	}
+
+	llmGRPCEnabled := config.LLMGRPCTarget != ""
+	llmHTTPEnabled := config.LLMHTTPBaseURL != nil
+
+	if llmGRPCEnabled || llmHTTPEnabled {
+		var llmHandler *handlers.LLMHandler
+		if llmGRPCEnabled {
+			llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
+			if err != nil {
+				log.Fatalf("failed to create llm gRPC client: %v", err)
+			}
+			defer func() {
+				if err := llmClient.Close(); err != nil {
+					log.Printf("failed to close llm gRPC client: %v", err)
+				}
+			}()
+			llmHandler = handlers.NewLLMHandler(llmClient)
+		}
+
+		var llmProxy http.Handler
+		if llmHTTPEnabled {
+			llmProxy = handlers.NewLLMResponseProxy(config.LLMHTTPBaseURL)
+		}
+
+		root.Route("/llm/v1", func(r chi.Router) {
+			if llmGRPCEnabled {
+				r.Post("/providers", llmHandler.CreateProvider)
+				r.Get("/providers", llmHandler.ListProviders)
+				r.Get("/providers/{providerId}", llmHandler.GetProvider)
+				r.Patch("/providers/{providerId}", llmHandler.UpdateProvider)
+				r.Delete("/providers/{providerId}", llmHandler.DeleteProvider)
+				r.Post("/models", llmHandler.CreateModel)
+				r.Get("/models", llmHandler.ListModels)
+				r.Get("/models/{modelId}", llmHandler.GetModel)
+				r.Patch("/models/{modelId}", llmHandler.UpdateModel)
+				r.Delete("/models/{modelId}", llmHandler.DeleteModel)
+			}
+			if llmHTTPEnabled {
+				r.Post("/responses", llmProxy.ServeHTTP)
+			}
 		})
 	}
 
