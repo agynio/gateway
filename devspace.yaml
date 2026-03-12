@@ -1,0 +1,111 @@
+version: v2beta1
+
+vars:
+  GATEWAY_NAMESPACE: gateway
+
+pipelines:
+  dev: |-
+    if kubectl get application gateway -n argocd >/dev/null 2>&1; then
+      echo "Disabling ArgoCD auto-sync for gateway..."
+      kubectl patch application gateway -n argocd \
+        --type merge \
+        -p '{"spec":{"syncPolicy":{"automated":null}}}'
+      echo "ArgoCD auto-sync disabled."
+    else
+      echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
+    fi
+    echo "Patching gateway deployment for DevSpace..."
+    kubectl patch deployment gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
+    spec:
+      template:
+        spec:
+          securityContext:
+            runAsUser: 1000
+            fsGroup: 1000
+          initContainers: []
+          containers:
+            - name: gateway
+              image: ghcr.io/agynio/devcontainer-go:1
+              workingDir: /opt/app/data
+              command:
+                - sh
+                - -c
+                - |
+                  set -eu
+                  elapsed=0
+                  while [ ! -f /opt/app/data/go.mod ]; do
+                    sleep 1; elapsed=$((elapsed + 1))
+                    [ "$elapsed" -ge 120 ] && { echo "ERROR: sync timeout" >&2; exit 1; }
+                  done
+                  exec /opt/app/data/scripts/devspace-startup.sh
+              resources:
+                requests:
+                  cpu: 500m
+                  memory: 1Gi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                readOnlyRootFilesystem: false
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
+    EOF
+    )"
+    start_dev --disable-pod-replace gateway
+
+hooks:
+  - name: restore-argocd-auto-sync
+    events:
+      - after:dev:gateway
+    command: sh
+    args:
+      - -c
+      - |
+        if kubectl get application gateway -n argocd >/dev/null 2>&1; then
+          echo "Re-enabling ArgoCD auto-sync for gateway..."
+          kubectl patch application gateway -n argocd \
+            --type merge \
+            -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+          echo "ArgoCD auto-sync restored."
+        fi
+
+dev:
+  gateway:
+    namespace: ${GATEWAY_NAMESPACE}
+    labelSelector:
+      app.kubernetes.io/name: gateway
+      app.kubernetes.io/instance: gateway
+    containers:
+      gateway:
+        container: gateway
+        sync:
+          - path: ./:/opt/app/data
+            excludePaths:
+              - .git/
+              - gen/
+              - .openapi/
+              - dist/
+              - .devspace/
+              - gateway.log
+              - gateway.pid
+            uploadExcludePaths:
+              - .git/
+              - gen/
+              - .openapi/
+              - dist/
+            downloadExcludePaths:
+              - .git/
+              - gen/
+              - .openapi/
+              - dist/
+        logs:
+          enabled: true
+          lastLines: 200
+    ports:
+      - port: "8080"
