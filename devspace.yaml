@@ -94,7 +94,7 @@ dev:
           - path: ./:/opt/app/data
             excludePaths:
               - .git/
-              - gen/
+              - /gen/
               - .openapi/
               - dist/
               - .devspace/
@@ -102,12 +102,12 @@ dev:
               - gateway.pid
             uploadExcludePaths:
               - .git/
-              - gen/
+              - /gen/
               - .openapi/
               - dist/
             downloadExcludePaths:
               - .git/
-              - gen/
+              - /gen/
               - .openapi/
               - dist/
         logs:
