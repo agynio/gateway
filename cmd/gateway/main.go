@@ -18,6 +18,7 @@ import (
 	"github.com/agynio/gateway/internal/handlers"
 	"github.com/agynio/gateway/internal/llmclient"
 	"github.com/agynio/gateway/internal/platform"
+	"github.com/agynio/gateway/internal/secretsclient"
 	"github.com/agynio/gateway/internal/teamsclient"
 )
 
@@ -143,6 +144,33 @@ func main() {
 			if llmHTTPEnabled {
 				r.Post("/responses", llmProxy.ServeHTTP)
 			}
+		})
+	}
+
+	if config.SecretsGRPCTarget != "" {
+		secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
+		if err != nil {
+			log.Fatalf("failed to create secrets gRPC client: %v", err)
+		}
+		defer func() {
+			if err := secretsClient.Close(); err != nil {
+				log.Printf("failed to close secrets gRPC client: %v", err)
+			}
+		}()
+
+		secretsHandler := handlers.NewSecretsHandler(secretsClient)
+		root.Route("/secrets/v1", func(r chi.Router) {
+			r.Post("/providers", secretsHandler.CreateProvider)
+			r.Get("/providers", secretsHandler.ListProviders)
+			r.Get("/providers/{providerId}", secretsHandler.GetProvider)
+			r.Patch("/providers/{providerId}", secretsHandler.UpdateProvider)
+			r.Delete("/providers/{providerId}", secretsHandler.DeleteProvider)
+			r.Post("/secrets", secretsHandler.CreateSecret)
+			r.Get("/secrets", secretsHandler.ListSecrets)
+			r.Get("/secrets/{secretId}", secretsHandler.GetSecret)
+			r.Patch("/secrets/{secretId}", secretsHandler.UpdateSecret)
+			r.Delete("/secrets/{secretId}", secretsHandler.DeleteSecret)
+			r.Post("/secrets/{secretId}/resolve", secretsHandler.ResolveSecret)
 		})
 	}
 

@@ -156,6 +156,7 @@ gateway:
   filesGrpcTarget: ""
   llmGrpcTarget: ""
   llmHttpBaseUrl: ""
+  secretsGrpcTarget: ""
   timeoutMs: 10000
   retries: 2
   requestHeadersJson: ""
