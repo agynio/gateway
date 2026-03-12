@@ -21,6 +21,8 @@ type Config struct {
 	BaseURL           *url.URL
 	TeamsGRPCTarget   string
 	FilesGRPCTarget   string
+	LLMGRPCTarget     string
+	LLMHTTPBaseURL    *url.URL
 	Timeout           time.Duration
 	Retries           int
 	RetriesConfigured bool
@@ -50,6 +52,19 @@ func LoadConfigFromEnv() (*Config, error) {
 	}
 
 	filesGRPCTarget := strings.TrimSpace(os.Getenv("FILES_GRPC_TARGET"))
+	llmGRPCTarget := strings.TrimSpace(os.Getenv("LLM_GRPC_TARGET"))
+
+	var llmHTTPBaseURL *url.URL
+	if rawLLMHTTPBaseURL := strings.TrimSpace(os.Getenv("LLM_HTTP_BASE_URL")); rawLLMHTTPBaseURL != "" {
+		parsed, err := url.Parse(rawLLMHTTPBaseURL)
+		if err != nil {
+			return nil, fmt.Errorf("parse LLM_HTTP_BASE_URL: %w", err)
+		}
+		if parsed.Scheme == "" || parsed.Host == "" {
+			return nil, fmt.Errorf("LLM_HTTP_BASE_URL must include scheme and host")
+		}
+		llmHTTPBaseURL = parsed
+	}
 
 	timeout := defaultTimeout
 	if rawTimeout := strings.TrimSpace(os.Getenv("PLATFORM_TIMEOUT_MS")); rawTimeout != "" {
@@ -97,6 +112,8 @@ func LoadConfigFromEnv() (*Config, error) {
 		BaseURL:           parsedURL,
 		TeamsGRPCTarget:   teamsGRPCTarget,
 		FilesGRPCTarget:   filesGRPCTarget,
+		LLMGRPCTarget:     llmGRPCTarget,
+		LLMHTTPBaseURL:    llmHTTPBaseURL,
 		Timeout:           timeout,
 		Retries:           retries,
 		RetriesConfigured: retriesConfigured,

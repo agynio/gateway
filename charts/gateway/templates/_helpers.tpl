@@ -9,6 +9,16 @@
 {{- $env = append $env (dict "name" "FILES_GRPC_TARGET" "value" $filesGrpcTarget) -}}
 {{- end }}
 
+{{- $llmGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.llmGrpcTarget) -}}
+{{- if $llmGrpcTarget }}
+{{- $env = append $env (dict "name" "LLM_GRPC_TARGET" "value" $llmGrpcTarget) -}}
+{{- end }}
+
+{{- $llmHttpBaseUrl := trimAll " \n\t" (default "" .Values.gateway.llmHttpBaseUrl) -}}
+{{- if $llmHttpBaseUrl }}
+{{- $env = append $env (dict "name" "LLM_HTTP_BASE_URL" "value" $llmHttpBaseUrl) -}}
+{{- end }}
+
 {{- $authSecret := trim (default "" .Values.gateway.authToken.existingSecret) -}}
 {{- $authVar := dict "name" "PLATFORM_AUTH_TOKEN" -}}
 {{- if $authSecret }}
