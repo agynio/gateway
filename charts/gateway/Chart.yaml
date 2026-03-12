@@ -2,7 +2,7 @@ apiVersion: v2
 name: gateway
 description: Helm chart for deploying the agyn gateway service.
 type: application
-version: 0.4.0
+version: 0.4.1
 appVersion: 0.4.0
 home: https://github.com/agynio/gateway
 sources:
