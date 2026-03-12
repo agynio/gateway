@@ -5,6 +5,7 @@ REGISTRY="${OPENAPI_REGISTRY:-ghcr.io}"
 IMAGE="${OPENAPI_IMAGE:-agynio/openapi/team:1}"
 OUTPUT_DIR=".openapi"
 OUTPUT_FILE="${OUTPUT_DIR}/team-v1.yaml"
+DIST_FILE="${OUTPUT_DIR}/dist/team-v1.yaml"
 
 if ! command -v oras &>/dev/null; then
   echo "ERROR: oras CLI not found. Install from https://oras.land" >&2
@@ -16,6 +17,10 @@ mkdir -p "${OUTPUT_DIR}"
 echo "Pulling ${REGISTRY}/${IMAGE} -> ${OUTPUT_FILE}"
 oras pull "${REGISTRY}/${IMAGE}" \
   --output "${OUTPUT_DIR}"
+
+if [[ -f "${DIST_FILE}" ]]; then
+	cp "${DIST_FILE}" "${OUTPUT_FILE}"
+fi
 
 if [[ ! -f "${OUTPUT_FILE}" ]]; then
 	echo "ERROR: expected ${OUTPUT_FILE} not found after pull" >&2
