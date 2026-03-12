@@ -3,6 +3,7 @@
 charts
 dist
 .openapi
+gen/
 *.log
 node_modules
 tmp
