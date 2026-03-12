@@ -22,6 +22,7 @@ type Config struct {
 	TeamsGRPCTarget   string
 	FilesGRPCTarget   string
 	LLMGRPCTarget     string
+	SecretsGRPCTarget string
 	LLMHTTPBaseURL    *url.URL
 	Timeout           time.Duration
 	Retries           int
@@ -53,6 +54,7 @@ func LoadConfigFromEnv() (*Config, error) {
 
 	filesGRPCTarget := strings.TrimSpace(os.Getenv("FILES_GRPC_TARGET"))
 	llmGRPCTarget := strings.TrimSpace(os.Getenv("LLM_GRPC_TARGET"))
+	secretsGRPCTarget := strings.TrimSpace(os.Getenv("SECRETS_GRPC_TARGET"))
 
 	var llmHTTPBaseURL *url.URL
 	if rawLLMHTTPBaseURL := strings.TrimSpace(os.Getenv("LLM_HTTP_BASE_URL")); rawLLMHTTPBaseURL != "" {
@@ -113,6 +115,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		TeamsGRPCTarget:   teamsGRPCTarget,
 		FilesGRPCTarget:   filesGRPCTarget,
 		LLMGRPCTarget:     llmGRPCTarget,
+		SecretsGRPCTarget: secretsGRPCTarget,
 		LLMHTTPBaseURL:    llmHTTPBaseURL,
 		Timeout:           timeout,
 		Retries:           retries,

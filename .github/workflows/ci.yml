@@ -57,7 +57,7 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
 
       - name: Generate gRPC stubs
-        run: buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/teams/v1
+        run: buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1
 
       - name: Spectral lint
         run: spectral lint .openapi/team-v1.yaml

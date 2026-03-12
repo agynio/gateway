@@ -22,6 +22,11 @@
 {{- $env = append $env (dict "name" "LLM_HTTP_BASE_URL" "value" $llmHttpBaseUrl) -}}
 {{- end }}
 
+{{- $secretsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.secretsGrpcTarget) -}}
+{{- if $secretsGrpcTarget }}
+{{- $env = append $env (dict "name" "SECRETS_GRPC_TARGET" "value" $secretsGrpcTarget) -}}
+{{- end }}
+
 {{- $authSecret := trim (default "" .Values.gateway.authToken.existingSecret) -}}
 {{- $authVar := dict "name" "PLATFORM_AUTH_TOKEN" -}}
 {{- if $authSecret }}

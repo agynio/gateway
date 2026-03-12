@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     go mod download && go mod verify
 
 COPY buf.gen.yaml ./
-RUN buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/teams/v1
+RUN buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1
 
 COPY . .
 
