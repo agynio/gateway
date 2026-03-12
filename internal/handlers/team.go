@@ -14,6 +14,7 @@ import (
 const (
 	teamBasePath   = "/team/v1"
 	defaultPerPage = 20
+	maxPages       = 1000
 )
 
 func TeamBasePath() string {
@@ -866,21 +867,24 @@ func paginateSlice[T any](items []T, page, perPage int) []T {
 func listAll[T any](ctx context.Context, pageSize int32, fetch func(context.Context, string, int32) ([]T, string, error)) ([]T, error) {
 	var items []T
 	pageToken := ""
-	for {
+	for page := 0; page < maxPages; page++ {
 		batch, nextToken, err := fetch(ctx, pageToken, pageSize)
 		if err != nil {
 			return nil, err
 		}
 		items = append(items, batch...)
 		if nextToken == "" {
-			break
+			if items == nil {
+				return []T{}, nil
+			}
+			return items, nil
+		}
+		if nextToken == pageToken {
+			return nil, fmt.Errorf("pagination token did not advance")
 		}
 		pageToken = nextToken
 	}
-	if items == nil {
-		return []T{}, nil
-	}
-	return items, nil
+	return nil, fmt.Errorf("pagination exceeded %d pages", maxPages)
 }
 
 func requestProblem(err error) *ProblemError {

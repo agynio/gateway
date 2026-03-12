@@ -36,8 +36,5 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) TeamsServiceClient() teamsv1.TeamsServiceClient {
-	if c == nil {
-		return nil
-	}
 	return c.client
 }

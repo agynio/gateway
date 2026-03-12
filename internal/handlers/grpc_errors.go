@@ -42,12 +42,14 @@ func grpcStatusToHTTP(code codes.Code) int {
 	case codes.PermissionDenied:
 		return http.StatusForbidden
 	case codes.FailedPrecondition:
+		// Map to 412 to reflect explicit precondition failures.
 		return http.StatusPreconditionFailed
 	case codes.ResourceExhausted:
 		return http.StatusTooManyRequests
 	case codes.Unimplemented:
 		return http.StatusNotImplemented
 	case codes.Unavailable:
+		// Use 503 to signal a retryable upstream outage.
 		return http.StatusServiceUnavailable
 	case codes.DeadlineExceeded:
 		return http.StatusGatewayTimeout
