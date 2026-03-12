@@ -17,6 +17,7 @@ import (
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
 	"github.com/agynio/gateway/internal/platform"
+	"github.com/agynio/gateway/internal/teamsclient"
 )
 
 const (
@@ -38,6 +39,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create platform client: %v", err)
 	}
+
+	teamsClient, err := teamsclient.NewClient(config.TeamsGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create teams gRPC client: %v", err)
+	}
+	defer func() {
+		if err := teamsClient.Close(); err != nil {
+			log.Printf("failed to close teams gRPC client: %v", err)
+		}
+	}()
 
 	root := chi.NewRouter()
 	root.Use(chimw.RequestID)
@@ -68,7 +79,7 @@ func main() {
 		teamRouter.Use(responseValidator)
 	}
 
-	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client, swagger), nil, gen.StrictHTTPServerOptions{
+	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(teamsClient.TeamsServiceClient()), nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
 		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
 	})

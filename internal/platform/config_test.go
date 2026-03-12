@@ -7,6 +7,7 @@ import (
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
 	t.Setenv("FILES_GRPC_TARGET", "files:50051")
 	t.Setenv("PLATFORM_TIMEOUT_MS", "1500")
 	t.Setenv("PLATFORM_RETRIES", "3")
@@ -20,6 +21,10 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.BaseURL.String(); got != "https://api.example.com/team" {
 		t.Fatalf("unexpected baseURL: %s", got)
+	}
+
+	if got := cfg.TeamsGRPCTarget; got != "teams:50052" {
+		t.Fatalf("unexpected teams grpc target: %s", got)
 	}
 
 	if got := cfg.FilesGRPCTarget; got != "files:50051" {
@@ -48,6 +53,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 func TestLoadConfigFromEnvRetriesZero(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
 	t.Setenv("PLATFORM_RETRIES", "0")
 
 	cfg, err := LoadConfigFromEnv()
@@ -65,6 +71,7 @@ func TestLoadConfigFromEnvRetriesZero(t *testing.T) {
 
 func TestLoadConfigFromEnvRetriesUnset(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -81,8 +88,18 @@ func TestLoadConfigFromEnvRetriesUnset(t *testing.T) {
 
 func TestLoadConfigFromEnvMissingBaseURL(t *testing.T) {
 	t.Setenv("PLATFORM_BASE_URL", "")
+	t.Setenv("TEAMS_GRPC_TARGET", "teams:50052")
 
 	if _, err := LoadConfigFromEnv(); err == nil {
 		t.Fatalf("expected error when PLATFORM_BASE_URL is missing")
+	}
+}
+
+func TestLoadConfigFromEnvMissingTeamsGRPC(t *testing.T) {
+	t.Setenv("PLATFORM_BASE_URL", "https://api.example.com/team")
+	t.Setenv("TEAMS_GRPC_TARGET", "")
+
+	if _, err := LoadConfigFromEnv(); err == nil {
+		t.Fatalf("expected error when TEAMS_GRPC_TARGET is missing")
 	}
 }
