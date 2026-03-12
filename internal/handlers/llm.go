@@ -2,10 +2,7 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -421,18 +418,7 @@ func writeLLMGRPCError(w http.ResponseWriter, err error) {
 }
 
 func decodeLLMJSON(r *http.Request, out any) error {
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(out); err != nil {
-		if errors.Is(err, io.EOF) {
-			return fmt.Errorf("request body is required")
-		}
-		return err
-	}
-	if decoder.Decode(&struct{}{}) != io.EOF {
-		return fmt.Errorf("request body must contain a single JSON object")
-	}
-	return nil
+	return decodeJSONBody(r, out)
 }
 
 func parseAuthMethod(raw string) (llmclient.AuthMethod, error) {
@@ -450,22 +436,13 @@ func parseAuthMethod(raw string) (llmclient.AuthMethod, error) {
 }
 
 func writeLLMBadRequest(w http.ResponseWriter, err error) {
-	message := strings.TrimSpace(err.Error())
-	if message == "" {
-		message = "invalid request"
-	}
-	writeLLMValidationMessage(w, message)
+	writeBadRequest(w, err)
 }
 
 func writeLLMValidationMessage(w http.ResponseWriter, message string) {
-	problem := NewProblem(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), message)
-	WriteProblem(w, problem)
+	writeValidationMessage(w, message)
 }
 
 func writeLLMJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		log.Printf("failed to encode llm response: %v", err)
-	}
+	writeJSONResponse(w, status, payload, "llm")
 }
