@@ -1,7 +1,7 @@
 version: v2beta1
 
 vars:
-  GATEWAY_NAMESPACE: gateway
+  GATEWAY_NAMESPACE: platform
 
 pipelines:
   dev: |-
