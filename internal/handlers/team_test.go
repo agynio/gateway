@@ -8,11 +8,14 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/uuid"
 
+	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/platform"
 )
@@ -116,6 +119,26 @@ func (s *stubPlatformClient) AssertDone() {
 	}
 }
 
+var (
+	teamSpecOnce sync.Once
+	teamSpec     *openapi3.T
+	teamSpecErr  error
+)
+
+func testTeamSpec(t *testing.T) *openapi3.T {
+	t.Helper()
+	teamSpecOnce.Do(func() {
+		teamSpec, teamSpecErr = teamv1schema.LoadSpec()
+	})
+	if teamSpecErr != nil {
+		t.Fatalf("load team spec: %v", teamSpecErr)
+	}
+	if teamSpec == nil {
+		t.Fatalf("team spec not initialized")
+	}
+	return teamSpec
+}
+
 func mustMarshalGraph(t *testing.T, graph graphDocument) string {
 	t.Helper()
 	data, err := json.Marshal(graph)
@@ -206,7 +229,7 @@ func TestTeamGetAgents(t *testing.T) {
 		}`,
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err != nil {
@@ -302,7 +325,7 @@ func TestTeamPostAgents(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	body := &gen.PostAgentsJSONRequestBody{}
 	body.Config.Model = ptr("gpt-4")
 	body.Title = ptr("New Agent")
@@ -363,7 +386,7 @@ func TestTeamPostAgentsConflictRetry(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	body := &gen.PostAgentsJSONRequestBody{}
 	body.Config.Model = ptr("gpt")
 
@@ -389,7 +412,7 @@ func TestTeamPostAgentsConflictNoRetry(t *testing.T) {
 		Status: http.StatusConflict,
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	body := &gen.PostAgentsJSONRequestBody{}
 	body.Config.Model = ptr("gpt")
 
@@ -419,7 +442,7 @@ func TestTeamGetAgentsPlatformError(t *testing.T) {
 		Status: http.StatusUnprocessableEntity,
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	_, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err == nil {
@@ -448,7 +471,7 @@ func TestTeamGetAgentsUnexpectedError(t *testing.T) {
 		Err:    errors.New("boom"),
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	_, err := h.GetAgents(context.Background(), gen.GetAgentsRequestObject{})
 	if err == nil {
@@ -496,7 +519,7 @@ func TestTeamGetTools(t *testing.T) {
 		ResponseJSON: mustMarshalGraph(t, graph),
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.GetTools(context.Background(), gen.GetToolsRequestObject{})
 	if err != nil {
@@ -594,7 +617,7 @@ func TestTeamPostTools(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.PostTools(context.Background(), gen.PostToolsRequestObject{
 		Body: &gen.PostToolsJSONRequestBody{
@@ -696,7 +719,7 @@ func TestTeamPatchTools(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.PatchToolsId(context.Background(), gen.PatchToolsIdRequestObject{
 		Id: toolID,
@@ -788,7 +811,7 @@ func TestTeamDeleteTools(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	_, err := h.DeleteToolsId(context.Background(), gen.DeleteToolsIdRequestObject{Id: toolID})
 	if err != nil {
@@ -872,7 +895,7 @@ func TestTeamPostAttachments(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.PostAttachments(context.Background(), gen.PostAttachmentsRequestObject{
 		Body: &gen.PostAttachmentsJSONRequestBody{
@@ -964,7 +987,7 @@ func TestTeamPostAttachmentsMcpServerWorkspaceConfiguration(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.PostAttachments(context.Background(), gen.PostAttachmentsRequestObject{
 		Body: &gen.PostAttachmentsJSONRequestBody{
@@ -1032,7 +1055,7 @@ func TestTeamGetAttachments(t *testing.T) {
 		ResponseJSON: mustMarshalGraph(t, graph),
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	resp, err := h.GetAttachments(context.Background(), gen.GetAttachmentsRequestObject{})
 	if err != nil {
@@ -1110,7 +1133,7 @@ func TestTeamDeleteAttachments(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	attachmentID := uuid.MustParse(edgeID)
 	_, err := h.DeleteAttachmentsId(context.Background(), gen.DeleteAttachmentsIdRequestObject{Id: attachmentID})
@@ -1157,7 +1180,7 @@ func TestTeamPostMcpServers(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 
 	body := gen.PostMcpServersJSONRequestBody{}
 	body.Title = ptr("Responder")
@@ -1226,7 +1249,7 @@ func TestTeamPatchMcpServers(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	config := gen.McpServerConfig{Command: ptr("./start")}
 	body := gen.PatchMcpServersIdJSONRequestBody{Title: ptr("Updated"), Config: &config}
 	resp, err := h.PatchMcpServersId(context.Background(), gen.PatchMcpServersIdRequestObject{
@@ -1278,7 +1301,7 @@ func TestTeamPostWorkspaceConfigurations(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	body := gen.PostWorkspaceConfigurationsJSONRequestBody{}
 	body.Title = ptr("Dev")
 	body.Description = ptr("Development")
@@ -1341,7 +1364,7 @@ func TestTeamPatchWorkspaceConfigurations(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	resp, err := h.PatchWorkspaceConfigurationsId(context.Background(), gen.PatchWorkspaceConfigurationsIdRequestObject{
 		Id: workspaceID,
 		Body: &gen.PatchWorkspaceConfigurationsIdJSONRequestBody{
@@ -1389,7 +1412,7 @@ func TestTeamPostMemoryBuckets(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	resp, err := h.PostMemoryBuckets(context.Background(), gen.PostMemoryBucketsRequestObject{
 		Body: &gen.PostMemoryBucketsJSONRequestBody{
 			Title:       ptr("User State"),
@@ -1455,7 +1478,7 @@ func TestTeamPatchMemoryBuckets(t *testing.T) {
 		},
 	})
 
-	h := NewTeam(stub)
+	h := NewTeam(stub, testTeamSpec(t))
 	resp, err := h.PatchMemoryBucketsId(context.Background(), gen.PatchMemoryBucketsIdRequestObject{
 		Id: bucketID,
 		Body: &gen.PatchMemoryBucketsIdJSONRequestBody{

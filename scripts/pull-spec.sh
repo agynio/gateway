@@ -18,13 +18,9 @@ oras pull "${REGISTRY}/${IMAGE}" \
   --output "${OUTPUT_DIR}"
 
 if [[ ! -f "${OUTPUT_FILE}" ]]; then
-  if [[ -f "${OUTPUT_DIR}/dist/team-v1.yaml" ]]; then
-    cp "${OUTPUT_DIR}/dist/team-v1.yaml" "${OUTPUT_FILE}"
-  else
-    echo "ERROR: expected ${OUTPUT_FILE} not found after pull" >&2
-    ls -la "${OUTPUT_DIR}" >&2
-    exit 1
-  fi
+	echo "ERROR: expected ${OUTPUT_FILE} not found after pull" >&2
+	ls -la "${OUTPUT_DIR}" >&2
+	exit 1
 fi
 
 echo "Spec downloaded: ${OUTPUT_FILE} ($(wc -c < "${OUTPUT_FILE}") bytes)"

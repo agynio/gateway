@@ -68,7 +68,7 @@ func main() {
 		teamRouter.Use(responseValidator)
 	}
 
-	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client), nil, gen.StrictHTTPServerOptions{
+	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client, swagger), nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
 		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
 	})
@@ -111,8 +111,7 @@ func main() {
 }
 
 func loadSpec() (*openapi3.T, error) {
-	loader := openapi3.NewLoader()
-	swagger, err := loader.LoadFromData(teamv1schema.Spec)
+	swagger, err := teamv1schema.LoadSpec()
 	if err != nil {
 		return nil, err
 	}

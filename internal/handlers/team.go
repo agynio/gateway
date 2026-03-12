@@ -14,7 +14,6 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/google/uuid"
 
-	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/platform"
 )
@@ -51,15 +50,14 @@ type Team struct {
 	attachmentValidator   *attachmentValidator
 }
 
-func NewTeam(client PlatformClient) *Team {
+func NewTeam(client PlatformClient, spec *openapi3.T) *Team {
 	if client == nil {
 		panic("platform client is required")
 	}
-	graphRetries := graphMutationRetries(client)
-	spec, err := loadTeamSpec()
-	if err != nil {
-		panic(fmt.Sprintf("load team spec: %v", err))
+	if spec == nil {
+		panic("team spec is required")
 	}
+	graphRetries := graphMutationRetries(client)
 	agentValidator, err := newAgentValidator(spec)
 	if err != nil {
 		panic(fmt.Sprintf("initialize agent validator: %v", err))
@@ -1389,11 +1387,6 @@ func (v *agentValidator) validate(schema *openapi3.SchemaRef, value any) error {
 		return err
 	}
 	return schema.Value.VisitJSON(normalized)
-}
-
-func loadTeamSpec() (*openapi3.T, error) {
-	loader := openapi3.NewLoader()
-	return loader.LoadFromData(teamv1schema.Spec)
 }
 
 func normalizeForValidation(value any) (any, error) {

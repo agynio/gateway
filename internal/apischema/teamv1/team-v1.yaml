@@ -662,47 +662,36 @@ components:
       properties:
         model:
           type: string
-          default: gpt-5
         systemPrompt:
           type: string
-          default: You are a helpful AI assistant.
         debounceMs:
           type: integer
           minimum: 0
-          default: 0
         whenBusy:
           type: string
           enum:
             - wait
             - injectAfterTools
-          default: wait
         processBuffer:
           type: string
           enum:
             - allTogether
             - oneByOne
-          default: allTogether
         sendFinalResponseToThread:
           type: boolean
-          default: true
         summarizationKeepTokens:
           type: integer
           minimum: 0
-          default: 0
         summarizationMaxTokens:
           type: integer
           minimum: 1
-          default: 512
         restrictOutput:
           type: boolean
-          default: false
         restrictionMessage:
           type: string
-          default: Do not produce a final answer directly. Before finishing, call a tool. If no tool is needed, call the 'finish' tool.
         restrictionMaxInjections:
           type: integer
           minimum: 0
-          default: 0
         name:
           type: string
         role:
@@ -868,11 +857,9 @@ components:
             maxAttempts:
               type: integer
               minimum: 1
-              default: 5
             backoffMs:
               type: integer
               minimum: 1
-              default: 2000
           additionalProperties: false
       additionalProperties: false
     McpServerCreateRequest:
@@ -942,7 +929,6 @@ components:
       properties:
         enabled:
           type: boolean
-          default: false
         mountPath:
           type: string
           pattern: ^/
@@ -976,11 +962,9 @@ components:
           $ref: '#/components/schemas/WorkspacePlatform'
         enableDinD:
           type: boolean
-          default: false
         ttlSeconds:
           type: integer
           minimum: 0
-          default: 86400
         nix:
           type: object
         volumes:
@@ -1046,7 +1030,6 @@ components:
           enum:
             - global
             - perThread
-          default: global
         collectionPrefix:
           type: string
       additionalProperties: false
