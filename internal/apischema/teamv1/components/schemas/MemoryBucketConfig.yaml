@@ -1,7 +1,0 @@
-type: object
-properties:
-  scope:
-    type: string
-    enum: [global, perThread]
-  collectionPrefix: { type: string }
-additionalProperties: false

@@ -1,7 +1,0 @@
-type: string
-enum:
-  - agent
-  - tool
-  - mcpServer
-  - workspaceConfiguration
-  - memoryBucket

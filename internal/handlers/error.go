@@ -18,23 +18,15 @@ const (
 	problemTypeDefault = "about:blank"
 )
 
-func NewProblem(status int, title, detail string, errs map[string][]string) gen.Problem {
+func NewProblem(status int, title, detail string) gen.Problem {
 	problem := gen.Problem{
-		Status: int32(status),
+		Status: status,
 		Title:  title,
-		Type:   problemTypeDefault,
+		Type:   ptr(problemTypeDefault),
 	}
 
 	if detail != "" {
 		problem.Detail = ptr(detail)
-	}
-
-	if len(errs) > 0 {
-		copied := make(map[string][]string, len(errs))
-		for field, messages := range errs {
-			copied[field] = append([]string(nil), messages...)
-		}
-		problem.Errors = &copied
 	}
 
 	return problem
@@ -52,7 +44,7 @@ func NewProblemError(problem gen.Problem, err error) *ProblemError {
 func (e *ProblemError) Error() string {
 	ititle := strings.TrimSpace(e.Problem.Title)
 	if ititle == "" {
-		ititle = http.StatusText(int(e.Problem.Status))
+		ititle = http.StatusText(e.Problem.Status)
 	}
 	detail := ""
 	if e.Problem.Detail != nil {
@@ -77,13 +69,13 @@ func StrictRequestErrorHandler(w http.ResponseWriter, r *http.Request, err error
 	if detail == "" {
 		detail = "malformed request payload"
 	}
-	problem := NewProblem(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), detail, nil)
+	problem := NewProblem(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), detail)
 	WriteProblem(w, problem)
 }
 
 func WriteProblem(w http.ResponseWriter, problem gen.Problem) {
 	w.Header().Set("Content-Type", problemContentType)
-	w.WriteHeader(int(problem.Status))
+	w.WriteHeader(problem.Status)
 	if err := json.NewEncoder(w).Encode(problem); err != nil {
 		log.Printf("failed to encode problem response: %v", err)
 	}
@@ -101,7 +93,7 @@ func RequestValidationError(w http.ResponseWriter, message string, statusCode in
 	if title == "" {
 		title = "Request validation error"
 	}
-	problem := NewProblem(statusCode, title, message, nil)
+	problem := NewProblem(statusCode, title, message)
 	WriteProblem(w, problem)
 }
 
@@ -136,6 +128,6 @@ func StrictErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	log.Printf("handler unexpected error: %v", err)
-	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), "upstream request failed", nil)
+	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), "upstream request failed")
 	WriteProblem(w, problem)
 }

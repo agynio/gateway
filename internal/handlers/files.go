@@ -72,7 +72,7 @@ func writeUploadFormError(w http.ResponseWriter, err error) {
 		message = "file is required"
 	}
 
-	problem := NewProblem(statusCode, http.StatusText(statusCode), message, nil)
+	problem := NewProblem(statusCode, http.StatusText(statusCode), message)
 	WriteProblem(w, problem)
 }
 
@@ -80,7 +80,7 @@ func writeUploadGRPCError(w http.ResponseWriter, err error) {
 	grpcStatus, ok := status.FromError(err)
 	if !ok {
 		log.Printf("files upload error: %v", err)
-		problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), err.Error(), nil)
+		problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), err.Error())
 		WriteProblem(w, problem)
 		return
 	}
@@ -106,6 +106,6 @@ func writeUploadGRPCError(w http.ResponseWriter, err error) {
 	if message == "" {
 		message = http.StatusText(statusCode)
 	}
-	problem := NewProblem(statusCode, http.StatusText(statusCode), message, nil)
+	problem := NewProblem(statusCode, http.StatusText(statusCode), message)
 	WriteProblem(w, problem)
 }

@@ -28,7 +28,7 @@ func NewResponseValidationMiddleware(swagger *openapi3.T) (func(http.Handler) ht
 			next.ServeHTTP(recorder, r)
 
 			if err := validateResponse(r, recorder, router); err != nil {
-				problem := NewProblem(http.StatusInternalServerError, "Response validation failed", err.Error(), nil)
+				problem := NewProblem(http.StatusInternalServerError, "Response validation failed", err.Error())
 				WriteProblem(w, problem)
 				return
 			}

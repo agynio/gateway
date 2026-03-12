@@ -8,7 +8,7 @@ import (
 func TestWorkspaceLimitRoundTripStrings(t *testing.T) {
 	input := `{"config":{"memory_limit":"2Gi","cpu_limit":"500m"}}`
 
-	var payload PostWorkspaceConfigurationsJSONBody
+	var payload PostWorkspaceConfigurationsJSONRequestBody
 	if err := json.Unmarshal([]byte(input), &payload); err != nil {
 		t.Fatalf("unmarshal input: %v", err)
 	}
@@ -26,7 +26,7 @@ func TestWorkspaceLimitRoundTripStrings(t *testing.T) {
 func TestWorkspaceLimitRoundTripNumbers(t *testing.T) {
 	input := `{"config":{"memory_limit":4096,"cpu_limit":4}}`
 
-	var payload PostWorkspaceConfigurationsJSONBody
+	var payload PostWorkspaceConfigurationsJSONRequestBody
 	if err := json.Unmarshal([]byte(input), &payload); err != nil {
 		t.Fatalf("unmarshal input: %v", err)
 	}

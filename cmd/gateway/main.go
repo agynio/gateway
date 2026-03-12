@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -13,6 +12,7 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 
+	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
 	"github.com/agynio/gateway/internal/filesclient"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
@@ -20,8 +20,7 @@ import (
 )
 
 const (
-	defaultAddr      = ":8080"
-	specRelativePath = "spec/openapi.yaml"
+	defaultAddr = ":8080"
 )
 
 func main() {
@@ -69,7 +68,7 @@ func main() {
 		teamRouter.Use(responseValidator)
 	}
 
-	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client), nil, gen.StrictHTTPServerOptions{
+	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(client, swagger), nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
 		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
 	})
@@ -112,9 +111,7 @@ func main() {
 }
 
 func loadSpec() (*openapi3.T, error) {
-	loader := &openapi3.Loader{IsExternalRefsAllowed: true}
-	specPath := filepath.Clean(specRelativePath)
-	swagger, err := loader.LoadFromFile(specPath)
+	swagger, err := teamv1schema.LoadSpec()
 	if err != nil {
 		return nil, err
 	}

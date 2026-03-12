@@ -16,117 +16,389 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// Defines values for PostAgentsJSONBodyConfigProcessBuffer.
+// Defines values for AgentConfigProcessBuffer.
 const (
-	PostAgentsJSONBodyConfigProcessBufferAllTogether PostAgentsJSONBodyConfigProcessBuffer = "allTogether"
-	PostAgentsJSONBodyConfigProcessBufferOneByOne    PostAgentsJSONBodyConfigProcessBuffer = "oneByOne"
+	AllTogether AgentConfigProcessBuffer = "allTogether"
+	OneByOne    AgentConfigProcessBuffer = "oneByOne"
 )
 
-// Defines values for PostAgentsJSONBodyConfigWhenBusy.
+// Defines values for AgentConfigWhenBusy.
 const (
-	PostAgentsJSONBodyConfigWhenBusyInjectAfterTools PostAgentsJSONBodyConfigWhenBusy = "injectAfterTools"
-	PostAgentsJSONBodyConfigWhenBusyWait             PostAgentsJSONBodyConfigWhenBusy = "wait"
+	InjectAfterTools AgentConfigWhenBusy = "injectAfterTools"
+	Wait             AgentConfigWhenBusy = "wait"
 )
 
-// Defines values for PatchAgentsIdJSONBodyConfigProcessBuffer.
+// Defines values for AttachmentKind.
 const (
-	PatchAgentsIdJSONBodyConfigProcessBufferAllTogether PatchAgentsIdJSONBodyConfigProcessBuffer = "allTogether"
-	PatchAgentsIdJSONBodyConfigProcessBufferOneByOne    PatchAgentsIdJSONBodyConfigProcessBuffer = "oneByOne"
+	AgentMcpServer                  AttachmentKind = "agent_mcpServer"
+	AgentMemoryBucket               AttachmentKind = "agent_memoryBucket"
+	AgentTool                       AttachmentKind = "agent_tool"
+	AgentWorkspaceConfiguration     AttachmentKind = "agent_workspaceConfiguration"
+	McpServerWorkspaceConfiguration AttachmentKind = "mcpServer_workspaceConfiguration"
 )
 
-// Defines values for PatchAgentsIdJSONBodyConfigWhenBusy.
+// Defines values for EntityType.
 const (
-	PatchAgentsIdJSONBodyConfigWhenBusyInjectAfterTools PatchAgentsIdJSONBodyConfigWhenBusy = "injectAfterTools"
-	PatchAgentsIdJSONBodyConfigWhenBusyWait             PatchAgentsIdJSONBodyConfigWhenBusy = "wait"
+	EntityTypeAgent                  EntityType = "agent"
+	EntityTypeMcpServer              EntityType = "mcpServer"
+	EntityTypeMemoryBucket           EntityType = "memoryBucket"
+	EntityTypeTool                   EntityType = "tool"
+	EntityTypeWorkspaceConfiguration EntityType = "workspaceConfiguration"
 )
 
-// Defines values for GetAttachmentsParamsSourceType.
+// Defines values for MemoryBucketConfigScope.
 const (
-	GetAttachmentsParamsSourceTypeAgent                  GetAttachmentsParamsSourceType = "agent"
-	GetAttachmentsParamsSourceTypeMcpServer              GetAttachmentsParamsSourceType = "mcpServer"
-	GetAttachmentsParamsSourceTypeMemoryBucket           GetAttachmentsParamsSourceType = "memoryBucket"
-	GetAttachmentsParamsSourceTypeTool                   GetAttachmentsParamsSourceType = "tool"
-	GetAttachmentsParamsSourceTypeWorkspaceConfiguration GetAttachmentsParamsSourceType = "workspaceConfiguration"
+	Global    MemoryBucketConfigScope = "global"
+	PerThread MemoryBucketConfigScope = "perThread"
 )
 
-// Defines values for GetAttachmentsParamsTargetType.
+// Defines values for ToolType.
 const (
-	GetAttachmentsParamsTargetTypeAgent                  GetAttachmentsParamsTargetType = "agent"
-	GetAttachmentsParamsTargetTypeMcpServer              GetAttachmentsParamsTargetType = "mcpServer"
-	GetAttachmentsParamsTargetTypeMemoryBucket           GetAttachmentsParamsTargetType = "memoryBucket"
-	GetAttachmentsParamsTargetTypeTool                   GetAttachmentsParamsTargetType = "tool"
-	GetAttachmentsParamsTargetTypeWorkspaceConfiguration GetAttachmentsParamsTargetType = "workspaceConfiguration"
+	CallAgent        ToolType = "call_agent"
+	GithubCloneRepo  ToolType = "github_clone_repo"
+	Manage           ToolType = "manage"
+	Memory           ToolType = "memory"
+	RemindMe         ToolType = "remind_me"
+	SendMessage      ToolType = "send_message"
+	SendSlackMessage ToolType = "send_slack_message"
+	ShellCommand     ToolType = "shell_command"
 )
 
-// Defines values for GetAttachmentsParamsKind.
+// Defines values for WorkspacePlatform.
 const (
-	GetAttachmentsParamsKindAgentMcpServer                  GetAttachmentsParamsKind = "agent_mcpServer"
-	GetAttachmentsParamsKindAgentMemoryBucket               GetAttachmentsParamsKind = "agent_memoryBucket"
-	GetAttachmentsParamsKindAgentTool                       GetAttachmentsParamsKind = "agent_tool"
-	GetAttachmentsParamsKindAgentWorkspaceConfiguration     GetAttachmentsParamsKind = "agent_workspaceConfiguration"
-	GetAttachmentsParamsKindMcpServerWorkspaceConfiguration GetAttachmentsParamsKind = "mcpServer_workspaceConfiguration"
+	Auto       WorkspacePlatform = "auto"
+	Linuxamd64 WorkspacePlatform = "linux/amd64"
+	Linuxarm64 WorkspacePlatform = "linux/arm64"
 )
 
-// Defines values for PostAttachmentsJSONBodyKind.
-const (
-	PostAttachmentsJSONBodyKindAgentMcpServer                  PostAttachmentsJSONBodyKind = "agent_mcpServer"
-	PostAttachmentsJSONBodyKindAgentMemoryBucket               PostAttachmentsJSONBodyKind = "agent_memoryBucket"
-	PostAttachmentsJSONBodyKindAgentTool                       PostAttachmentsJSONBodyKind = "agent_tool"
-	PostAttachmentsJSONBodyKindAgentWorkspaceConfiguration     PostAttachmentsJSONBodyKind = "agent_workspaceConfiguration"
-	PostAttachmentsJSONBodyKindMcpServerWorkspaceConfiguration PostAttachmentsJSONBodyKind = "mcpServer_workspaceConfiguration"
-)
+// Agent defines model for Agent.
+type Agent struct {
+	Config      AgentConfig        `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
 
-// Defines values for PostMemoryBucketsJSONBodyConfigScope.
-const (
-	PostMemoryBucketsJSONBodyConfigScopeGlobal    PostMemoryBucketsJSONBodyConfigScope = "global"
-	PostMemoryBucketsJSONBodyConfigScopePerThread PostMemoryBucketsJSONBodyConfigScope = "perThread"
-)
+// AgentConfig defines model for AgentConfig.
+type AgentConfig struct {
+	DebounceMs                *int                      `json:"debounceMs,omitempty"`
+	Model                     *string                   `json:"model,omitempty"`
+	Name                      *string                   `json:"name,omitempty"`
+	ProcessBuffer             *AgentConfigProcessBuffer `json:"processBuffer,omitempty"`
+	RestrictOutput            *bool                     `json:"restrictOutput,omitempty"`
+	RestrictionMaxInjections  *int                      `json:"restrictionMaxInjections,omitempty"`
+	RestrictionMessage        *string                   `json:"restrictionMessage,omitempty"`
+	Role                      *string                   `json:"role,omitempty"`
+	SendFinalResponseToThread *bool                     `json:"sendFinalResponseToThread,omitempty"`
+	SummarizationKeepTokens   *int                      `json:"summarizationKeepTokens,omitempty"`
+	SummarizationMaxTokens    *int                      `json:"summarizationMaxTokens,omitempty"`
+	SystemPrompt              *string                   `json:"systemPrompt,omitempty"`
+	WhenBusy                  *AgentConfigWhenBusy      `json:"whenBusy,omitempty"`
+}
 
-// Defines values for PatchMemoryBucketsIdJSONBodyConfigScope.
-const (
-	PatchMemoryBucketsIdJSONBodyConfigScopeGlobal    PatchMemoryBucketsIdJSONBodyConfigScope = "global"
-	PatchMemoryBucketsIdJSONBodyConfigScopePerThread PatchMemoryBucketsIdJSONBodyConfigScope = "perThread"
-)
+// AgentConfigProcessBuffer defines model for AgentConfig.ProcessBuffer.
+type AgentConfigProcessBuffer string
 
-// Defines values for GetToolsParamsType.
-const (
-	GetToolsParamsTypeCallAgent        GetToolsParamsType = "call_agent"
-	GetToolsParamsTypeFinish           GetToolsParamsType = "finish"
-	GetToolsParamsTypeGithubCloneRepo  GetToolsParamsType = "github_clone_repo"
-	GetToolsParamsTypeManage           GetToolsParamsType = "manage"
-	GetToolsParamsTypeMemory           GetToolsParamsType = "memory"
-	GetToolsParamsTypeRemindMe         GetToolsParamsType = "remind_me"
-	GetToolsParamsTypeSendMessage      GetToolsParamsType = "send_message"
-	GetToolsParamsTypeSendSlackMessage GetToolsParamsType = "send_slack_message"
-	GetToolsParamsTypeShellCommand     GetToolsParamsType = "shell_command"
-)
+// AgentConfigWhenBusy defines model for AgentConfig.WhenBusy.
+type AgentConfigWhenBusy string
 
-// Defines values for PostToolsJSONBodyType.
-const (
-	PostToolsJSONBodyTypeCallAgent        PostToolsJSONBodyType = "call_agent"
-	PostToolsJSONBodyTypeFinish           PostToolsJSONBodyType = "finish"
-	PostToolsJSONBodyTypeGithubCloneRepo  PostToolsJSONBodyType = "github_clone_repo"
-	PostToolsJSONBodyTypeManage           PostToolsJSONBodyType = "manage"
-	PostToolsJSONBodyTypeMemory           PostToolsJSONBodyType = "memory"
-	PostToolsJSONBodyTypeRemindMe         PostToolsJSONBodyType = "remind_me"
-	PostToolsJSONBodyTypeSendMessage      PostToolsJSONBodyType = "send_message"
-	PostToolsJSONBodyTypeSendSlackMessage PostToolsJSONBodyType = "send_slack_message"
-	PostToolsJSONBodyTypeShellCommand     PostToolsJSONBodyType = "shell_command"
-)
+// AgentCreateRequest defines model for AgentCreateRequest.
+type AgentCreateRequest struct {
+	Config      AgentConfig `json:"config"`
+	Description *string     `json:"description,omitempty"`
+	Title       *string     `json:"title,omitempty"`
+}
 
-// Defines values for PostWorkspaceConfigurationsJSONBodyConfigPlatform.
-const (
-	PostWorkspaceConfigurationsJSONBodyConfigPlatformAuto       PostWorkspaceConfigurationsJSONBodyConfigPlatform = "auto"
-	PostWorkspaceConfigurationsJSONBodyConfigPlatformLinuxamd64 PostWorkspaceConfigurationsJSONBodyConfigPlatform = "linux/amd64"
-	PostWorkspaceConfigurationsJSONBodyConfigPlatformLinuxarm64 PostWorkspaceConfigurationsJSONBodyConfigPlatform = "linux/arm64"
-)
+// AgentUpdateRequest defines model for AgentUpdateRequest.
+type AgentUpdateRequest struct {
+	Config      *AgentConfig `json:"config,omitempty"`
+	Description *string      `json:"description,omitempty"`
+	Title       *string      `json:"title,omitempty"`
+}
 
-// Defines values for PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform.
-const (
-	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformAuto       PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "auto"
-	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformLinuxamd64 PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "linux/amd64"
-	PatchWorkspaceConfigurationsIdJSONBodyConfigPlatformLinuxarm64 PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform = "linux/arm64"
-)
+// Attachment defines model for Attachment.
+type Attachment struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+
+	// Kind Relation type between entities
+	Kind       AttachmentKind     `json:"kind"`
+	SourceId   openapi_types.UUID `json:"sourceId"`
+	SourceType EntityType         `json:"sourceType"`
+	TargetId   openapi_types.UUID `json:"targetId"`
+	TargetType EntityType         `json:"targetType"`
+	UpdatedAt  *time.Time         `json:"updatedAt,omitempty"`
+}
+
+// AttachmentCreateRequest Create an attachment (relation) between two entities using a predefined `kind`.
+// Source/target types are implied by `kind` and validated by the backend; do not include them to avoid duplication.
+type AttachmentCreateRequest struct {
+	// Kind Relation type between entities
+	Kind     AttachmentKind     `json:"kind"`
+	SourceId openapi_types.UUID `json:"sourceId"`
+	TargetId openapi_types.UUID `json:"targetId"`
+}
+
+// AttachmentKind Relation type between entities
+type AttachmentKind string
+
+// EntityMeta defines model for EntityMeta.
+type EntityMeta struct {
+	CreatedAt time.Time          `json:"createdAt"`
+	Id        openapi_types.UUID `json:"id"`
+	UpdatedAt *time.Time         `json:"updatedAt,omitempty"`
+}
+
+// EntityType defines model for EntityType.
+type EntityType string
+
+// McpEnvItem defines model for McpEnvItem.
+type McpEnvItem struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// McpServer defines model for McpServer.
+type McpServer struct {
+	Config      McpServerConfig    `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+// McpServerConfig defines model for McpServerConfig.
+type McpServerConfig struct {
+	Command             *string       `json:"command,omitempty"`
+	Env                 *[]McpEnvItem `json:"env,omitempty"`
+	HeartbeatIntervalMs *int          `json:"heartbeatIntervalMs,omitempty"`
+	Namespace           *string       `json:"namespace,omitempty"`
+	RequestTimeoutMs    *int          `json:"requestTimeoutMs,omitempty"`
+	Restart             *struct {
+		BackoffMs   *int `json:"backoffMs,omitempty"`
+		MaxAttempts *int `json:"maxAttempts,omitempty"`
+	} `json:"restart,omitempty"`
+	StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
+	StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
+	Workdir          *string `json:"workdir,omitempty"`
+}
+
+// McpServerCreateRequest defines model for McpServerCreateRequest.
+type McpServerCreateRequest struct {
+	Config      McpServerConfig `json:"config"`
+	Description *string         `json:"description,omitempty"`
+	Title       *string         `json:"title,omitempty"`
+}
+
+// McpServerUpdateRequest defines model for McpServerUpdateRequest.
+type McpServerUpdateRequest struct {
+	Config      *McpServerConfig `json:"config,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Title       *string          `json:"title,omitempty"`
+}
+
+// MemoryBucket defines model for MemoryBucket.
+type MemoryBucket struct {
+	Config      MemoryBucketConfig `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+// MemoryBucketConfig defines model for MemoryBucketConfig.
+type MemoryBucketConfig struct {
+	CollectionPrefix *string                  `json:"collectionPrefix,omitempty"`
+	Scope            *MemoryBucketConfigScope `json:"scope,omitempty"`
+}
+
+// MemoryBucketConfigScope defines model for MemoryBucketConfig.Scope.
+type MemoryBucketConfigScope string
+
+// MemoryBucketCreateRequest defines model for MemoryBucketCreateRequest.
+type MemoryBucketCreateRequest struct {
+	Config      MemoryBucketConfig `json:"config"`
+	Description *string            `json:"description,omitempty"`
+	Title       *string            `json:"title,omitempty"`
+}
+
+// MemoryBucketUpdateRequest defines model for MemoryBucketUpdateRequest.
+type MemoryBucketUpdateRequest struct {
+	Config      *MemoryBucketConfig `json:"config,omitempty"`
+	Description *string             `json:"description,omitempty"`
+	Title       *string             `json:"title,omitempty"`
+}
+
+// PaginatedAgents defines model for PaginatedAgents.
+type PaginatedAgents struct {
+	Items   []Agent `json:"items"`
+	Page    int     `json:"page"`
+	PerPage int     `json:"perPage"`
+	Total   int     `json:"total"`
+}
+
+// PaginatedAttachments defines model for PaginatedAttachments.
+type PaginatedAttachments struct {
+	Items   []Attachment `json:"items"`
+	Page    int          `json:"page"`
+	PerPage int          `json:"perPage"`
+	Total   int          `json:"total"`
+}
+
+// PaginatedMcpServers defines model for PaginatedMcpServers.
+type PaginatedMcpServers struct {
+	Items   []McpServer `json:"items"`
+	Page    int         `json:"page"`
+	PerPage int         `json:"perPage"`
+	Total   int         `json:"total"`
+}
+
+// PaginatedMemoryBuckets defines model for PaginatedMemoryBuckets.
+type PaginatedMemoryBuckets struct {
+	Items   []MemoryBucket `json:"items"`
+	Page    int            `json:"page"`
+	PerPage int            `json:"perPage"`
+	Total   int            `json:"total"`
+}
+
+// PaginatedTools defines model for PaginatedTools.
+type PaginatedTools struct {
+	Items   []Tool `json:"items"`
+	Page    int    `json:"page"`
+	PerPage int    `json:"perPage"`
+	Total   int    `json:"total"`
+}
+
+// PaginatedWorkspaceConfigurations defines model for PaginatedWorkspaceConfigurations.
+type PaginatedWorkspaceConfigurations struct {
+	Items   []WorkspaceConfiguration `json:"items"`
+	Page    int                      `json:"page"`
+	PerPage int                      `json:"perPage"`
+	Total   int                      `json:"total"`
+}
+
+// Problem defines model for Problem.
+type Problem struct {
+	Detail   *string `json:"detail,omitempty"`
+	Instance *string `json:"instance,omitempty"`
+	Status   int     `json:"status"`
+	Title    string  `json:"title"`
+	Type     *string `json:"type,omitempty"`
+}
+
+// Tool defines model for Tool.
+type Tool struct {
+	Config      *map[string]interface{} `json:"config,omitempty"`
+	CreatedAt   time.Time               `json:"createdAt"`
+	Description *string                 `json:"description,omitempty"`
+	Id          openapi_types.UUID      `json:"id"`
+	Name        *string                 `json:"name,omitempty"`
+	Type        ToolType                `json:"type"`
+	UpdatedAt   *time.Time              `json:"updatedAt,omitempty"`
+}
+
+// ToolCreateRequest defines model for ToolCreateRequest.
+type ToolCreateRequest struct {
+	Config      *map[string]interface{} `json:"config,omitempty"`
+	Description *string                 `json:"description,omitempty"`
+	Name        *string                 `json:"name,omitempty"`
+	Type        ToolType                `json:"type"`
+}
+
+// ToolType defines model for ToolType.
+type ToolType string
+
+// ToolUpdateRequest defines model for ToolUpdateRequest.
+type ToolUpdateRequest struct {
+	Config      *map[string]interface{} `json:"config,omitempty"`
+	Description *string                 `json:"description,omitempty"`
+	Name        *string                 `json:"name,omitempty"`
+}
+
+// WorkspaceConfig defines model for WorkspaceConfig.
+type WorkspaceConfig struct {
+	CpuLimit      *WorkspaceConfig_CpuLimit    `json:"cpu_limit,omitempty"`
+	EnableDinD    *bool                        `json:"enableDinD,omitempty"`
+	Env           *[]WorkspaceEnvItem          `json:"env,omitempty"`
+	Image         *string                      `json:"image,omitempty"`
+	InitialScript *string                      `json:"initialScript,omitempty"`
+	MemoryLimit   *WorkspaceConfig_MemoryLimit `json:"memory_limit,omitempty"`
+	Nix           *map[string]interface{}      `json:"nix,omitempty"`
+	Platform      *WorkspacePlatform           `json:"platform,omitempty"`
+	TtlSeconds    *int                         `json:"ttlSeconds,omitempty"`
+	Volumes       *WorkspaceVolumeConfig       `json:"volumes,omitempty"`
+}
+
+// WorkspaceConfigCpuLimit0 defines model for .
+type WorkspaceConfigCpuLimit0 = float32
+
+// WorkspaceConfigCpuLimit1 defines model for .
+type WorkspaceConfigCpuLimit1 = string
+
+// WorkspaceConfig_CpuLimit defines model for WorkspaceConfig.CpuLimit.
+type WorkspaceConfig_CpuLimit struct {
+	union json.RawMessage
+}
+
+// WorkspaceConfigMemoryLimit0 defines model for .
+type WorkspaceConfigMemoryLimit0 = float32
+
+// WorkspaceConfigMemoryLimit1 defines model for .
+type WorkspaceConfigMemoryLimit1 = string
+
+// WorkspaceConfig_MemoryLimit defines model for WorkspaceConfig.MemoryLimit.
+type WorkspaceConfig_MemoryLimit struct {
+	union json.RawMessage
+}
+
+// WorkspaceConfiguration defines model for WorkspaceConfiguration.
+type WorkspaceConfiguration struct {
+	Config      WorkspaceConfig    `json:"config"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Title       *string            `json:"title,omitempty"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+}
+
+// WorkspaceConfigurationCreateRequest defines model for WorkspaceConfigurationCreateRequest.
+type WorkspaceConfigurationCreateRequest struct {
+	Config      WorkspaceConfig `json:"config"`
+	Description *string         `json:"description,omitempty"`
+	Title       *string         `json:"title,omitempty"`
+}
+
+// WorkspaceConfigurationUpdateRequest defines model for WorkspaceConfigurationUpdateRequest.
+type WorkspaceConfigurationUpdateRequest struct {
+	Config      *WorkspaceConfig `json:"config,omitempty"`
+	Description *string          `json:"description,omitempty"`
+	Title       *string          `json:"title,omitempty"`
+}
+
+// WorkspaceEnvItem defines model for WorkspaceEnvItem.
+type WorkspaceEnvItem struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// WorkspacePlatform defines model for WorkspacePlatform.
+type WorkspacePlatform string
+
+// WorkspaceVolumeConfig defines model for WorkspaceVolumeConfig.
+type WorkspaceVolumeConfig struct {
+	Enabled   *bool   `json:"enabled,omitempty"`
+	MountPath *string `json:"mountPath,omitempty"`
+}
+
+// IdPath defines model for IdPath.
+type IdPath = openapi_types.UUID
+
+// ProblemResponse defines model for ProblemResponse.
+type ProblemResponse = Problem
 
 // GetAgentsParams defines parameters for GetAgents.
 type GetAgentsParams struct {
@@ -136,349 +408,199 @@ type GetAgentsParams struct {
 	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
-// PostAgentsJSONBody defines parameters for PostAgents.
-type PostAgentsJSONBody struct {
-	Config struct {
-		DebounceMs                *int                                   `json:"debounceMs,omitempty"`
-		Model                     *string                                `json:"model,omitempty"`
-		Name                      *string                                `json:"name,omitempty"`
-		ProcessBuffer             *PostAgentsJSONBodyConfigProcessBuffer `json:"processBuffer,omitempty"`
-		RestrictOutput            *bool                                  `json:"restrictOutput,omitempty"`
-		RestrictionMaxInjections  *int                                   `json:"restrictionMaxInjections,omitempty"`
-		RestrictionMessage        *string                                `json:"restrictionMessage,omitempty"`
-		Role                      *string                                `json:"role,omitempty"`
-		SendFinalResponseToThread *bool                                  `json:"sendFinalResponseToThread,omitempty"`
-		SummarizationKeepTokens   *int                                   `json:"summarizationKeepTokens,omitempty"`
-		SummarizationMaxTokens    *int                                   `json:"summarizationMaxTokens,omitempty"`
-		SystemPrompt              *string                                `json:"systemPrompt,omitempty"`
-		WhenBusy                  *PostAgentsJSONBodyConfigWhenBusy      `json:"whenBusy,omitempty"`
-	} `json:"config"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PostAgentsJSONBodyConfigProcessBuffer defines parameters for PostAgents.
-type PostAgentsJSONBodyConfigProcessBuffer string
-
-// PostAgentsJSONBodyConfigWhenBusy defines parameters for PostAgents.
-type PostAgentsJSONBodyConfigWhenBusy string
-
-// PatchAgentsIdJSONBody defines parameters for PatchAgentsId.
-type PatchAgentsIdJSONBody struct {
-	Config *struct {
-		DebounceMs                *int                                      `json:"debounceMs,omitempty"`
-		Model                     *string                                   `json:"model,omitempty"`
-		Name                      *string                                   `json:"name,omitempty"`
-		ProcessBuffer             *PatchAgentsIdJSONBodyConfigProcessBuffer `json:"processBuffer,omitempty"`
-		RestrictOutput            *bool                                     `json:"restrictOutput,omitempty"`
-		RestrictionMaxInjections  *int                                      `json:"restrictionMaxInjections,omitempty"`
-		RestrictionMessage        *string                                   `json:"restrictionMessage,omitempty"`
-		Role                      *string                                   `json:"role,omitempty"`
-		SendFinalResponseToThread *bool                                     `json:"sendFinalResponseToThread,omitempty"`
-		SummarizationKeepTokens   *int                                      `json:"summarizationKeepTokens,omitempty"`
-		SummarizationMaxTokens    *int                                      `json:"summarizationMaxTokens,omitempty"`
-		SystemPrompt              *string                                   `json:"systemPrompt,omitempty"`
-		WhenBusy                  *PatchAgentsIdJSONBodyConfigWhenBusy      `json:"whenBusy,omitempty"`
-	} `json:"config,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PatchAgentsIdJSONBodyConfigProcessBuffer defines parameters for PatchAgentsId.
-type PatchAgentsIdJSONBodyConfigProcessBuffer string
-
-// PatchAgentsIdJSONBodyConfigWhenBusy defines parameters for PatchAgentsId.
-type PatchAgentsIdJSONBodyConfigWhenBusy string
-
 // GetAttachmentsParams defines parameters for GetAttachments.
 type GetAttachmentsParams struct {
-	SourceType *GetAttachmentsParamsSourceType `form:"sourceType,omitempty" json:"sourceType,omitempty"`
-	SourceId   *openapi_types.UUID             `form:"sourceId,omitempty" json:"sourceId,omitempty"`
-	TargetType *GetAttachmentsParamsTargetType `form:"targetType,omitempty" json:"targetType,omitempty"`
-	TargetId   *openapi_types.UUID             `form:"targetId,omitempty" json:"targetId,omitempty"`
-	Kind       *GetAttachmentsParamsKind       `form:"kind,omitempty" json:"kind,omitempty"`
-	Page       *int                            `form:"page,omitempty" json:"page,omitempty"`
-	PerPage    *int                            `form:"perPage,omitempty" json:"perPage,omitempty"`
+	SourceType *EntityType         `form:"sourceType,omitempty" json:"sourceType,omitempty"`
+	SourceId   *openapi_types.UUID `form:"sourceId,omitempty" json:"sourceId,omitempty"`
+	TargetType *EntityType         `form:"targetType,omitempty" json:"targetType,omitempty"`
+	TargetId   *openapi_types.UUID `form:"targetId,omitempty" json:"targetId,omitempty"`
+	Kind       *AttachmentKind     `form:"kind,omitempty" json:"kind,omitempty"`
+	Page       *int                `form:"page,omitempty" json:"page,omitempty"`
+	PerPage    *int                `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
-
-// GetAttachmentsParamsSourceType defines parameters for GetAttachments.
-type GetAttachmentsParamsSourceType string
-
-// GetAttachmentsParamsTargetType defines parameters for GetAttachments.
-type GetAttachmentsParamsTargetType string
-
-// GetAttachmentsParamsKind defines parameters for GetAttachments.
-type GetAttachmentsParamsKind string
-
-// PostAttachmentsJSONBody defines parameters for PostAttachments.
-type PostAttachmentsJSONBody struct {
-	// Kind Relation type between entities
-	Kind     PostAttachmentsJSONBodyKind `json:"kind"`
-	SourceId openapi_types.UUID          `json:"sourceId"`
-	TargetId openapi_types.UUID          `json:"targetId"`
-}
-
-// PostAttachmentsJSONBodyKind defines parameters for PostAttachments.
-type PostAttachmentsJSONBodyKind string
 
 // GetMcpServersParams defines parameters for GetMcpServers.
 type GetMcpServersParams struct {
-	// Q Free-text search (title/description/id).
-	Q       *string `form:"q,omitempty" json:"q,omitempty"`
-	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
-}
-
-// PostMcpServersJSONBody defines parameters for PostMcpServers.
-type PostMcpServersJSONBody struct {
-	Config struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	} `json:"config"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PatchMcpServersIdJSONBody defines parameters for PatchMcpServersId.
-type PatchMcpServersIdJSONBody struct {
-	Config *struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	} `json:"config,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
 // GetMemoryBucketsParams defines parameters for GetMemoryBuckets.
 type GetMemoryBucketsParams struct {
-	// Q Free-text search (title/description/id).
-	Q       *string `form:"q,omitempty" json:"q,omitempty"`
-	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
-
-// PostMemoryBucketsJSONBody defines parameters for PostMemoryBuckets.
-type PostMemoryBucketsJSONBody struct {
-	Config struct {
-		CollectionPrefix *string                               `json:"collectionPrefix,omitempty"`
-		Scope            *PostMemoryBucketsJSONBodyConfigScope `json:"scope,omitempty"`
-	} `json:"config"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PostMemoryBucketsJSONBodyConfigScope defines parameters for PostMemoryBuckets.
-type PostMemoryBucketsJSONBodyConfigScope string
-
-// PatchMemoryBucketsIdJSONBody defines parameters for PatchMemoryBucketsId.
-type PatchMemoryBucketsIdJSONBody struct {
-	Config *struct {
-		CollectionPrefix *string                                  `json:"collectionPrefix,omitempty"`
-		Scope            *PatchMemoryBucketsIdJSONBodyConfigScope `json:"scope,omitempty"`
-	} `json:"config,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PatchMemoryBucketsIdJSONBodyConfigScope defines parameters for PatchMemoryBucketsId.
-type PatchMemoryBucketsIdJSONBodyConfigScope string
 
 // GetToolsParams defines parameters for GetTools.
 type GetToolsParams struct {
-	// Q Free-text search (name/description/id).
-	Q *string `form:"q,omitempty" json:"q,omitempty"`
-
 	// Type Filter by tool type
-	Type    *GetToolsParamsType `form:"type,omitempty" json:"type,omitempty"`
-	Page    *int                `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int                `form:"perPage,omitempty" json:"perPage,omitempty"`
-}
-
-// GetToolsParamsType defines parameters for GetTools.
-type GetToolsParamsType string
-
-// PostToolsJSONBody defines parameters for PostTools.
-type PostToolsJSONBody struct {
-	Config      *map[string]interface{} `json:"config,omitempty"`
-	Description *string                 `json:"description,omitempty"`
-	Name        *string                 `json:"name,omitempty"`
-	Type        PostToolsJSONBodyType   `json:"type"`
-}
-
-// PostToolsJSONBodyType defines parameters for PostTools.
-type PostToolsJSONBodyType string
-
-// PatchToolsIdJSONBody defines parameters for PatchToolsId.
-type PatchToolsIdJSONBody struct {
-	Config      *map[string]interface{} `json:"config,omitempty"`
-	Description *string                 `json:"description,omitempty"`
-	Name        *string                 `json:"name,omitempty"`
+	Type    *ToolType `form:"type,omitempty" json:"type,omitempty"`
+	Page    *int      `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int      `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
 // GetWorkspaceConfigurationsParams defines parameters for GetWorkspaceConfigurations.
 type GetWorkspaceConfigurationsParams struct {
-	// Q Free-text search (title/description/id).
-	Q       *string `form:"q,omitempty" json:"q,omitempty"`
-	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
-	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
+	Page    *int `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
-
-// PostWorkspaceConfigurationsJSONBody defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBody struct {
-	Config struct {
-		CpuLimit   *PostWorkspaceConfigurationsJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
-		EnableDinD *bool                                                `json:"enableDinD,omitempty"`
-		Env        *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		Image         *string                                                 `json:"image,omitempty"`
-		InitialScript *string                                                 `json:"initialScript,omitempty"`
-		MemoryLimit   *PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                 `json:"nix,omitempty"`
-		Platform      *PostWorkspaceConfigurationsJSONBodyConfigPlatform      `json:"platform,omitempty"`
-		TtlSeconds    *int                                                    `json:"ttlSeconds,omitempty"`
-		Volumes       *struct {
-			Enabled   *bool   `json:"enabled,omitempty"`
-			MountPath *string `json:"mountPath,omitempty"`
-		} `json:"volumes,omitempty"`
-	} `json:"config"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit0 = float32
-
-// PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBodyConfigCpuLimit1 = string
-
-// PostWorkspaceConfigurationsJSONBody_Config_CpuLimit defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBody_Config_CpuLimit struct {
-	union json.RawMessage
-}
-
-// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit0 = float32
-
-// PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBodyConfigMemoryLimit1 = string
-
-// PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBody_Config_MemoryLimit struct {
-	union json.RawMessage
-}
-
-// PostWorkspaceConfigurationsJSONBodyConfigPlatform defines parameters for PostWorkspaceConfigurations.
-type PostWorkspaceConfigurationsJSONBodyConfigPlatform string
-
-// PatchWorkspaceConfigurationsIdJSONBody defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBody struct {
-	Config *struct {
-		CpuLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit `json:"cpu_limit,omitempty"`
-		EnableDinD *bool                                                   `json:"enableDinD,omitempty"`
-		Env        *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		Image         *string                                                    `json:"image,omitempty"`
-		InitialScript *string                                                    `json:"initialScript,omitempty"`
-		MemoryLimit   *PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                    `json:"nix,omitempty"`
-		Platform      *PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform      `json:"platform,omitempty"`
-		TtlSeconds    *int                                                       `json:"ttlSeconds,omitempty"`
-		Volumes       *struct {
-			Enabled   *bool   `json:"enabled,omitempty"`
-			MountPath *string `json:"mountPath,omitempty"`
-		} `json:"volumes,omitempty"`
-	} `json:"config,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Title       *string `json:"title,omitempty"`
-}
-
-// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit0 = float32
-
-// PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBodyConfigCpuLimit1 = string
-
-// PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBody_Config_CpuLimit struct {
-	union json.RawMessage
-}
-
-// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit0 = float32
-
-// PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBodyConfigMemoryLimit1 = string
-
-// PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBody_Config_MemoryLimit struct {
-	union json.RawMessage
-}
-
-// PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform defines parameters for PatchWorkspaceConfigurationsId.
-type PatchWorkspaceConfigurationsIdJSONBodyConfigPlatform string
 
 // PostAgentsJSONRequestBody defines body for PostAgents for application/json ContentType.
-type PostAgentsJSONRequestBody PostAgentsJSONBody
+type PostAgentsJSONRequestBody = AgentCreateRequest
 
 // PatchAgentsIdJSONRequestBody defines body for PatchAgentsId for application/json ContentType.
-type PatchAgentsIdJSONRequestBody PatchAgentsIdJSONBody
+type PatchAgentsIdJSONRequestBody = AgentUpdateRequest
 
 // PostAttachmentsJSONRequestBody defines body for PostAttachments for application/json ContentType.
-type PostAttachmentsJSONRequestBody PostAttachmentsJSONBody
+type PostAttachmentsJSONRequestBody = AttachmentCreateRequest
 
 // PostMcpServersJSONRequestBody defines body for PostMcpServers for application/json ContentType.
-type PostMcpServersJSONRequestBody PostMcpServersJSONBody
+type PostMcpServersJSONRequestBody = McpServerCreateRequest
 
 // PatchMcpServersIdJSONRequestBody defines body for PatchMcpServersId for application/json ContentType.
-type PatchMcpServersIdJSONRequestBody PatchMcpServersIdJSONBody
+type PatchMcpServersIdJSONRequestBody = McpServerUpdateRequest
 
 // PostMemoryBucketsJSONRequestBody defines body for PostMemoryBuckets for application/json ContentType.
-type PostMemoryBucketsJSONRequestBody PostMemoryBucketsJSONBody
+type PostMemoryBucketsJSONRequestBody = MemoryBucketCreateRequest
 
 // PatchMemoryBucketsIdJSONRequestBody defines body for PatchMemoryBucketsId for application/json ContentType.
-type PatchMemoryBucketsIdJSONRequestBody PatchMemoryBucketsIdJSONBody
+type PatchMemoryBucketsIdJSONRequestBody = MemoryBucketUpdateRequest
 
 // PostToolsJSONRequestBody defines body for PostTools for application/json ContentType.
-type PostToolsJSONRequestBody PostToolsJSONBody
+type PostToolsJSONRequestBody = ToolCreateRequest
 
 // PatchToolsIdJSONRequestBody defines body for PatchToolsId for application/json ContentType.
-type PatchToolsIdJSONRequestBody PatchToolsIdJSONBody
+type PatchToolsIdJSONRequestBody = ToolUpdateRequest
 
 // PostWorkspaceConfigurationsJSONRequestBody defines body for PostWorkspaceConfigurations for application/json ContentType.
-type PostWorkspaceConfigurationsJSONRequestBody PostWorkspaceConfigurationsJSONBody
+type PostWorkspaceConfigurationsJSONRequestBody = WorkspaceConfigurationCreateRequest
 
 // PatchWorkspaceConfigurationsIdJSONRequestBody defines body for PatchWorkspaceConfigurationsId for application/json ContentType.
-type PatchWorkspaceConfigurationsIdJSONRequestBody PatchWorkspaceConfigurationsIdJSONBody
+type PatchWorkspaceConfigurationsIdJSONRequestBody = WorkspaceConfigurationUpdateRequest
+
+// AsWorkspaceConfigCpuLimit0 returns the union data inside the WorkspaceConfig_CpuLimit as a WorkspaceConfigCpuLimit0
+func (t WorkspaceConfig_CpuLimit) AsWorkspaceConfigCpuLimit0() (WorkspaceConfigCpuLimit0, error) {
+	var body WorkspaceConfigCpuLimit0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkspaceConfigCpuLimit0 overwrites any union data inside the WorkspaceConfig_CpuLimit as the provided WorkspaceConfigCpuLimit0
+func (t *WorkspaceConfig_CpuLimit) FromWorkspaceConfigCpuLimit0(v WorkspaceConfigCpuLimit0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkspaceConfigCpuLimit0 performs a merge with any union data inside the WorkspaceConfig_CpuLimit, using the provided WorkspaceConfigCpuLimit0
+func (t *WorkspaceConfig_CpuLimit) MergeWorkspaceConfigCpuLimit0(v WorkspaceConfigCpuLimit0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWorkspaceConfigCpuLimit1 returns the union data inside the WorkspaceConfig_CpuLimit as a WorkspaceConfigCpuLimit1
+func (t WorkspaceConfig_CpuLimit) AsWorkspaceConfigCpuLimit1() (WorkspaceConfigCpuLimit1, error) {
+	var body WorkspaceConfigCpuLimit1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkspaceConfigCpuLimit1 overwrites any union data inside the WorkspaceConfig_CpuLimit as the provided WorkspaceConfigCpuLimit1
+func (t *WorkspaceConfig_CpuLimit) FromWorkspaceConfigCpuLimit1(v WorkspaceConfigCpuLimit1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkspaceConfigCpuLimit1 performs a merge with any union data inside the WorkspaceConfig_CpuLimit, using the provided WorkspaceConfigCpuLimit1
+func (t *WorkspaceConfig_CpuLimit) MergeWorkspaceConfigCpuLimit1(v WorkspaceConfigCpuLimit1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WorkspaceConfig_CpuLimit) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *WorkspaceConfig_CpuLimit) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsWorkspaceConfigMemoryLimit0 returns the union data inside the WorkspaceConfig_MemoryLimit as a WorkspaceConfigMemoryLimit0
+func (t WorkspaceConfig_MemoryLimit) AsWorkspaceConfigMemoryLimit0() (WorkspaceConfigMemoryLimit0, error) {
+	var body WorkspaceConfigMemoryLimit0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkspaceConfigMemoryLimit0 overwrites any union data inside the WorkspaceConfig_MemoryLimit as the provided WorkspaceConfigMemoryLimit0
+func (t *WorkspaceConfig_MemoryLimit) FromWorkspaceConfigMemoryLimit0(v WorkspaceConfigMemoryLimit0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkspaceConfigMemoryLimit0 performs a merge with any union data inside the WorkspaceConfig_MemoryLimit, using the provided WorkspaceConfigMemoryLimit0
+func (t *WorkspaceConfig_MemoryLimit) MergeWorkspaceConfigMemoryLimit0(v WorkspaceConfigMemoryLimit0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsWorkspaceConfigMemoryLimit1 returns the union data inside the WorkspaceConfig_MemoryLimit as a WorkspaceConfigMemoryLimit1
+func (t WorkspaceConfig_MemoryLimit) AsWorkspaceConfigMemoryLimit1() (WorkspaceConfigMemoryLimit1, error) {
+	var body WorkspaceConfigMemoryLimit1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromWorkspaceConfigMemoryLimit1 overwrites any union data inside the WorkspaceConfig_MemoryLimit as the provided WorkspaceConfigMemoryLimit1
+func (t *WorkspaceConfig_MemoryLimit) FromWorkspaceConfigMemoryLimit1(v WorkspaceConfigMemoryLimit1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeWorkspaceConfigMemoryLimit1 performs a merge with any union data inside the WorkspaceConfig_MemoryLimit, using the provided WorkspaceConfigMemoryLimit1
+func (t *WorkspaceConfig_MemoryLimit) MergeWorkspaceConfigMemoryLimit1(v WorkspaceConfigMemoryLimit1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t WorkspaceConfig_MemoryLimit) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *WorkspaceConfig_MemoryLimit) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -490,13 +612,13 @@ type ServerInterface interface {
 	PostAgents(w http.ResponseWriter, r *http.Request)
 	// Delete agent
 	// (DELETE /agents/{id})
-	DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteAgentsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Get agent by ID
 	// (GET /agents/{id})
-	GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetAgentsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Update agent (partial)
 	// (PATCH /agents/{id})
-	PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	PatchAgentsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List attachments
 	// (GET /attachments)
 	GetAttachments(w http.ResponseWriter, r *http.Request, params GetAttachmentsParams)
@@ -505,7 +627,7 @@ type ServerInterface interface {
 	PostAttachments(w http.ResponseWriter, r *http.Request)
 	// Delete attachment
 	// (DELETE /attachments/{id})
-	DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List MCP servers
 	// (GET /mcp-servers)
 	GetMcpServers(w http.ResponseWriter, r *http.Request, params GetMcpServersParams)
@@ -514,13 +636,13 @@ type ServerInterface interface {
 	PostMcpServers(w http.ResponseWriter, r *http.Request)
 	// Delete MCP server
 	// (DELETE /mcp-servers/{id})
-	DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Get MCP server by ID
 	// (GET /mcp-servers/{id})
-	GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Update MCP server (partial)
 	// (PATCH /mcp-servers/{id})
-	PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	PatchMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List memory buckets
 	// (GET /memory-buckets)
 	GetMemoryBuckets(w http.ResponseWriter, r *http.Request, params GetMemoryBucketsParams)
@@ -529,13 +651,13 @@ type ServerInterface interface {
 	PostMemoryBuckets(w http.ResponseWriter, r *http.Request)
 	// Delete memory bucket
 	// (DELETE /memory-buckets/{id})
-	DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Get memory bucket by ID
 	// (GET /memory-buckets/{id})
-	GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Update memory bucket (partial)
 	// (PATCH /memory-buckets/{id})
-	PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List tools
 	// (GET /tools)
 	GetTools(w http.ResponseWriter, r *http.Request, params GetToolsParams)
@@ -544,13 +666,13 @@ type ServerInterface interface {
 	PostTools(w http.ResponseWriter, r *http.Request)
 	// Delete tool
 	// (DELETE /tools/{id})
-	DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteToolsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Get tool by ID
 	// (GET /tools/{id})
-	GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetToolsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Update tool (partial)
 	// (PATCH /tools/{id})
-	PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	PatchToolsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List workspace configurations
 	// (GET /workspace-configurations)
 	GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request, params GetWorkspaceConfigurationsParams)
@@ -559,13 +681,13 @@ type ServerInterface interface {
 	PostWorkspaceConfigurations(w http.ResponseWriter, r *http.Request)
 	// Delete workspace configuration
 	// (DELETE /workspace-configurations/{id})
-	DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Get workspace configuration by ID
 	// (GET /workspace-configurations/{id})
-	GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// Update workspace configuration (partial)
 	// (PATCH /workspace-configurations/{id})
-	PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID)
+	PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -586,19 +708,19 @@ func (_ Unimplemented) PostAgents(w http.ResponseWriter, r *http.Request) {
 
 // Delete agent
 // (DELETE /agents/{id})
-func (_ Unimplemented) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get agent by ID
 // (GET /agents/{id})
-func (_ Unimplemented) GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update agent (partial)
 // (PATCH /agents/{id})
-func (_ Unimplemented) PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) PatchAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -616,7 +738,7 @@ func (_ Unimplemented) PostAttachments(w http.ResponseWriter, r *http.Request) {
 
 // Delete attachment
 // (DELETE /attachments/{id})
-func (_ Unimplemented) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -634,19 +756,19 @@ func (_ Unimplemented) PostMcpServers(w http.ResponseWriter, r *http.Request) {
 
 // Delete MCP server
 // (DELETE /mcp-servers/{id})
-func (_ Unimplemented) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get MCP server by ID
 // (GET /mcp-servers/{id})
-func (_ Unimplemented) GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update MCP server (partial)
 // (PATCH /mcp-servers/{id})
-func (_ Unimplemented) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -664,19 +786,19 @@ func (_ Unimplemented) PostMemoryBuckets(w http.ResponseWriter, r *http.Request)
 
 // Delete memory bucket
 // (DELETE /memory-buckets/{id})
-func (_ Unimplemented) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get memory bucket by ID
 // (GET /memory-buckets/{id})
-func (_ Unimplemented) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update memory bucket (partial)
 // (PATCH /memory-buckets/{id})
-func (_ Unimplemented) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -694,19 +816,19 @@ func (_ Unimplemented) PostTools(w http.ResponseWriter, r *http.Request) {
 
 // Delete tool
 // (DELETE /tools/{id})
-func (_ Unimplemented) DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get tool by ID
 // (GET /tools/{id})
-func (_ Unimplemented) GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update tool (partial)
 // (PATCH /tools/{id})
-func (_ Unimplemented) PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) PatchToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -724,19 +846,19 @@ func (_ Unimplemented) PostWorkspaceConfigurations(w http.ResponseWriter, r *htt
 
 // Delete workspace configuration
 // (DELETE /workspace-configurations/{id})
-func (_ Unimplemented) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get workspace configuration by ID
 // (GET /workspace-configurations/{id})
-func (_ Unimplemented) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Update workspace configuration (partial)
 // (PATCH /workspace-configurations/{id})
-func (_ Unimplemented) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (_ Unimplemented) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -812,7 +934,7 @@ func (siw *ServerInterfaceWrapper) DeleteAgentsId(w http.ResponseWriter, r *http
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -837,7 +959,7 @@ func (siw *ServerInterfaceWrapper) GetAgentsId(w http.ResponseWriter, r *http.Re
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -862,7 +984,7 @@ func (siw *ServerInterfaceWrapper) PatchAgentsId(w http.ResponseWriter, r *http.
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -976,7 +1098,7 @@ func (siw *ServerInterfaceWrapper) DeleteAttachmentsId(w http.ResponseWriter, r 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1002,14 +1124,6 @@ func (siw *ServerInterfaceWrapper) GetMcpServers(w http.ResponseWriter, r *http.
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetMcpServersParams
-
-	// ------------- Optional query parameter "q" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
-		return
-	}
 
 	// ------------- Optional query parameter "page" -------------
 
@@ -1058,7 +1172,7 @@ func (siw *ServerInterfaceWrapper) DeleteMcpServersId(w http.ResponseWriter, r *
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1083,7 +1197,7 @@ func (siw *ServerInterfaceWrapper) GetMcpServersId(w http.ResponseWriter, r *htt
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1108,7 +1222,7 @@ func (siw *ServerInterfaceWrapper) PatchMcpServersId(w http.ResponseWriter, r *h
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1134,14 +1248,6 @@ func (siw *ServerInterfaceWrapper) GetMemoryBuckets(w http.ResponseWriter, r *ht
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetMemoryBucketsParams
-
-	// ------------- Optional query parameter "q" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
-		return
-	}
 
 	// ------------- Optional query parameter "page" -------------
 
@@ -1190,7 +1296,7 @@ func (siw *ServerInterfaceWrapper) DeleteMemoryBucketsId(w http.ResponseWriter, 
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1215,7 +1321,7 @@ func (siw *ServerInterfaceWrapper) GetMemoryBucketsId(w http.ResponseWriter, r *
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1240,7 +1346,7 @@ func (siw *ServerInterfaceWrapper) PatchMemoryBucketsId(w http.ResponseWriter, r
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1266,14 +1372,6 @@ func (siw *ServerInterfaceWrapper) GetTools(w http.ResponseWriter, r *http.Reque
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetToolsParams
-
-	// ------------- Optional query parameter "q" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
-		return
-	}
 
 	// ------------- Optional query parameter "type" -------------
 
@@ -1330,7 +1428,7 @@ func (siw *ServerInterfaceWrapper) DeleteToolsId(w http.ResponseWriter, r *http.
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1355,7 +1453,7 @@ func (siw *ServerInterfaceWrapper) GetToolsId(w http.ResponseWriter, r *http.Req
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1380,7 +1478,7 @@ func (siw *ServerInterfaceWrapper) PatchToolsId(w http.ResponseWriter, r *http.R
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1406,14 +1504,6 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurations(w http.ResponseWri
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params GetWorkspaceConfigurationsParams
-
-	// ------------- Optional query parameter "q" -------------
-
-	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
-		return
-	}
 
 	// ------------- Optional query parameter "page" -------------
 
@@ -1462,7 +1552,7 @@ func (siw *ServerInterfaceWrapper) DeleteWorkspaceConfigurationsId(w http.Respon
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1487,7 +1577,7 @@ func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurationsId(w http.ResponseW
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1512,7 +1602,7 @@ func (siw *ServerInterfaceWrapper) PatchWorkspaceConfigurationsId(w http.Respons
 	var err error
 
 	// ------------- Path parameter "id" -------------
-	var id openapi_types.UUID
+	var id IdPath
 
 	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
 	if err != nil {
@@ -1732,6 +1822,8 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	return r
 }
 
+type ProblemResponseApplicationProblemPlusJSONResponse Problem
+
 type GetAgentsRequestObject struct {
 	Params GetAgentsParams
 }
@@ -1740,33 +1832,7 @@ type GetAgentsResponseObject interface {
 	VisitGetAgentsResponse(w http.ResponseWriter) error
 }
 
-type GetAgents200JSONResponse struct {
-	Items []struct {
-		Config struct {
-			DebounceMs                *int                                              `json:"debounceMs,omitempty"`
-			Model                     *string                                           `json:"model,omitempty"`
-			Name                      *string                                           `json:"name,omitempty"`
-			ProcessBuffer             *GetAgents200JSONResponseItemsConfigProcessBuffer `json:"processBuffer,omitempty"`
-			RestrictOutput            *bool                                             `json:"restrictOutput,omitempty"`
-			RestrictionMaxInjections  *int                                              `json:"restrictionMaxInjections,omitempty"`
-			RestrictionMessage        *string                                           `json:"restrictionMessage,omitempty"`
-			Role                      *string                                           `json:"role,omitempty"`
-			SendFinalResponseToThread *bool                                             `json:"sendFinalResponseToThread,omitempty"`
-			SummarizationKeepTokens   *int                                              `json:"summarizationKeepTokens,omitempty"`
-			SummarizationMaxTokens    *int                                              `json:"summarizationMaxTokens,omitempty"`
-			SystemPrompt              *string                                           `json:"systemPrompt,omitempty"`
-			WhenBusy                  *GetAgents200JSONResponseItemsConfigWhenBusy      `json:"whenBusy,omitempty"`
-		} `json:"config"`
-		CreatedAt   time.Time          `json:"createdAt"`
-		Description *string            `json:"description,omitempty"`
-		Id          openapi_types.UUID `json:"id"`
-		Title       *string            `json:"title,omitempty"`
-		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetAgents200JSONResponse PaginatedAgents
 
 func (response GetAgents200JSONResponse) VisitGetAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1776,13 +1842,7 @@ func (response GetAgents200JSONResponse) VisitGetAgentsResponse(w http.ResponseW
 }
 
 type GetAgentsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -1801,28 +1861,7 @@ type PostAgentsResponseObject interface {
 	VisitPostAgentsResponse(w http.ResponseWriter) error
 }
 
-type PostAgents201JSONResponse struct {
-	Config struct {
-		DebounceMs                *int                                          `json:"debounceMs,omitempty"`
-		Model                     *string                                       `json:"model,omitempty"`
-		Name                      *string                                       `json:"name,omitempty"`
-		ProcessBuffer             *PostAgents201JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
-		RestrictOutput            *bool                                         `json:"restrictOutput,omitempty"`
-		RestrictionMaxInjections  *int                                          `json:"restrictionMaxInjections,omitempty"`
-		RestrictionMessage        *string                                       `json:"restrictionMessage,omitempty"`
-		Role                      *string                                       `json:"role,omitempty"`
-		SendFinalResponseToThread *bool                                         `json:"sendFinalResponseToThread,omitempty"`
-		SummarizationKeepTokens   *int                                          `json:"summarizationKeepTokens,omitempty"`
-		SummarizationMaxTokens    *int                                          `json:"summarizationMaxTokens,omitempty"`
-		SystemPrompt              *string                                       `json:"systemPrompt,omitempty"`
-		WhenBusy                  *PostAgents201JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PostAgents201JSONResponse Agent
 
 func (response PostAgents201JSONResponse) VisitPostAgentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1832,13 +1871,7 @@ func (response PostAgents201JSONResponse) VisitPostAgentsResponse(w http.Respons
 }
 
 type PostAgentsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -1850,7 +1883,7 @@ func (response PostAgentsdefaultApplicationProblemPlusJSONResponse) VisitPostAge
 }
 
 type DeleteAgentsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteAgentsIdResponseObject interface {
@@ -1866,13 +1899,7 @@ func (response DeleteAgentsId204Response) VisitDeleteAgentsIdResponse(w http.Res
 }
 
 type DeleteAgentsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -1884,35 +1911,14 @@ func (response DeleteAgentsIddefaultApplicationProblemPlusJSONResponse) VisitDel
 }
 
 type GetAgentsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type GetAgentsIdResponseObject interface {
 	VisitGetAgentsIdResponse(w http.ResponseWriter) error
 }
 
-type GetAgentsId200JSONResponse struct {
-	Config struct {
-		DebounceMs                *int                                           `json:"debounceMs,omitempty"`
-		Model                     *string                                        `json:"model,omitempty"`
-		Name                      *string                                        `json:"name,omitempty"`
-		ProcessBuffer             *GetAgentsId200JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
-		RestrictOutput            *bool                                          `json:"restrictOutput,omitempty"`
-		RestrictionMaxInjections  *int                                           `json:"restrictionMaxInjections,omitempty"`
-		RestrictionMessage        *string                                        `json:"restrictionMessage,omitempty"`
-		Role                      *string                                        `json:"role,omitempty"`
-		SendFinalResponseToThread *bool                                          `json:"sendFinalResponseToThread,omitempty"`
-		SummarizationKeepTokens   *int                                           `json:"summarizationKeepTokens,omitempty"`
-		SummarizationMaxTokens    *int                                           `json:"summarizationMaxTokens,omitempty"`
-		SystemPrompt              *string                                        `json:"systemPrompt,omitempty"`
-		WhenBusy                  *GetAgentsId200JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type GetAgentsId200JSONResponse Agent
 
 func (response GetAgentsId200JSONResponse) VisitGetAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1922,13 +1928,7 @@ func (response GetAgentsId200JSONResponse) VisitGetAgentsIdResponse(w http.Respo
 }
 
 type GetAgentsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -1940,7 +1940,7 @@ func (response GetAgentsIddefaultApplicationProblemPlusJSONResponse) VisitGetAge
 }
 
 type PatchAgentsIdRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   IdPath `json:"id"`
 	Body *PatchAgentsIdJSONRequestBody
 }
 
@@ -1948,28 +1948,7 @@ type PatchAgentsIdResponseObject interface {
 	VisitPatchAgentsIdResponse(w http.ResponseWriter) error
 }
 
-type PatchAgentsId200JSONResponse struct {
-	Config struct {
-		DebounceMs                *int                                             `json:"debounceMs,omitempty"`
-		Model                     *string                                          `json:"model,omitempty"`
-		Name                      *string                                          `json:"name,omitempty"`
-		ProcessBuffer             *PatchAgentsId200JSONResponseConfigProcessBuffer `json:"processBuffer,omitempty"`
-		RestrictOutput            *bool                                            `json:"restrictOutput,omitempty"`
-		RestrictionMaxInjections  *int                                             `json:"restrictionMaxInjections,omitempty"`
-		RestrictionMessage        *string                                          `json:"restrictionMessage,omitempty"`
-		Role                      *string                                          `json:"role,omitempty"`
-		SendFinalResponseToThread *bool                                            `json:"sendFinalResponseToThread,omitempty"`
-		SummarizationKeepTokens   *int                                             `json:"summarizationKeepTokens,omitempty"`
-		SummarizationMaxTokens    *int                                             `json:"summarizationMaxTokens,omitempty"`
-		SystemPrompt              *string                                          `json:"systemPrompt,omitempty"`
-		WhenBusy                  *PatchAgentsId200JSONResponseConfigWhenBusy      `json:"whenBusy,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PatchAgentsId200JSONResponse Agent
 
 func (response PatchAgentsId200JSONResponse) VisitPatchAgentsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1979,13 +1958,7 @@ func (response PatchAgentsId200JSONResponse) VisitPatchAgentsIdResponse(w http.R
 }
 
 type PatchAgentsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2004,23 +1977,7 @@ type GetAttachmentsResponseObject interface {
 	VisitGetAttachmentsResponse(w http.ResponseWriter) error
 }
 
-type GetAttachments200JSONResponse struct {
-	Items []struct {
-		CreatedAt time.Time          `json:"createdAt"`
-		Id        openapi_types.UUID `json:"id"`
-
-		// Kind Relation type between entities
-		Kind       GetAttachments200JSONResponseItemsKind       `json:"kind"`
-		SourceId   openapi_types.UUID                           `json:"sourceId"`
-		SourceType GetAttachments200JSONResponseItemsSourceType `json:"sourceType"`
-		TargetId   openapi_types.UUID                           `json:"targetId"`
-		TargetType GetAttachments200JSONResponseItemsTargetType `json:"targetType"`
-		UpdatedAt  *time.Time                                   `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetAttachments200JSONResponse PaginatedAttachments
 
 func (response GetAttachments200JSONResponse) VisitGetAttachmentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2030,13 +1987,7 @@ func (response GetAttachments200JSONResponse) VisitGetAttachmentsResponse(w http
 }
 
 type GetAttachmentsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2055,18 +2006,7 @@ type PostAttachmentsResponseObject interface {
 	VisitPostAttachmentsResponse(w http.ResponseWriter) error
 }
 
-type PostAttachments201JSONResponse struct {
-	CreatedAt time.Time          `json:"createdAt"`
-	Id        openapi_types.UUID `json:"id"`
-
-	// Kind Relation type between entities
-	Kind       PostAttachments201JSONResponseKind       `json:"kind"`
-	SourceId   openapi_types.UUID                       `json:"sourceId"`
-	SourceType PostAttachments201JSONResponseSourceType `json:"sourceType"`
-	TargetId   openapi_types.UUID                       `json:"targetId"`
-	TargetType PostAttachments201JSONResponseTargetType `json:"targetType"`
-	UpdatedAt  *time.Time                               `json:"updatedAt,omitempty"`
-}
+type PostAttachments201JSONResponse Attachment
 
 func (response PostAttachments201JSONResponse) VisitPostAttachmentsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2076,13 +2016,7 @@ func (response PostAttachments201JSONResponse) VisitPostAttachmentsResponse(w ht
 }
 
 type PostAttachmentsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2094,7 +2028,7 @@ func (response PostAttachmentsdefaultApplicationProblemPlusJSONResponse) VisitPo
 }
 
 type DeleteAttachmentsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteAttachmentsIdResponseObject interface {
@@ -2110,13 +2044,7 @@ func (response DeleteAttachmentsId204Response) VisitDeleteAttachmentsIdResponse(
 }
 
 type DeleteAttachmentsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2135,35 +2063,7 @@ type GetMcpServersResponseObject interface {
 	VisitGetMcpServersResponse(w http.ResponseWriter) error
 }
 
-type GetMcpServers200JSONResponse struct {
-	Items []struct {
-		Config struct {
-			Command *string `json:"command,omitempty"`
-			Env     *[]struct {
-				Name  string `json:"name"`
-				Value string `json:"value"`
-			} `json:"env,omitempty"`
-			HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-			Namespace           *string `json:"namespace,omitempty"`
-			RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-			Restart             *struct {
-				BackoffMs   *int `json:"backoffMs,omitempty"`
-				MaxAttempts *int `json:"maxAttempts,omitempty"`
-			} `json:"restart,omitempty"`
-			StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-			StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-			Workdir          *string `json:"workdir,omitempty"`
-		} `json:"config"`
-		CreatedAt   time.Time          `json:"createdAt"`
-		Description *string            `json:"description,omitempty"`
-		Id          openapi_types.UUID `json:"id"`
-		Title       *string            `json:"title,omitempty"`
-		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetMcpServers200JSONResponse PaginatedMcpServers
 
 func (response GetMcpServers200JSONResponse) VisitGetMcpServersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2173,13 +2073,7 @@ func (response GetMcpServers200JSONResponse) VisitGetMcpServersResponse(w http.R
 }
 
 type GetMcpServersdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2198,30 +2092,7 @@ type PostMcpServersResponseObject interface {
 	VisitPostMcpServersResponse(w http.ResponseWriter) error
 }
 
-type PostMcpServers201JSONResponse struct {
-	Config struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PostMcpServers201JSONResponse McpServer
 
 func (response PostMcpServers201JSONResponse) VisitPostMcpServersResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2231,13 +2102,7 @@ func (response PostMcpServers201JSONResponse) VisitPostMcpServersResponse(w http
 }
 
 type PostMcpServersdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2249,7 +2114,7 @@ func (response PostMcpServersdefaultApplicationProblemPlusJSONResponse) VisitPos
 }
 
 type DeleteMcpServersIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteMcpServersIdResponseObject interface {
@@ -2265,13 +2130,7 @@ func (response DeleteMcpServersId204Response) VisitDeleteMcpServersIdResponse(w 
 }
 
 type DeleteMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2283,37 +2142,14 @@ func (response DeleteMcpServersIddefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type GetMcpServersIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type GetMcpServersIdResponseObject interface {
 	VisitGetMcpServersIdResponse(w http.ResponseWriter) error
 }
 
-type GetMcpServersId200JSONResponse struct {
-	Config struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type GetMcpServersId200JSONResponse McpServer
 
 func (response GetMcpServersId200JSONResponse) VisitGetMcpServersIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2323,13 +2159,7 @@ func (response GetMcpServersId200JSONResponse) VisitGetMcpServersIdResponse(w ht
 }
 
 type GetMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2341,7 +2171,7 @@ func (response GetMcpServersIddefaultApplicationProblemPlusJSONResponse) VisitGe
 }
 
 type PatchMcpServersIdRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   IdPath `json:"id"`
 	Body *PatchMcpServersIdJSONRequestBody
 }
 
@@ -2349,30 +2179,7 @@ type PatchMcpServersIdResponseObject interface {
 	VisitPatchMcpServersIdResponse(w http.ResponseWriter) error
 }
 
-type PatchMcpServersId200JSONResponse struct {
-	Config struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PatchMcpServersId200JSONResponse McpServer
 
 func (response PatchMcpServersId200JSONResponse) VisitPatchMcpServersIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2382,13 +2189,7 @@ func (response PatchMcpServersId200JSONResponse) VisitPatchMcpServersIdResponse(
 }
 
 type PatchMcpServersIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2407,22 +2208,7 @@ type GetMemoryBucketsResponseObject interface {
 	VisitGetMemoryBucketsResponse(w http.ResponseWriter) error
 }
 
-type GetMemoryBuckets200JSONResponse struct {
-	Items []struct {
-		Config struct {
-			CollectionPrefix *string                                          `json:"collectionPrefix,omitempty"`
-			Scope            *GetMemoryBuckets200JSONResponseItemsConfigScope `json:"scope,omitempty"`
-		} `json:"config"`
-		CreatedAt   time.Time          `json:"createdAt"`
-		Description *string            `json:"description,omitempty"`
-		Id          openapi_types.UUID `json:"id"`
-		Title       *string            `json:"title,omitempty"`
-		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetMemoryBuckets200JSONResponse PaginatedMemoryBuckets
 
 func (response GetMemoryBuckets200JSONResponse) VisitGetMemoryBucketsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2432,13 +2218,7 @@ func (response GetMemoryBuckets200JSONResponse) VisitGetMemoryBucketsResponse(w 
 }
 
 type GetMemoryBucketsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2457,17 +2237,7 @@ type PostMemoryBucketsResponseObject interface {
 	VisitPostMemoryBucketsResponse(w http.ResponseWriter) error
 }
 
-type PostMemoryBuckets201JSONResponse struct {
-	Config struct {
-		CollectionPrefix *string                                      `json:"collectionPrefix,omitempty"`
-		Scope            *PostMemoryBuckets201JSONResponseConfigScope `json:"scope,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PostMemoryBuckets201JSONResponse MemoryBucket
 
 func (response PostMemoryBuckets201JSONResponse) VisitPostMemoryBucketsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2477,13 +2247,7 @@ func (response PostMemoryBuckets201JSONResponse) VisitPostMemoryBucketsResponse(
 }
 
 type PostMemoryBucketsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2495,7 +2259,7 @@ func (response PostMemoryBucketsdefaultApplicationProblemPlusJSONResponse) Visit
 }
 
 type DeleteMemoryBucketsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteMemoryBucketsIdResponseObject interface {
@@ -2511,13 +2275,7 @@ func (response DeleteMemoryBucketsId204Response) VisitDeleteMemoryBucketsIdRespo
 }
 
 type DeleteMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2529,24 +2287,14 @@ func (response DeleteMemoryBucketsIddefaultApplicationProblemPlusJSONResponse) V
 }
 
 type GetMemoryBucketsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type GetMemoryBucketsIdResponseObject interface {
 	VisitGetMemoryBucketsIdResponse(w http.ResponseWriter) error
 }
 
-type GetMemoryBucketsId200JSONResponse struct {
-	Config struct {
-		CollectionPrefix *string                                       `json:"collectionPrefix,omitempty"`
-		Scope            *GetMemoryBucketsId200JSONResponseConfigScope `json:"scope,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type GetMemoryBucketsId200JSONResponse MemoryBucket
 
 func (response GetMemoryBucketsId200JSONResponse) VisitGetMemoryBucketsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2556,13 +2304,7 @@ func (response GetMemoryBucketsId200JSONResponse) VisitGetMemoryBucketsIdRespons
 }
 
 type GetMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2574,7 +2316,7 @@ func (response GetMemoryBucketsIddefaultApplicationProblemPlusJSONResponse) Visi
 }
 
 type PatchMemoryBucketsIdRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   IdPath `json:"id"`
 	Body *PatchMemoryBucketsIdJSONRequestBody
 }
 
@@ -2582,17 +2324,7 @@ type PatchMemoryBucketsIdResponseObject interface {
 	VisitPatchMemoryBucketsIdResponse(w http.ResponseWriter) error
 }
 
-type PatchMemoryBucketsId200JSONResponse struct {
-	Config struct {
-		CollectionPrefix *string                                         `json:"collectionPrefix,omitempty"`
-		Scope            *PatchMemoryBucketsId200JSONResponseConfigScope `json:"scope,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PatchMemoryBucketsId200JSONResponse MemoryBucket
 
 func (response PatchMemoryBucketsId200JSONResponse) VisitPatchMemoryBucketsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2602,13 +2334,7 @@ func (response PatchMemoryBucketsId200JSONResponse) VisitPatchMemoryBucketsIdRes
 }
 
 type PatchMemoryBucketsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2627,20 +2353,7 @@ type GetToolsResponseObject interface {
 	VisitGetToolsResponse(w http.ResponseWriter) error
 }
 
-type GetTools200JSONResponse struct {
-	Items []struct {
-		Config      *map[string]interface{}          `json:"config,omitempty"`
-		CreatedAt   time.Time                        `json:"createdAt"`
-		Description *string                          `json:"description,omitempty"`
-		Id          openapi_types.UUID               `json:"id"`
-		Name        *string                          `json:"name,omitempty"`
-		Type        GetTools200JSONResponseItemsType `json:"type"`
-		UpdatedAt   *time.Time                       `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetTools200JSONResponse PaginatedTools
 
 func (response GetTools200JSONResponse) VisitGetToolsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2650,13 +2363,7 @@ func (response GetTools200JSONResponse) VisitGetToolsResponse(w http.ResponseWri
 }
 
 type GetToolsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2675,15 +2382,7 @@ type PostToolsResponseObject interface {
 	VisitPostToolsResponse(w http.ResponseWriter) error
 }
 
-type PostTools201JSONResponse struct {
-	Config      *map[string]interface{}      `json:"config,omitempty"`
-	CreatedAt   time.Time                    `json:"createdAt"`
-	Description *string                      `json:"description,omitempty"`
-	Id          openapi_types.UUID           `json:"id"`
-	Name        *string                      `json:"name,omitempty"`
-	Type        PostTools201JSONResponseType `json:"type"`
-	UpdatedAt   *time.Time                   `json:"updatedAt,omitempty"`
-}
+type PostTools201JSONResponse Tool
 
 func (response PostTools201JSONResponse) VisitPostToolsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2693,13 +2392,7 @@ func (response PostTools201JSONResponse) VisitPostToolsResponse(w http.ResponseW
 }
 
 type PostToolsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2711,7 +2404,7 @@ func (response PostToolsdefaultApplicationProblemPlusJSONResponse) VisitPostTool
 }
 
 type DeleteToolsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteToolsIdResponseObject interface {
@@ -2727,13 +2420,7 @@ func (response DeleteToolsId204Response) VisitDeleteToolsIdResponse(w http.Respo
 }
 
 type DeleteToolsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2745,22 +2432,14 @@ func (response DeleteToolsIddefaultApplicationProblemPlusJSONResponse) VisitDele
 }
 
 type GetToolsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type GetToolsIdResponseObject interface {
 	VisitGetToolsIdResponse(w http.ResponseWriter) error
 }
 
-type GetToolsId200JSONResponse struct {
-	Config      *map[string]interface{}       `json:"config,omitempty"`
-	CreatedAt   time.Time                     `json:"createdAt"`
-	Description *string                       `json:"description,omitempty"`
-	Id          openapi_types.UUID            `json:"id"`
-	Name        *string                       `json:"name,omitempty"`
-	Type        GetToolsId200JSONResponseType `json:"type"`
-	UpdatedAt   *time.Time                    `json:"updatedAt,omitempty"`
-}
+type GetToolsId200JSONResponse Tool
 
 func (response GetToolsId200JSONResponse) VisitGetToolsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2770,13 +2449,7 @@ func (response GetToolsId200JSONResponse) VisitGetToolsIdResponse(w http.Respons
 }
 
 type GetToolsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2788,7 +2461,7 @@ func (response GetToolsIddefaultApplicationProblemPlusJSONResponse) VisitGetTool
 }
 
 type PatchToolsIdRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   IdPath `json:"id"`
 	Body *PatchToolsIdJSONRequestBody
 }
 
@@ -2796,15 +2469,7 @@ type PatchToolsIdResponseObject interface {
 	VisitPatchToolsIdResponse(w http.ResponseWriter) error
 }
 
-type PatchToolsId200JSONResponse struct {
-	Config      *map[string]interface{}         `json:"config,omitempty"`
-	CreatedAt   time.Time                       `json:"createdAt"`
-	Description *string                         `json:"description,omitempty"`
-	Id          openapi_types.UUID              `json:"id"`
-	Name        *string                         `json:"name,omitempty"`
-	Type        PatchToolsId200JSONResponseType `json:"type"`
-	UpdatedAt   *time.Time                      `json:"updatedAt,omitempty"`
-}
+type PatchToolsId200JSONResponse Tool
 
 func (response PatchToolsId200JSONResponse) VisitPatchToolsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2814,13 +2479,7 @@ func (response PatchToolsId200JSONResponse) VisitPatchToolsIdResponse(w http.Res
 }
 
 type PatchToolsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2839,36 +2498,7 @@ type GetWorkspaceConfigurationsResponseObject interface {
 	VisitGetWorkspaceConfigurationsResponse(w http.ResponseWriter) error
 }
 
-type GetWorkspaceConfigurations200JSONResponse struct {
-	Items []struct {
-		Config struct {
-			CpuLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_CpuLimit `json:"cpu_limit,omitempty"`
-			EnableDinD *bool                                                            `json:"enableDinD,omitempty"`
-			Env        *[]struct {
-				Name  string `json:"name"`
-				Value string `json:"value"`
-			} `json:"env,omitempty"`
-			Image         *string                                                             `json:"image,omitempty"`
-			InitialScript *string                                                             `json:"initialScript,omitempty"`
-			MemoryLimit   *GetWorkspaceConfigurations200JSONResponse_Items_Config_MemoryLimit `json:"memory_limit,omitempty"`
-			Nix           *map[string]interface{}                                             `json:"nix,omitempty"`
-			Platform      *GetWorkspaceConfigurations200JSONResponseItemsConfigPlatform       `json:"platform,omitempty"`
-			TtlSeconds    *int                                                                `json:"ttlSeconds,omitempty"`
-			Volumes       *struct {
-				Enabled   *bool   `json:"enabled,omitempty"`
-				MountPath *string `json:"mountPath,omitempty"`
-			} `json:"volumes,omitempty"`
-		} `json:"config"`
-		CreatedAt   time.Time          `json:"createdAt"`
-		Description *string            `json:"description,omitempty"`
-		Id          openapi_types.UUID `json:"id"`
-		Title       *string            `json:"title,omitempty"`
-		UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-	} `json:"items"`
-	Page    int `json:"page"`
-	PerPage int `json:"perPage"`
-	Total   int `json:"total"`
-}
+type GetWorkspaceConfigurations200JSONResponse PaginatedWorkspaceConfigurations
 
 func (response GetWorkspaceConfigurations200JSONResponse) VisitGetWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2878,13 +2508,7 @@ func (response GetWorkspaceConfigurations200JSONResponse) VisitGetWorkspaceConfi
 }
 
 type GetWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2903,31 +2527,7 @@ type PostWorkspaceConfigurationsResponseObject interface {
 	VisitPostWorkspaceConfigurationsResponse(w http.ResponseWriter) error
 }
 
-type PostWorkspaceConfigurations201JSONResponse struct {
-	Config struct {
-		CpuLimit   *PostWorkspaceConfigurations201JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
-		EnableDinD *bool                                                       `json:"enableDinD,omitempty"`
-		Env        *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		Image         *string                                                        `json:"image,omitempty"`
-		InitialScript *string                                                        `json:"initialScript,omitempty"`
-		MemoryLimit   *PostWorkspaceConfigurations201JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                        `json:"nix,omitempty"`
-		Platform      *PostWorkspaceConfigurations201JSONResponseConfigPlatform      `json:"platform,omitempty"`
-		TtlSeconds    *int                                                           `json:"ttlSeconds,omitempty"`
-		Volumes       *struct {
-			Enabled   *bool   `json:"enabled,omitempty"`
-			MountPath *string `json:"mountPath,omitempty"`
-		} `json:"volumes,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PostWorkspaceConfigurations201JSONResponse WorkspaceConfiguration
 
 func (response PostWorkspaceConfigurations201JSONResponse) VisitPostWorkspaceConfigurationsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -2937,13 +2537,7 @@ func (response PostWorkspaceConfigurations201JSONResponse) VisitPostWorkspaceCon
 }
 
 type PostWorkspaceConfigurationsdefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2955,7 +2549,7 @@ func (response PostWorkspaceConfigurationsdefaultApplicationProblemPlusJSONRespo
 }
 
 type DeleteWorkspaceConfigurationsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type DeleteWorkspaceConfigurationsIdResponseObject interface {
@@ -2971,13 +2565,7 @@ func (response DeleteWorkspaceConfigurationsId204Response) VisitDeleteWorkspaceC
 }
 
 type DeleteWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -2989,38 +2577,14 @@ func (response DeleteWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONR
 }
 
 type GetWorkspaceConfigurationsIdRequestObject struct {
-	Id openapi_types.UUID `json:"id"`
+	Id IdPath `json:"id"`
 }
 
 type GetWorkspaceConfigurationsIdResponseObject interface {
 	VisitGetWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error
 }
 
-type GetWorkspaceConfigurationsId200JSONResponse struct {
-	Config struct {
-		CpuLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
-		EnableDinD *bool                                                        `json:"enableDinD,omitempty"`
-		Env        *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		Image         *string                                                         `json:"image,omitempty"`
-		InitialScript *string                                                         `json:"initialScript,omitempty"`
-		MemoryLimit   *GetWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                         `json:"nix,omitempty"`
-		Platform      *GetWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
-		TtlSeconds    *int                                                            `json:"ttlSeconds,omitempty"`
-		Volumes       *struct {
-			Enabled   *bool   `json:"enabled,omitempty"`
-			MountPath *string `json:"mountPath,omitempty"`
-		} `json:"volumes,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type GetWorkspaceConfigurationsId200JSONResponse WorkspaceConfiguration
 
 func (response GetWorkspaceConfigurationsId200JSONResponse) VisitGetWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -3030,13 +2594,7 @@ func (response GetWorkspaceConfigurationsId200JSONResponse) VisitGetWorkspaceCon
 }
 
 type GetWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -3048,7 +2606,7 @@ func (response GetWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResp
 }
 
 type PatchWorkspaceConfigurationsIdRequestObject struct {
-	Id   openapi_types.UUID `json:"id"`
+	Id   IdPath `json:"id"`
 	Body *PatchWorkspaceConfigurationsIdJSONRequestBody
 }
 
@@ -3056,31 +2614,7 @@ type PatchWorkspaceConfigurationsIdResponseObject interface {
 	VisitPatchWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error
 }
 
-type PatchWorkspaceConfigurationsId200JSONResponse struct {
-	Config struct {
-		CpuLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_CpuLimit `json:"cpu_limit,omitempty"`
-		EnableDinD *bool                                                          `json:"enableDinD,omitempty"`
-		Env        *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		Image         *string                                                           `json:"image,omitempty"`
-		InitialScript *string                                                           `json:"initialScript,omitempty"`
-		MemoryLimit   *PatchWorkspaceConfigurationsId200JSONResponse_Config_MemoryLimit `json:"memory_limit,omitempty"`
-		Nix           *map[string]interface{}                                           `json:"nix,omitempty"`
-		Platform      *PatchWorkspaceConfigurationsId200JSONResponseConfigPlatform      `json:"platform,omitempty"`
-		TtlSeconds    *int                                                              `json:"ttlSeconds,omitempty"`
-		Volumes       *struct {
-			Enabled   *bool   `json:"enabled,omitempty"`
-			MountPath *string `json:"mountPath,omitempty"`
-		} `json:"volumes,omitempty"`
-	} `json:"config"`
-	CreatedAt   time.Time          `json:"createdAt"`
-	Description *string            `json:"description,omitempty"`
-	Id          openapi_types.UUID `json:"id"`
-	Title       *string            `json:"title,omitempty"`
-	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
-}
+type PatchWorkspaceConfigurationsId200JSONResponse WorkspaceConfiguration
 
 func (response PatchWorkspaceConfigurationsId200JSONResponse) VisitPatchWorkspaceConfigurationsIdResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -3090,13 +2624,7 @@ func (response PatchWorkspaceConfigurationsId200JSONResponse) VisitPatchWorkspac
 }
 
 type PatchWorkspaceConfigurationsIddefaultApplicationProblemPlusJSONResponse struct {
-	Body struct {
-		Detail   *string `json:"detail,omitempty"`
-		Instance *string `json:"instance,omitempty"`
-		Status   int     `json:"status"`
-		Title    string  `json:"title"`
-		Type     *string `json:"type,omitempty"`
-	}
+	Body       Problem
 	StatusCode int
 }
 
@@ -3282,7 +2810,7 @@ func (sh *strictHandler) PostAgents(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteAgentsId operation middleware
-func (sh *strictHandler) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteAgentsIdRequestObject
 
 	request.Id = id
@@ -3308,7 +2836,7 @@ func (sh *strictHandler) DeleteAgentsId(w http.ResponseWriter, r *http.Request, 
 }
 
 // GetAgentsId operation middleware
-func (sh *strictHandler) GetAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request GetAgentsIdRequestObject
 
 	request.Id = id
@@ -3334,7 +2862,7 @@ func (sh *strictHandler) GetAgentsId(w http.ResponseWriter, r *http.Request, id 
 }
 
 // PatchAgentsId operation middleware
-func (sh *strictHandler) PatchAgentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) PatchAgentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request PatchAgentsIdRequestObject
 
 	request.Id = id
@@ -3424,7 +2952,7 @@ func (sh *strictHandler) PostAttachments(w http.ResponseWriter, r *http.Request)
 }
 
 // DeleteAttachmentsId operation middleware
-func (sh *strictHandler) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteAttachmentsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteAttachmentsIdRequestObject
 
 	request.Id = id
@@ -3507,7 +3035,7 @@ func (sh *strictHandler) PostMcpServers(w http.ResponseWriter, r *http.Request) 
 }
 
 // DeleteMcpServersId operation middleware
-func (sh *strictHandler) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteMcpServersIdRequestObject
 
 	request.Id = id
@@ -3533,7 +3061,7 @@ func (sh *strictHandler) DeleteMcpServersId(w http.ResponseWriter, r *http.Reque
 }
 
 // GetMcpServersId operation middleware
-func (sh *strictHandler) GetMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request GetMcpServersIdRequestObject
 
 	request.Id = id
@@ -3559,7 +3087,7 @@ func (sh *strictHandler) GetMcpServersId(w http.ResponseWriter, r *http.Request,
 }
 
 // PatchMcpServersId operation middleware
-func (sh *strictHandler) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) PatchMcpServersId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request PatchMcpServersIdRequestObject
 
 	request.Id = id
@@ -3649,7 +3177,7 @@ func (sh *strictHandler) PostMemoryBuckets(w http.ResponseWriter, r *http.Reques
 }
 
 // DeleteMemoryBucketsId operation middleware
-func (sh *strictHandler) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteMemoryBucketsIdRequestObject
 
 	request.Id = id
@@ -3675,7 +3203,7 @@ func (sh *strictHandler) DeleteMemoryBucketsId(w http.ResponseWriter, r *http.Re
 }
 
 // GetMemoryBucketsId operation middleware
-func (sh *strictHandler) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request GetMemoryBucketsIdRequestObject
 
 	request.Id = id
@@ -3701,7 +3229,7 @@ func (sh *strictHandler) GetMemoryBucketsId(w http.ResponseWriter, r *http.Reque
 }
 
 // PatchMemoryBucketsId operation middleware
-func (sh *strictHandler) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) PatchMemoryBucketsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request PatchMemoryBucketsIdRequestObject
 
 	request.Id = id
@@ -3791,7 +3319,7 @@ func (sh *strictHandler) PostTools(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteToolsId operation middleware
-func (sh *strictHandler) DeleteToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteToolsIdRequestObject
 
 	request.Id = id
@@ -3817,7 +3345,7 @@ func (sh *strictHandler) DeleteToolsId(w http.ResponseWriter, r *http.Request, i
 }
 
 // GetToolsId operation middleware
-func (sh *strictHandler) GetToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request GetToolsIdRequestObject
 
 	request.Id = id
@@ -3843,7 +3371,7 @@ func (sh *strictHandler) GetToolsId(w http.ResponseWriter, r *http.Request, id o
 }
 
 // PatchToolsId operation middleware
-func (sh *strictHandler) PatchToolsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) PatchToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request PatchToolsIdRequestObject
 
 	request.Id = id
@@ -3933,7 +3461,7 @@ func (sh *strictHandler) PostWorkspaceConfigurations(w http.ResponseWriter, r *h
 }
 
 // DeleteWorkspaceConfigurationsId operation middleware
-func (sh *strictHandler) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request DeleteWorkspaceConfigurationsIdRequestObject
 
 	request.Id = id
@@ -3959,7 +3487,7 @@ func (sh *strictHandler) DeleteWorkspaceConfigurationsId(w http.ResponseWriter, 
 }
 
 // GetWorkspaceConfigurationsId operation middleware
-func (sh *strictHandler) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request GetWorkspaceConfigurationsIdRequestObject
 
 	request.Id = id
@@ -3985,7 +3513,7 @@ func (sh *strictHandler) GetWorkspaceConfigurationsId(w http.ResponseWriter, r *
 }
 
 // PatchWorkspaceConfigurationsId operation middleware
-func (sh *strictHandler) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id openapi_types.UUID) {
+func (sh *strictHandler) PatchWorkspaceConfigurationsId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	var request PatchWorkspaceConfigurationsIdRequestObject
 
 	request.Id = id
