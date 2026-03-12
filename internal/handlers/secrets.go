@@ -2,10 +2,7 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strings"
@@ -429,8 +426,16 @@ func parseProviderConfig(payload *secretProviderConfigRequest, required bool) (*
 }
 
 func writeSecretsGRPCError(w http.ResponseWriter, err error) {
+	if err == nil {
+		problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), "upstream request failed")
+		WriteProblem(w, problem)
+		return
+	}
+
 	problemErr := grpcErrorToProblem(err)
 	if problemErr == nil {
+		problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), "upstream request failed")
+		WriteProblem(w, problem)
 		return
 	}
 
@@ -442,37 +447,17 @@ func writeSecretsGRPCError(w http.ResponseWriter, err error) {
 }
 
 func decodeSecretsJSON(r *http.Request, out any) error {
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(out); err != nil {
-		if errors.Is(err, io.EOF) {
-			return fmt.Errorf("request body is required")
-		}
-		return err
-	}
-	if decoder.Decode(&struct{}{}) != io.EOF {
-		return fmt.Errorf("request body must contain a single JSON object")
-	}
-	return nil
+	return decodeJSONBody(r, out)
 }
 
 func writeSecretsBadRequest(w http.ResponseWriter, err error) {
-	message := strings.TrimSpace(err.Error())
-	if message == "" {
-		message = "invalid request"
-	}
-	writeSecretsValidationMessage(w, message)
+	writeBadRequest(w, err)
 }
 
 func writeSecretsValidationMessage(w http.ResponseWriter, message string) {
-	problem := NewProblem(http.StatusBadRequest, http.StatusText(http.StatusBadRequest), message)
-	WriteProblem(w, problem)
+	writeValidationMessage(w, message)
 }
 
 func writeSecretsJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		log.Printf("failed to encode secrets response: %v", err)
-	}
+	writeJSONResponse(w, status, payload, "secrets")
 }

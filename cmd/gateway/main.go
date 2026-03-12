@@ -160,11 +160,11 @@ func main() {
 
 		secretsHandler := handlers.NewSecretsHandler(secretsClient)
 		root.Route("/secrets/v1", func(r chi.Router) {
-			r.Post("/providers", secretsHandler.CreateProvider)
-			r.Get("/providers", secretsHandler.ListProviders)
-			r.Get("/providers/{providerId}", secretsHandler.GetProvider)
-			r.Patch("/providers/{providerId}", secretsHandler.UpdateProvider)
-			r.Delete("/providers/{providerId}", secretsHandler.DeleteProvider)
+			r.Post("/secret-providers", secretsHandler.CreateProvider)
+			r.Get("/secret-providers", secretsHandler.ListProviders)
+			r.Get("/secret-providers/{providerId}", secretsHandler.GetProvider)
+			r.Patch("/secret-providers/{providerId}", secretsHandler.UpdateProvider)
+			r.Delete("/secret-providers/{providerId}", secretsHandler.DeleteProvider)
 			r.Post("/secrets", secretsHandler.CreateSecret)
 			r.Get("/secrets", secretsHandler.ListSecrets)
 			r.Get("/secrets/{secretId}", secretsHandler.GetSecret)

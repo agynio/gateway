@@ -196,9 +196,6 @@ func (c *Client) ListProviders(ctx context.Context, pageSize int32, pageToken st
 		}
 		providers = append(providers, converted)
 	}
-	if providers == nil {
-		providers = []SecretProvider{}
-	}
 
 	return providers, resp.GetNextPageToken(), nil
 }
@@ -290,9 +287,6 @@ func (c *Client) ListSecrets(ctx context.Context, pageSize int32, pageToken, sec
 			return nil, "", err
 		}
 		secrets = append(secrets, converted)
-	}
-	if secrets == nil {
-		secrets = []Secret{}
 	}
 
 	return secrets, resp.GetNextPageToken(), nil
@@ -396,17 +390,22 @@ func providerConfigFromProto(config *secretsv1.SecretProviderConfig) (SecretProv
 		return SecretProviderConfig{}, fmt.Errorf("provider config is required")
 	}
 
-	vault := config.GetVault()
-	if vault == nil {
-		return SecretProviderConfig{}, fmt.Errorf("provider config is missing vault")
+	switch provider := config.GetProvider().(type) {
+	case *secretsv1.SecretProviderConfig_Vault:
+		if provider.Vault == nil {
+			return SecretProviderConfig{}, fmt.Errorf("provider config vault is required")
+		}
+		return SecretProviderConfig{
+			Vault: &VaultConfig{
+				Address: provider.Vault.GetAddress(),
+				Token:   provider.Vault.GetToken(),
+			},
+		}, nil
+	case nil:
+		return SecretProviderConfig{}, fmt.Errorf("provider config is empty")
+	default:
+		return SecretProviderConfig{}, fmt.Errorf("unsupported provider config type: %T", provider)
 	}
-
-	return SecretProviderConfig{
-		Vault: &VaultConfig{
-			Address: vault.GetAddress(),
-			Token:   vault.GetToken(),
-		},
-	}, nil
 }
 
 func toProtoProviderConfig(config SecretProviderConfig) (*secretsv1.SecretProviderConfig, error) {
