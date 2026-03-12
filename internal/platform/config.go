@@ -19,6 +19,7 @@ const (
 // Config holds the runtime configuration for communicating with the platform service.
 type Config struct {
 	BaseURL           *url.URL
+	TeamsGRPCTarget   string
 	FilesGRPCTarget   string
 	Timeout           time.Duration
 	Retries           int
@@ -41,6 +42,11 @@ func LoadConfigFromEnv() (*Config, error) {
 
 	if parsedURL.Scheme == "" || parsedURL.Host == "" {
 		return nil, fmt.Errorf("PLATFORM_BASE_URL must include scheme and host")
+	}
+
+	teamsGRPCTarget := strings.TrimSpace(os.Getenv("TEAMS_GRPC_TARGET"))
+	if teamsGRPCTarget == "" {
+		return nil, fmt.Errorf("TEAMS_GRPC_TARGET is required")
 	}
 
 	filesGRPCTarget := strings.TrimSpace(os.Getenv("FILES_GRPC_TARGET"))
@@ -89,6 +95,7 @@ func LoadConfigFromEnv() (*Config, error) {
 
 	return &Config{
 		BaseURL:           parsedURL,
+		TeamsGRPCTarget:   teamsGRPCTarget,
 		FilesGRPCTarget:   filesGRPCTarget,
 		Timeout:           timeout,
 		Retries:           retries,
