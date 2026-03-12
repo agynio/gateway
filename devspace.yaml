@@ -23,6 +23,9 @@ pipelines:
             runAsUser: 1000
             fsGroup: 1000
           initContainers: []
+          volumes:
+            - name: data
+              emptyDir: {}
           containers:
             - name: gateway
               image: ghcr.io/agynio/devcontainer-go:1
@@ -38,6 +41,9 @@ pipelines:
                     [ "$elapsed" -ge 120 ] && { echo "ERROR: sync timeout" >&2; exit 1; }
                   done
                   exec /opt/app/data/scripts/devspace-startup.sh
+              volumeMounts:
+                - name: data
+                  mountPath: /opt/app/data
               resources:
                 requests:
                   cpu: 500m
