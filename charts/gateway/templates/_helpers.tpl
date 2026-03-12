@@ -4,6 +4,9 @@
 {{- $baseURL := required "gateway.platformBaseUrl is required" (trimAll " \n\t" (default "" .Values.gateway.platformBaseUrl)) -}}
 {{- $env = append $env (dict "name" "PLATFORM_BASE_URL" "value" $baseURL) -}}
 
+{{- $teamsGrpcTarget := required "gateway.teamsGrpcTarget is required" (trimAll " \n\t" (default "" .Values.gateway.teamsGrpcTarget)) -}}
+{{- $env = append $env (dict "name" "TEAMS_GRPC_TARGET" "value" $teamsGrpcTarget) -}}
+
 {{- $filesGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.filesGrpcTarget) -}}
 {{- if $filesGrpcTarget }}
 {{- $env = append $env (dict "name" "FILES_GRPC_TARGET" "value" $filesGrpcTarget) -}}
