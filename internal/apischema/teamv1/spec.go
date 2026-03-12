@@ -1,10 +1,9 @@
 package teamv1
 
-import "embed"
+import _ "embed"
 
-// SpecFS bundles the canonical Team API specification copied from
-// github.com/agynio/api during go:generate. Handlers rely on this
-// read-only filesystem to load schemas for runtime validation.
+// Spec holds the bundled Team API v1 OpenAPI specification (single YAML file,
+// all $refs resolved). Pulled from ghcr.io/agynio/openapi/team:1.
 //
-//go:embed openapi.yaml components/**/*.yaml paths/*.yaml
-var SpecFS embed.FS
+//go:embed team-v1.yaml
+var Spec []byte

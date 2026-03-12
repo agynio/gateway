@@ -238,7 +238,7 @@ func assertProblemResponse(t *testing.T, response *httptest.ResponseRecorder, st
 	if err := json.NewDecoder(result.Body).Decode(&problem); err != nil {
 		t.Fatalf("decode problem: %v", err)
 	}
-	if problem.Status != int32(statusCode) {
+	if problem.Status != statusCode {
 		t.Fatalf("unexpected problem status: got %d want %d", problem.Status, statusCode)
 	}
 	if detail != "" {

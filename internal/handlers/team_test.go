@@ -598,7 +598,7 @@ func TestTeamPostTools(t *testing.T) {
 
 	resp, err := h.PostTools(context.Background(), gen.PostToolsRequestObject{
 		Body: &gen.PostToolsJSONRequestBody{
-			Type:        gen.PostToolsJSONBodyType("manage"),
+			Type:        gen.ToolType("manage"),
 			Name:        ptr("Runner"),
 			Description: ptr("Plan executor"),
 			Config: &map[string]interface{}{
@@ -876,7 +876,7 @@ func TestTeamPostAttachments(t *testing.T) {
 
 	resp, err := h.PostAttachments(context.Background(), gen.PostAttachmentsRequestObject{
 		Body: &gen.PostAttachmentsJSONRequestBody{
-			Kind:     gen.PostAttachmentsJSONBodyKindAgentTool,
+			Kind:     gen.AgentTool,
 			SourceId: agentID,
 			TargetId: toolID,
 		},
@@ -892,10 +892,10 @@ func TestTeamPostAttachments(t *testing.T) {
 	if string(created.Kind) != "agent_tool" {
 		t.Fatalf("unexpected kind: %s", created.Kind)
 	}
-	if created.SourceType != gen.PostAttachments201JSONResponseSourceType("agent") {
+	if created.SourceType != gen.EntityTypeAgent {
 		t.Fatalf("unexpected source type: %s", created.SourceType)
 	}
-	if created.TargetType != gen.PostAttachments201JSONResponseTargetType("tool") {
+	if created.TargetType != gen.EntityTypeTool {
 		t.Fatalf("unexpected target type: %s", created.TargetType)
 	}
 	if created.CreatedAt.IsZero() {
@@ -968,7 +968,7 @@ func TestTeamPostAttachmentsMcpServerWorkspaceConfiguration(t *testing.T) {
 
 	resp, err := h.PostAttachments(context.Background(), gen.PostAttachmentsRequestObject{
 		Body: &gen.PostAttachmentsJSONRequestBody{
-			Kind:     gen.PostAttachmentsJSONBodyKindMcpServerWorkspaceConfiguration,
+			Kind:     gen.McpServerWorkspaceConfiguration,
 			SourceId: mcpServerID,
 			TargetId: workspaceID,
 		},
@@ -984,10 +984,10 @@ func TestTeamPostAttachmentsMcpServerWorkspaceConfiguration(t *testing.T) {
 	if string(created.Kind) != "mcpServer_workspaceConfiguration" {
 		t.Fatalf("unexpected kind: %s", created.Kind)
 	}
-	if created.SourceType != gen.PostAttachments201JSONResponseSourceType("mcpServer") {
+	if created.SourceType != gen.EntityTypeMcpServer {
 		t.Fatalf("unexpected source type: %s", created.SourceType)
 	}
-	if created.TargetType != gen.PostAttachments201JSONResponseTargetType("workspaceConfiguration") {
+	if created.TargetType != gen.EntityTypeWorkspaceConfiguration {
 		t.Fatalf("unexpected target type: %s", created.TargetType)
 	}
 	if created.CreatedAt.IsZero() {
@@ -1227,24 +1227,7 @@ func TestTeamPatchMcpServers(t *testing.T) {
 	})
 
 	h := NewTeam(stub)
-	config := struct {
-		Command *string `json:"command,omitempty"`
-		Env     *[]struct {
-			Name  string `json:"name"`
-			Value string `json:"value"`
-		} `json:"env,omitempty"`
-		HeartbeatIntervalMs *int    `json:"heartbeatIntervalMs,omitempty"`
-		Namespace           *string `json:"namespace,omitempty"`
-		RequestTimeoutMs    *int    `json:"requestTimeoutMs,omitempty"`
-		Restart             *struct {
-			BackoffMs   *int `json:"backoffMs,omitempty"`
-			MaxAttempts *int `json:"maxAttempts,omitempty"`
-		} `json:"restart,omitempty"`
-		StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-		StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-		Workdir          *string `json:"workdir,omitempty"`
-	}{}
-	config.Command = ptr("./start")
+	config := gen.McpServerConfig{Command: ptr("./start")}
 	body := gen.PatchMcpServersIdJSONRequestBody{Title: ptr("Updated"), Config: &config}
 	resp, err := h.PatchMcpServersId(context.Background(), gen.PatchMcpServersIdRequestObject{
 		Id:   serverID,
@@ -1411,10 +1394,7 @@ func TestTeamPostMemoryBuckets(t *testing.T) {
 		Body: &gen.PostMemoryBucketsJSONRequestBody{
 			Title:       ptr("User State"),
 			Description: ptr("Stores user preferences"),
-			Config: struct {
-				CollectionPrefix *string                                   `json:"collectionPrefix,omitempty"`
-				Scope            *gen.PostMemoryBucketsJSONBodyConfigScope `json:"scope,omitempty"`
-			}{
+			Config: gen.MemoryBucketConfig{
 				CollectionPrefix: ptr("users"),
 			},
 		},
@@ -1479,10 +1459,7 @@ func TestTeamPatchMemoryBuckets(t *testing.T) {
 	resp, err := h.PatchMemoryBucketsId(context.Background(), gen.PatchMemoryBucketsIdRequestObject{
 		Id: bucketID,
 		Body: &gen.PatchMemoryBucketsIdJSONRequestBody{
-			Config: &struct {
-				CollectionPrefix *string                                      `json:"collectionPrefix,omitempty"`
-				Scope            *gen.PatchMemoryBucketsIdJSONBodyConfigScope `json:"scope,omitempty"`
-			}{
+			Config: &gen.MemoryBucketConfig{
 				CollectionPrefix: ptr("sessions"),
 			},
 		},

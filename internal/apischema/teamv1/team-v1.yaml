@@ -1,0 +1,1167 @@
+openapi: 3.0.3
+info:
+  title: Team Management API
+  version: 0.1.0
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Agents
+  - name: Tools
+  - name: MCP Servers
+  - name: WorkspaceConfigurations
+  - name: MemoryBuckets
+  - name: Attachments
+paths:
+  /agents:
+    get:
+      tags:
+        - Agents
+      summary: List agents
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Free-text search (name/role).
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAgents'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - Agents
+      summary: Create agent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /agents/{id}:
+    get:
+      tags:
+        - Agents
+      summary: Get agent by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - Agents
+      summary: Update agent (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - Agents
+      summary: Delete agent
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /tools:
+    get:
+      tags:
+        - Tools
+      summary: List tools
+      parameters:
+        - in: query
+          name: type
+          schema:
+            $ref: '#/components/schemas/ToolType'
+          description: Filter by tool type
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTools'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - Tools
+      summary: Create tool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /tools/{id}:
+    get:
+      tags:
+        - Tools
+      summary: Get tool by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - Tools
+      summary: Update tool (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ToolUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tool'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - Tools
+      summary: Delete tool
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /mcp-servers:
+    get:
+      tags:
+        - MCP Servers
+      summary: List MCP servers
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMcpServers'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - MCP Servers
+      summary: Create MCP server
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpServerCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /mcp-servers/{id}:
+    get:
+      tags:
+        - MCP Servers
+      summary: Get MCP server by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - MCP Servers
+      summary: Update MCP server (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/McpServerUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpServer'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - MCP Servers
+      summary: Delete MCP server
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /workspace-configurations:
+    get:
+      tags:
+        - WorkspaceConfigurations
+      summary: List workspace configurations
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedWorkspaceConfigurations'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - WorkspaceConfigurations
+      summary: Create workspace configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceConfigurationCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceConfiguration'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /workspace-configurations/{id}:
+    get:
+      tags:
+        - WorkspaceConfigurations
+      summary: Get workspace configuration by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceConfiguration'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - WorkspaceConfigurations
+      summary: Update workspace configuration (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceConfigurationUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceConfiguration'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - WorkspaceConfigurations
+      summary: Delete workspace configuration
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /memory-buckets:
+    get:
+      tags:
+        - MemoryBuckets
+      summary: List memory buckets
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMemoryBuckets'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - MemoryBuckets
+      summary: Create memory bucket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryBucketCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryBucket'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /memory-buckets/{id}:
+    get:
+      tags:
+        - MemoryBuckets
+      summary: Get memory bucket by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryBucket'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - MemoryBuckets
+      summary: Update memory bucket (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemoryBucketUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemoryBucket'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - MemoryBuckets
+      summary: Delete memory bucket
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /attachments:
+    get:
+      tags:
+        - Attachments
+      summary: List attachments
+      parameters:
+        - in: query
+          name: sourceType
+          schema:
+            $ref: '#/components/schemas/EntityType'
+        - in: query
+          name: sourceId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: targetType
+          schema:
+            $ref: '#/components/schemas/EntityType'
+        - in: query
+          name: targetId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: kind
+          schema:
+            $ref: '#/components/schemas/AttachmentKind'
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAttachments'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - Attachments
+      summary: Create attachment (relation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /attachments/{id}:
+    delete:
+      tags:
+        - Attachments
+      summary: Delete attachment
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+components:
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    ProblemResponse:
+      description: RFC 7807 problem response
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+      required:
+        - title
+        - status
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        perPage:
+          type: integer
+          minimum: 1
+        total:
+          type: integer
+          minimum: 0
+      required:
+        - page
+        - perPage
+        - total
+    EntityMeta:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - createdAt
+    Agent:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            config:
+              $ref: '#/components/schemas/AgentConfig'
+          required:
+            - config
+    AgentConfig:
+      type: object
+      properties:
+        model:
+          type: string
+          default: gpt-5
+        systemPrompt:
+          type: string
+          default: You are a helpful AI assistant.
+        debounceMs:
+          type: integer
+          minimum: 0
+          default: 0
+        whenBusy:
+          type: string
+          enum:
+            - wait
+            - injectAfterTools
+          default: wait
+        processBuffer:
+          type: string
+          enum:
+            - allTogether
+            - oneByOne
+          default: allTogether
+        sendFinalResponseToThread:
+          type: boolean
+          default: true
+        summarizationKeepTokens:
+          type: integer
+          minimum: 0
+          default: 0
+        summarizationMaxTokens:
+          type: integer
+          minimum: 1
+          default: 512
+        restrictOutput:
+          type: boolean
+          default: false
+        restrictionMessage:
+          type: string
+          default: Do not produce a final answer directly. Before finishing, call a tool. If no tool is needed, call the 'finish' tool.
+        restrictionMaxInjections:
+          type: integer
+          minimum: 0
+          default: 0
+        name:
+          type: string
+        role:
+          type: string
+      additionalProperties: false
+    AgentCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/AgentConfig'
+      required:
+        - config
+    AgentUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/AgentConfig'
+      additionalProperties: false
+    PaginatedAgents:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Agent'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
+    Tool:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            type:
+              $ref: '#/components/schemas/ToolType'
+            name:
+              type: string
+            description:
+              type: string
+            config:
+              type: object
+          required:
+            - type
+    ToolType:
+      type: string
+      enum:
+        - manage
+        - memory
+        - shell_command
+        - send_message
+        - send_slack_message
+        - remind_me
+        - github_clone_repo
+        - call_agent
+    ToolCreateRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ToolType'
+        name:
+          type: string
+        description:
+          type: string
+        config:
+          type: object
+      required:
+        - type
+    ToolUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        config:
+          type: object
+      additionalProperties: false
+    PaginatedTools:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tool'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
+    McpServer:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            config:
+              $ref: '#/components/schemas/McpServerConfig'
+          required:
+            - config
+    McpEnvItem:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+      required:
+        - name
+        - value
+    McpServerConfig:
+      type: object
+      properties:
+        namespace:
+          type: string
+        command:
+          type: string
+        workdir:
+          type: string
+        env:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpEnvItem'
+        requestTimeoutMs:
+          type: integer
+          minimum: 1
+        startupTimeoutMs:
+          type: integer
+          minimum: 1
+        heartbeatIntervalMs:
+          type: integer
+          minimum: 1
+        staleTimeoutMs:
+          type: integer
+          minimum: 0
+        restart:
+          type: object
+          properties:
+            maxAttempts:
+              type: integer
+              minimum: 1
+              default: 5
+            backoffMs:
+              type: integer
+              minimum: 1
+              default: 2000
+          additionalProperties: false
+      additionalProperties: false
+    McpServerCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/McpServerConfig'
+      required:
+        - config
+    McpServerUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/McpServerConfig'
+      additionalProperties: false
+    PaginatedMcpServers:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpServer'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
+    WorkspaceConfiguration:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            config:
+              $ref: '#/components/schemas/WorkspaceConfig'
+          required:
+            - config
+    WorkspaceEnvItem:
+      type: object
+      properties:
+        name:
+          type: string
+        value:
+          type: string
+      required:
+        - name
+        - value
+    WorkspaceVolumeConfig:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          default: false
+        mountPath:
+          type: string
+          pattern: ^/
+      additionalProperties: false
+    WorkspacePlatform:
+      type: string
+      enum:
+        - linux/amd64
+        - linux/arm64
+        - auto
+    WorkspaceConfig:
+      type: object
+      properties:
+        image:
+          type: string
+        env:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceEnvItem'
+        initialScript:
+          type: string
+        cpu_limit:
+          oneOf:
+            - type: number
+            - type: string
+        memory_limit:
+          oneOf:
+            - type: number
+            - type: string
+        platform:
+          $ref: '#/components/schemas/WorkspacePlatform'
+        enableDinD:
+          type: boolean
+          default: false
+        ttlSeconds:
+          type: integer
+          minimum: 0
+          default: 86400
+        nix:
+          type: object
+        volumes:
+          $ref: '#/components/schemas/WorkspaceVolumeConfig'
+      additionalProperties: false
+    WorkspaceConfigurationCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/WorkspaceConfig'
+      required:
+        - config
+    WorkspaceConfigurationUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/WorkspaceConfig'
+      additionalProperties: false
+    PaginatedWorkspaceConfigurations:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceConfiguration'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
+    MemoryBucket:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            title:
+              type: string
+            description:
+              type: string
+            config:
+              $ref: '#/components/schemas/MemoryBucketConfig'
+          required:
+            - config
+    MemoryBucketConfig:
+      type: object
+      properties:
+        scope:
+          type: string
+          enum:
+            - global
+            - perThread
+          default: global
+        collectionPrefix:
+          type: string
+      additionalProperties: false
+    MemoryBucketCreateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/MemoryBucketConfig'
+      required:
+        - config
+    MemoryBucketUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        config:
+          $ref: '#/components/schemas/MemoryBucketConfig'
+      additionalProperties: false
+    PaginatedMemoryBuckets:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MemoryBucket'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
+    EntityType:
+      type: string
+      enum:
+        - agent
+        - tool
+        - mcpServer
+        - workspaceConfiguration
+        - memoryBucket
+    AttachmentKind:
+      type: string
+      description: Relation type between entities
+      enum:
+        - agent_tool
+        - agent_memoryBucket
+        - agent_workspaceConfiguration
+        - agent_mcpServer
+        - mcpServer_workspaceConfiguration
+    Attachment:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            kind:
+              $ref: '#/components/schemas/AttachmentKind'
+            sourceType:
+              $ref: '#/components/schemas/EntityType'
+            sourceId:
+              type: string
+              format: uuid
+            targetType:
+              $ref: '#/components/schemas/EntityType'
+            targetId:
+              type: string
+              format: uuid
+          required:
+            - kind
+            - sourceType
+            - sourceId
+            - targetType
+            - targetId
+    AttachmentCreateRequest:
+      type: object
+      description: |
+        Create an attachment (relation) between two entities using a predefined `kind`.
+        Source/target types are implied by `kind` and validated by the backend; do not include them to avoid duplication.
+      properties:
+        kind:
+          $ref: '#/components/schemas/AttachmentKind'
+        sourceId:
+          type: string
+          format: uuid
+        targetId:
+          type: string
+          format: uuid
+      required:
+        - kind
+        - sourceId
+        - targetId
+    PaginatedAttachments:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total

@@ -2,6 +2,7 @@
 .github
 charts
 dist
+.openapi
 *.log
 node_modules
 tmp

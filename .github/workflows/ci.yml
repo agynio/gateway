@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     env:
       GO111MODULE: on
     steps:
@@ -33,6 +36,23 @@ jobs:
           go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.0
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      - name: Install ORAS
+        env:
+          ORAS_VERSION: '1.1.0'
+        run: |
+          curl -fsSL -o oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
+          tar -xzf oras.tar.gz oras
+          sudo mv oras /usr/local/bin/oras
+          rm oras.tar.gz
+          oras version
+
+      - name: Pull OpenAPI spec from GHCR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GH_TOKEN}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+          bash scripts/pull-spec.sh
+
       - name: Set up Buf
         uses: bufbuild/buf-setup-action@v1
 
@@ -40,32 +60,34 @@ jobs:
         run: buf generate buf.build/agynio/api --path agynio/api/files/v1
 
       - name: Spectral lint
-        run: spectral lint spec/openapi.yaml
+        run: spectral lint .openapi/team-v1.yaml
 
-      - name: oasdiff breaking-change gate (bundled)
+      - name: oasdiff breaking-change gate
         run: |
           set -euo pipefail
-          git fetch origin main --depth=1 || true
           mkdir -p dist
-          BASE_DIR="$(mktemp -d)"
-          if git rev-parse --verify origin/main >/dev/null 2>&1 && git cat-file -e origin/main:spec/openapi.yaml 2>/dev/null; then
-            # Extract the entire spec directory from origin/main so $refs resolve
-            git archive --format=tar origin/main spec | tar -x -C "$BASE_DIR"
-            redocly bundle "$BASE_DIR/spec/openapi.yaml" -o dist/base.yaml
+          git fetch origin main --depth=1 || true
+          if git rev-parse --verify origin/main >/dev/null 2>&1 \
+             && git cat-file -e origin/main:internal/apischema/teamv1/team-v1.yaml 2>/dev/null; then
+            git show origin/main:internal/apischema/teamv1/team-v1.yaml > dist/base.yaml
           else
-            redocly bundle spec/openapi.yaml -o dist/base.yaml
+            cp .openapi/team-v1.yaml dist/base.yaml
           fi
-          # Bundle current HEAD spec
-          redocly bundle spec/openapi.yaml -o dist/head.yaml
-          # Run breaking-change diff on bundled specs
+          cp .openapi/team-v1.yaml dist/head.yaml
           oasdiff breaking --fail-on ERR dist/base.yaml dist/head.yaml
 
       - name: Verify generated code
         run: |
           set -euo pipefail
-          oapi-codegen --config oapi-codegen.server.yaml spec/openapi.yaml
+          oapi-codegen --config oapi-codegen.server.yaml .openapi/team-v1.yaml
           gofmt -w internal/gen/server.gen.go
           git diff --exit-code internal/gen/server.gen.go
+
+      - name: Verify embedded spec matches GHCR
+        run: |
+          set -euo pipefail
+          bash scripts/sync-embedded-spec.sh
+          git diff --exit-code internal/apischema/teamv1/team-v1.yaml
 
       - name: Go vet
         run: go vet ./...
@@ -77,7 +99,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist
-          redocly build-docs spec/openapi.yaml --output dist/redoc.html
+          redocly build-docs .openapi/team-v1.yaml --output dist/redoc.html
 
       - name: Upload Redoc artifact
         uses: actions/upload-artifact@v4

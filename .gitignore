@@ -1,6 +1,7 @@
 .venv/
 .hypothesis/
 dist/
+.openapi/
 gateway.log
 gateway.pid
 gen/

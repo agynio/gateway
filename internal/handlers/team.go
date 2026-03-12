@@ -244,7 +244,7 @@ func (t *Team) handleAgentError(err error) error {
 			title = http.StatusText(http.StatusBadGateway)
 		}
 		detail := strings.TrimSpace(agentErr.detail)
-		problem := NewProblem(status, title, detail, nil)
+		problem := NewProblem(status, title, detail)
 		return NewProblemError(problem, agentErr)
 	}
 
@@ -267,7 +267,7 @@ func (t *Team) handleResourceError(err error) error {
 			title = http.StatusText(http.StatusBadGateway)
 		}
 		detail := strings.TrimSpace(resErr.detail)
-		problem := NewProblem(status, title, detail, nil)
+		problem := NewProblem(status, title, detail)
 		return NewProblemError(problem, resErr)
 	}
 
@@ -280,14 +280,14 @@ func (t *Team) resourceValidationError(resource string, err error) error {
 		detail = "response validation failed"
 	}
 	title := fmt.Sprintf("%s response validation failed", titleCase(resource))
-	problem := NewProblem(http.StatusInternalServerError, title, detail, nil)
+	problem := NewProblem(http.StatusInternalServerError, title, detail)
 	return NewProblemError(problem, err)
 }
 
 func (t *Team) resourceSerializationError(resource string, err error) error {
 	title := fmt.Sprintf("%s serialization failed", titleCase(resource))
 	detail := fmt.Sprintf("failed to serialize %s payload", resource)
-	problem := NewProblem(http.StatusInternalServerError, title, detail, nil)
+	problem := NewProblem(http.StatusInternalServerError, title, detail)
 	return NewProblemError(problem, err)
 }
 
@@ -296,12 +296,12 @@ func (t *Team) agentValidationError(err error) error {
 	if detail == "" {
 		detail = "response validation failed"
 	}
-	problem := NewProblem(http.StatusInternalServerError, "Response validation failed", detail, nil)
+	problem := NewProblem(http.StatusInternalServerError, "Response validation failed", detail)
 	return NewProblemError(problem, err)
 }
 
 func (t *Team) agentSerializationError(err error) error {
-	problem := NewProblem(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "failed to serialize agent payload", nil)
+	problem := NewProblem(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError), "failed to serialize agent payload")
 	return NewProblemError(problem, err)
 }
 
@@ -1392,26 +1392,8 @@ func (v *agentValidator) validate(schema *openapi3.SchemaRef, value any) error {
 }
 
 func loadTeamSpec() (*openapi3.T, error) {
-	data, err := teamv1schema.SpecFS.ReadFile("openapi.yaml")
-	if err != nil {
-		return nil, fmt.Errorf("load embedded spec: %w", err)
-	}
 	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
-	loader.ReadFromURIFunc = func(_ *openapi3.Loader, location *url.URL) ([]byte, error) {
-		path := location.Path
-		if path == "" {
-			path = location.String()
-		}
-		path = strings.TrimPrefix(path, "file://")
-		path = strings.TrimPrefix(path, "/")
-		if path == "" {
-			path = "openapi.yaml"
-		}
-		return teamv1schema.SpecFS.ReadFile(path)
-	}
-	base := &url.URL{Path: "openapi.yaml"}
-	return loader.LoadFromDataWithPath(data, base)
+	return loader.LoadFromData(teamv1schema.Spec)
 }
 
 func normalizeForValidation(value any) (any, error) {
@@ -1524,9 +1506,6 @@ func (t *Team) GetMcpServers(ctx context.Context, request gen.GetMcpServersReque
 	params := mcpServerListParams{
 		Page:    1,
 		PerPage: 20,
-	}
-	if request.Params.Q != nil {
-		params.Query = strings.TrimSpace(*request.Params.Q)
 	}
 	if request.Params.Page != nil {
 		params.Page = *request.Params.Page
@@ -1670,9 +1649,6 @@ func (t *Team) GetMemoryBuckets(ctx context.Context, request gen.GetMemoryBucket
 		Page:    1,
 		PerPage: 20,
 	}
-	if request.Params.Q != nil {
-		params.Query = strings.TrimSpace(*request.Params.Q)
-	}
 	if request.Params.Page != nil {
 		params.Page = *request.Params.Page
 	}
@@ -1814,9 +1790,6 @@ func (t *Team) GetTools(ctx context.Context, request gen.GetToolsRequestObject) 
 	params := toolListParams{
 		Page:    1,
 		PerPage: 20,
-	}
-	if request.Params.Q != nil {
-		params.Query = strings.TrimSpace(*request.Params.Q)
 	}
 	if request.Params.Type != nil {
 		params.Type = string(*request.Params.Type)
@@ -1960,9 +1933,6 @@ func (t *Team) GetWorkspaceConfigurations(ctx context.Context, request gen.GetWo
 	params := workspaceListParams{
 		Page:    1,
 		PerPage: 20,
-	}
-	if request.Params.Q != nil {
-		params.Query = strings.TrimSpace(*request.Params.Q)
 	}
 	if request.Params.Page != nil {
 		params.Page = *request.Params.Page
@@ -2113,7 +2083,7 @@ func (t *Team) wrapError(err error) error {
 	}
 
 	detail := strings.TrimSpace(err.Error())
-	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), detail, nil)
+	problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), detail)
 	return NewProblemError(problem, err)
 }
 
@@ -2132,7 +2102,7 @@ func problemFromPlatform(err *platform.Error) gen.Problem {
 		if title == "" {
 			title = http.StatusText(http.StatusBadGateway)
 		}
-		return NewProblem(status, title, detail, nil)
+		return NewProblem(status, title, detail)
 	}
 
 	upstream := err.Problem
@@ -2146,13 +2116,13 @@ func problemFromPlatform(err *platform.Error) gen.Problem {
 	}
 
 	problem := gen.Problem{
-		Status: int32(status),
+		Status: status,
 		Title:  title,
-		Type:   typ,
+		Type:   ptr(typ),
 	}
 
 	if upstream.Status > 0 {
-		problem.Status = int32(upstream.Status)
+		problem.Status = upstream.Status
 	}
 
 	if upstream.Detail != nil {
@@ -2167,14 +2137,6 @@ func problemFromPlatform(err *platform.Error) gen.Problem {
 		if trimmed != "" {
 			problem.Instance = ptr(trimmed)
 		}
-	}
-
-	if len(upstream.Errors) > 0 {
-		copied := make(map[string][]string, len(upstream.Errors))
-		for key, values := range upstream.Errors {
-			copied[key] = append([]string(nil), values...)
-		}
-		problem.Errors = &copied
 	}
 
 	return problem

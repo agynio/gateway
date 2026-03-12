@@ -4,7 +4,7 @@ Schema-first HTTP gateway built on Go 1.22 with OpenAPI-driven request and respo
 
 ## Specification
 
-The OpenAPI 3.0 definition lives in [`spec/openapi.yaml`](spec/openapi.yaml). Generated server stubs and models are located under [`internal/gen`](internal/gen).
+The Team API OpenAPI 3.0 definition is bundled as [`internal/apischema/teamv1/team-v1.yaml`](internal/apischema/teamv1/team-v1.yaml) and pulled from `ghcr.io/agynio/openapi/team:1`. Use `scripts/pull-spec.sh` to fetch the latest spec into `.openapi/team-v1.yaml`, then run `scripts/sync-embedded-spec.sh` to update the embedded copy. Generated server stubs and models are located under [`internal/gen`](internal/gen).
 
 ## Prerequisites
 
@@ -62,18 +62,20 @@ Additional timeouts, retry counts, request headers, and response validation flag
 Regenerate the typed models and Chi server whenever the OpenAPI document changes:
 
 ```bash
-oapi-codegen --config oapi-codegen.server.yaml spec/openapi.yaml
+bash scripts/pull-spec.sh
+oapi-codegen --config oapi-codegen.server.yaml .openapi/team-v1.yaml
 gofmt -w internal/gen/server.gen.go
+bash scripts/sync-embedded-spec.sh
 ```
 
 Run the full local test suite (mirrors CI):
 
 ```bash
-spectral lint spec/openapi.yaml
-oasdiff breaking --fail-on ERR spec/openapi.yaml spec/openapi.yaml
+spectral lint .openapi/team-v1.yaml
+oasdiff breaking --fail-on ERR .openapi/team-v1.yaml .openapi/team-v1.yaml
 go test ./...
 go vet ./...
-schemathesis run --url=http://localhost:8080 spec/openapi.yaml
+schemathesis run --url=http://localhost:8080 .openapi/team-v1.yaml
 ```
 
 ## Continuous Integration
