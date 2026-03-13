@@ -72,37 +72,31 @@ pipelines:
         start_dev --disable-pod-replace gateway
       else
         echo "Waiting for gateway to be healthy on :8080..."
+        healthy=false
         for i in $(seq 1 60); do
           if kubectl exec deployment/gateway-gateway -n ${GATEWAY_NAMESPACE} -c gateway -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1' 2>/dev/null; then
             echo "Gateway is healthy on :8080."
+            healthy=true
             break
           fi
           sleep 2
         done
-        if kubectl get application gateway -n argocd >/dev/null 2>&1; then
-          echo "Re-enabling ArgoCD auto-sync for gateway..."
-          kubectl patch application gateway -n argocd \
-            --type merge \
-            -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-          echo "ArgoCD auto-sync restored."
+        if [ "$healthy" != "true" ]; then
+          echo "ERROR: Gateway did not become healthy within 120s" >&2
+          exit 1
         fi
+        bash scripts/argocd-restore.sh
       fi
 
 hooks:
   - name: restore-argocd-auto-sync
     events:
       - after:dev:gateway
-    command: sh
+    command: bash
     args:
       - -c
       - |
-        if kubectl get application gateway -n argocd >/dev/null 2>&1; then
-          echo "Re-enabling ArgoCD auto-sync for gateway..."
-          kubectl patch application gateway -n argocd \
-            --type merge \
-            -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-          echo "ArgoCD auto-sync restored."
-        fi
+        ./scripts/argocd-restore.sh
 
 dev:
   gateway:
