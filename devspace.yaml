@@ -14,6 +14,14 @@ functions:
     else
       echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
     fi
+  restore_argocd_sync: &restore_argocd_sync |-
+    if kubectl get application gateway -n argocd >/dev/null 2>&1; then
+      echo "Re-enabling ArgoCD auto-sync for gateway..."
+      kubectl patch application gateway -n argocd \
+        --type merge \
+        -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
+      echo "ArgoCD auto-sync restored."
+    fi
   patch_deployment: |-
     echo "Patching gateway deployment for DevSpace..."
     kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
@@ -100,8 +108,11 @@ pipelines:
   setup:
     run: |-
       disable_argocd_sync
+      trap 'restore_argocd_sync' EXIT
       patch_deployment
       wait_healthy
+      restore_argocd_sync
+      trap - EXIT
 
 hooks:
   - name: restore-argocd-auto-sync
@@ -110,14 +121,7 @@ hooks:
     command: sh
     args:
       - -c
-      - |
-        if kubectl get application gateway -n argocd >/dev/null 2>&1; then
-          echo "Re-enabling ArgoCD auto-sync for gateway..."
-          kubectl patch application gateway -n argocd \
-            --type merge \
-            -p '{"spec":{"syncPolicy":{"automated":{"prune":true,"selfHeal":true}}}}'
-          echo "ArgoCD auto-sync restored."
-        fi
+      - *restore_argocd_sync
 
 dev:
   gateway:
