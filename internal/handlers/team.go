@@ -549,6 +549,148 @@ func (t *Team) PatchMemoryBucketsId(ctx context.Context, request gen.PatchMemory
 	return gen.PatchMemoryBucketsId200JSONResponse(converted), nil
 }
 
+func (t *Team) GetVariables(ctx context.Context, request gen.GetVariablesRequestObject) (gen.GetVariablesResponseObject, error) {
+	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
+
+	query := ""
+	if request.Params.Q != nil {
+		query = strings.TrimSpace(*request.Params.Q)
+	}
+
+	variables, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.Variable, string, error) {
+		resp, err := t.client.ListVariables(ctx, &teamsv1.ListVariablesRequest{
+			PageSize:  pageSize,
+			PageToken: token,
+			Query:     query,
+		})
+		if err != nil {
+			return nil, "", err
+		}
+		return resp.GetVariables(), resp.GetNextPageToken(), nil
+	})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	pageItems := paginateSlice(variables, page, perPage)
+	items := make([]gen.Variable, 0, len(pageItems))
+	for _, variable := range pageItems {
+		converted, err := variableFromProto(variable)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedVariables{
+		Items:   items,
+		Page:    page,
+		PerPage: perPage,
+		Total:   len(variables),
+	}
+
+	return gen.GetVariables200JSONResponse(payload), nil
+}
+
+func (t *Team) PostVariables(ctx context.Context, request gen.PostVariablesRequestObject) (gen.PostVariablesResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	createRequest, err := variableCreateToProto(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	resp, err := t.client.CreateVariable(ctx, createRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	variable := resp.GetVariable()
+	if variable == nil {
+		return nil, responseProblem(fmt.Errorf("create variable response missing variable"))
+	}
+
+	converted, err := variableFromProto(variable)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostVariables201JSONResponse(converted), nil
+}
+
+func (t *Team) GetVariablesResolveKey(ctx context.Context, request gen.GetVariablesResolveKeyRequestObject) (gen.GetVariablesResolveKeyResponseObject, error) {
+	resp, err := t.client.ResolveVariable(ctx, &teamsv1.ResolveVariableRequest{Key: request.Key})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	payload := gen.GetVariablesResolveKey200JSONResponse{Found: resp.GetFound()}
+	if resp.GetFound() {
+		value := resp.GetValue()
+		payload.Value = &value
+	}
+
+	return payload, nil
+}
+
+func (t *Team) DeleteVariablesId(ctx context.Context, request gen.DeleteVariablesIdRequestObject) (gen.DeleteVariablesIdResponseObject, error) {
+	_, err := t.client.DeleteVariable(ctx, &teamsv1.DeleteVariableRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteVariablesId204Response{}, nil
+}
+
+func (t *Team) GetVariablesId(ctx context.Context, request gen.GetVariablesIdRequestObject) (gen.GetVariablesIdResponseObject, error) {
+	resp, err := t.client.GetVariable(ctx, &teamsv1.GetVariableRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	variable := resp.GetVariable()
+	if variable == nil {
+		return nil, responseProblem(fmt.Errorf("get variable response missing variable"))
+	}
+
+	converted, err := variableFromProto(variable)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetVariablesId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchVariablesId(ctx context.Context, request gen.PatchVariablesIdRequestObject) (gen.PatchVariablesIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	updateRequest, err := variableUpdateToProto(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+	updateRequest.Id = request.Id.String()
+
+	resp, err := t.client.UpdateVariable(ctx, updateRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	variable := resp.GetVariable()
+	if variable == nil {
+		return nil, responseProblem(fmt.Errorf("update variable response missing variable"))
+	}
+
+	converted, err := variableFromProto(variable)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchVariablesId200JSONResponse(converted), nil
+}
+
 func (t *Team) GetTools(ctx context.Context, request gen.GetToolsRequestObject) (gen.GetToolsResponseObject, error) {
 	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
 

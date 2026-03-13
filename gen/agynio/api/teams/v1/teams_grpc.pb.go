@@ -44,6 +44,12 @@ const (
 	TeamsService_UpdateMemoryBucket_FullMethodName           = "/agynio.api.teams.v1.TeamsService/UpdateMemoryBucket"
 	TeamsService_DeleteMemoryBucket_FullMethodName           = "/agynio.api.teams.v1.TeamsService/DeleteMemoryBucket"
 	TeamsService_ListMemoryBuckets_FullMethodName            = "/agynio.api.teams.v1.TeamsService/ListMemoryBuckets"
+	TeamsService_CreateVariable_FullMethodName               = "/agynio.api.teams.v1.TeamsService/CreateVariable"
+	TeamsService_GetVariable_FullMethodName                  = "/agynio.api.teams.v1.TeamsService/GetVariable"
+	TeamsService_UpdateVariable_FullMethodName               = "/agynio.api.teams.v1.TeamsService/UpdateVariable"
+	TeamsService_DeleteVariable_FullMethodName               = "/agynio.api.teams.v1.TeamsService/DeleteVariable"
+	TeamsService_ListVariables_FullMethodName                = "/agynio.api.teams.v1.TeamsService/ListVariables"
+	TeamsService_ResolveVariable_FullMethodName              = "/agynio.api.teams.v1.TeamsService/ResolveVariable"
 	TeamsService_CreateAttachment_FullMethodName             = "/agynio.api.teams.v1.TeamsService/CreateAttachment"
 	TeamsService_GetAttachment_FullMethodName                = "/agynio.api.teams.v1.TeamsService/GetAttachment"
 	TeamsService_DeleteAttachment_FullMethodName             = "/agynio.api.teams.v1.TeamsService/DeleteAttachment"
@@ -55,7 +61,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
 // TeamsService manages team resources: agents, tools, MCP servers,
-// workspace configurations, memory buckets, and attachments (relations).
+// workspace configurations, memory buckets, variables, and attachments (relations).
 //
 // This is a control-plane service. It stores desired state;
 // other services reconcile toward it.
@@ -90,6 +96,13 @@ type TeamsServiceClient interface {
 	UpdateMemoryBucket(ctx context.Context, in *UpdateMemoryBucketRequest, opts ...grpc.CallOption) (*UpdateMemoryBucketResponse, error)
 	DeleteMemoryBucket(ctx context.Context, in *DeleteMemoryBucketRequest, opts ...grpc.CallOption) (*DeleteMemoryBucketResponse, error)
 	ListMemoryBuckets(ctx context.Context, in *ListMemoryBucketsRequest, opts ...grpc.CallOption) (*ListMemoryBucketsResponse, error)
+	// --- Variables ---
+	CreateVariable(ctx context.Context, in *CreateVariableRequest, opts ...grpc.CallOption) (*CreateVariableResponse, error)
+	GetVariable(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*GetVariableResponse, error)
+	UpdateVariable(ctx context.Context, in *UpdateVariableRequest, opts ...grpc.CallOption) (*UpdateVariableResponse, error)
+	DeleteVariable(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*DeleteVariableResponse, error)
+	ListVariables(ctx context.Context, in *ListVariablesRequest, opts ...grpc.CallOption) (*ListVariablesResponse, error)
+	ResolveVariable(ctx context.Context, in *ResolveVariableRequest, opts ...grpc.CallOption) (*ResolveVariableResponse, error)
 	// --- Attachments (no Update) ---
 	CreateAttachment(ctx context.Context, in *CreateAttachmentRequest, opts ...grpc.CallOption) (*CreateAttachmentResponse, error)
 	GetAttachment(ctx context.Context, in *GetAttachmentRequest, opts ...grpc.CallOption) (*GetAttachmentResponse, error)
@@ -355,6 +368,66 @@ func (c *teamsServiceClient) ListMemoryBuckets(ctx context.Context, in *ListMemo
 	return out, nil
 }
 
+func (c *teamsServiceClient) CreateVariable(ctx context.Context, in *CreateVariableRequest, opts ...grpc.CallOption) (*CreateVariableResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateVariableResponse)
+	err := c.cc.Invoke(ctx, TeamsService_CreateVariable_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamsServiceClient) GetVariable(ctx context.Context, in *GetVariableRequest, opts ...grpc.CallOption) (*GetVariableResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetVariableResponse)
+	err := c.cc.Invoke(ctx, TeamsService_GetVariable_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamsServiceClient) UpdateVariable(ctx context.Context, in *UpdateVariableRequest, opts ...grpc.CallOption) (*UpdateVariableResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateVariableResponse)
+	err := c.cc.Invoke(ctx, TeamsService_UpdateVariable_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamsServiceClient) DeleteVariable(ctx context.Context, in *DeleteVariableRequest, opts ...grpc.CallOption) (*DeleteVariableResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteVariableResponse)
+	err := c.cc.Invoke(ctx, TeamsService_DeleteVariable_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamsServiceClient) ListVariables(ctx context.Context, in *ListVariablesRequest, opts ...grpc.CallOption) (*ListVariablesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListVariablesResponse)
+	err := c.cc.Invoke(ctx, TeamsService_ListVariables_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *teamsServiceClient) ResolveVariable(ctx context.Context, in *ResolveVariableRequest, opts ...grpc.CallOption) (*ResolveVariableResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResolveVariableResponse)
+	err := c.cc.Invoke(ctx, TeamsService_ResolveVariable_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *teamsServiceClient) CreateAttachment(ctx context.Context, in *CreateAttachmentRequest, opts ...grpc.CallOption) (*CreateAttachmentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateAttachmentResponse)
@@ -400,7 +473,7 @@ func (c *teamsServiceClient) ListAttachments(ctx context.Context, in *ListAttach
 // for forward compatibility.
 //
 // TeamsService manages team resources: agents, tools, MCP servers,
-// workspace configurations, memory buckets, and attachments (relations).
+// workspace configurations, memory buckets, variables, and attachments (relations).
 //
 // This is a control-plane service. It stores desired state;
 // other services reconcile toward it.
@@ -435,6 +508,13 @@ type TeamsServiceServer interface {
 	UpdateMemoryBucket(context.Context, *UpdateMemoryBucketRequest) (*UpdateMemoryBucketResponse, error)
 	DeleteMemoryBucket(context.Context, *DeleteMemoryBucketRequest) (*DeleteMemoryBucketResponse, error)
 	ListMemoryBuckets(context.Context, *ListMemoryBucketsRequest) (*ListMemoryBucketsResponse, error)
+	// --- Variables ---
+	CreateVariable(context.Context, *CreateVariableRequest) (*CreateVariableResponse, error)
+	GetVariable(context.Context, *GetVariableRequest) (*GetVariableResponse, error)
+	UpdateVariable(context.Context, *UpdateVariableRequest) (*UpdateVariableResponse, error)
+	DeleteVariable(context.Context, *DeleteVariableRequest) (*DeleteVariableResponse, error)
+	ListVariables(context.Context, *ListVariablesRequest) (*ListVariablesResponse, error)
+	ResolveVariable(context.Context, *ResolveVariableRequest) (*ResolveVariableResponse, error)
 	// --- Attachments (no Update) ---
 	CreateAttachment(context.Context, *CreateAttachmentRequest) (*CreateAttachmentResponse, error)
 	GetAttachment(context.Context, *GetAttachmentRequest) (*GetAttachmentResponse, error)
@@ -524,6 +604,24 @@ func (UnimplementedTeamsServiceServer) DeleteMemoryBucket(context.Context, *Dele
 }
 func (UnimplementedTeamsServiceServer) ListMemoryBuckets(context.Context, *ListMemoryBucketsRequest) (*ListMemoryBucketsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMemoryBuckets not implemented")
+}
+func (UnimplementedTeamsServiceServer) CreateVariable(context.Context, *CreateVariableRequest) (*CreateVariableResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateVariable not implemented")
+}
+func (UnimplementedTeamsServiceServer) GetVariable(context.Context, *GetVariableRequest) (*GetVariableResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetVariable not implemented")
+}
+func (UnimplementedTeamsServiceServer) UpdateVariable(context.Context, *UpdateVariableRequest) (*UpdateVariableResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateVariable not implemented")
+}
+func (UnimplementedTeamsServiceServer) DeleteVariable(context.Context, *DeleteVariableRequest) (*DeleteVariableResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteVariable not implemented")
+}
+func (UnimplementedTeamsServiceServer) ListVariables(context.Context, *ListVariablesRequest) (*ListVariablesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListVariables not implemented")
+}
+func (UnimplementedTeamsServiceServer) ResolveVariable(context.Context, *ResolveVariableRequest) (*ResolveVariableResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResolveVariable not implemented")
 }
 func (UnimplementedTeamsServiceServer) CreateAttachment(context.Context, *CreateAttachmentRequest) (*CreateAttachmentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateAttachment not implemented")
@@ -1008,6 +1106,114 @@ func _TeamsService_ListMemoryBuckets_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TeamsService_CreateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).CreateVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_CreateVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).CreateVariable(ctx, req.(*CreateVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamsService_GetVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).GetVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_GetVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).GetVariable(ctx, req.(*GetVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamsService_UpdateVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).UpdateVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_UpdateVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).UpdateVariable(ctx, req.(*UpdateVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamsService_DeleteVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).DeleteVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_DeleteVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).DeleteVariable(ctx, req.(*DeleteVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamsService_ListVariables_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListVariablesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).ListVariables(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_ListVariables_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).ListVariables(ctx, req.(*ListVariablesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TeamsService_ResolveVariable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResolveVariableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TeamsServiceServer).ResolveVariable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: TeamsService_ResolveVariable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TeamsServiceServer).ResolveVariable(ctx, req.(*ResolveVariableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _TeamsService_CreateAttachment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateAttachmentRequest)
 	if err := dec(in); err != nil {
@@ -1186,6 +1392,30 @@ var TeamsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListMemoryBuckets",
 			Handler:    _TeamsService_ListMemoryBuckets_Handler,
+		},
+		{
+			MethodName: "CreateVariable",
+			Handler:    _TeamsService_CreateVariable_Handler,
+		},
+		{
+			MethodName: "GetVariable",
+			Handler:    _TeamsService_GetVariable_Handler,
+		},
+		{
+			MethodName: "UpdateVariable",
+			Handler:    _TeamsService_UpdateVariable_Handler,
+		},
+		{
+			MethodName: "DeleteVariable",
+			Handler:    _TeamsService_DeleteVariable_Handler,
+		},
+		{
+			MethodName: "ListVariables",
+			Handler:    _TeamsService_ListVariables_Handler,
+		},
+		{
+			MethodName: "ResolveVariable",
+			Handler:    _TeamsService_ResolveVariable_Handler,
 		},
 		{
 			MethodName: "CreateAttachment",

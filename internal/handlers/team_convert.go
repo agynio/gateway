@@ -294,6 +294,41 @@ func mcpServerConfigFromProto(config *teamsv1.McpServerConfig) (gen.McpServerCon
 		}
 	}
 
+	if filter := config.GetToolFilter(); filter != nil {
+		mode, err := mcpToolFilterModeFromProto(filter.GetMode())
+		if err != nil {
+			return gen.McpServerConfig{}, err
+		}
+
+		toolFilter := &struct {
+			Mode  gen.McpServerConfigToolFilterMode `json:"mode"`
+			Rules *[]struct {
+				Pattern string `json:"pattern"`
+			} `json:"rules,omitempty"`
+		}{
+			Mode: mode,
+		}
+
+		if rules := filter.GetRules(); len(rules) > 0 {
+			items := make([]struct {
+				Pattern string `json:"pattern"`
+			}, 0, len(rules))
+			for _, rule := range rules {
+				if rule == nil {
+					continue
+				}
+				items = append(items, struct {
+					Pattern string `json:"pattern"`
+				}{Pattern: rule.GetPattern()})
+			}
+			if len(items) > 0 {
+				toolFilter.Rules = &items
+			}
+		}
+
+		result.ToolFilter = toolFilter
+	}
+
 	return result, nil
 }
 
@@ -314,6 +349,24 @@ func mcpServerConfigToProto(config gen.McpServerConfig) (*teamsv1.McpServerConfi
 		}
 	}
 
+	var toolFilter *teamsv1.McpToolFilter
+	if config.ToolFilter != nil {
+		mode, err := mcpToolFilterModeToProto(config.ToolFilter.Mode)
+		if err != nil {
+			return nil, err
+		}
+
+		var rules []*teamsv1.McpToolFilterRule
+		if config.ToolFilter.Rules != nil {
+			for _, rule := range *config.ToolFilter.Rules {
+				copyRule := rule
+				rules = append(rules, &teamsv1.McpToolFilterRule{Pattern: copyRule.Pattern})
+			}
+		}
+
+		toolFilter = &teamsv1.McpToolFilter{Mode: mode, Rules: rules}
+	}
+
 	return &teamsv1.McpServerConfig{
 		Namespace:           stringValue(config.Namespace),
 		Command:             stringValue(config.Command),
@@ -324,6 +377,7 @@ func mcpServerConfigToProto(config gen.McpServerConfig) (*teamsv1.McpServerConfi
 		HeartbeatIntervalMs: int32Value(config.HeartbeatIntervalMs),
 		StaleTimeoutMs:      int32Value(config.StaleTimeoutMs),
 		Restart:             restart,
+		ToolFilter:          toolFilter,
 	}, nil
 }
 
@@ -546,6 +600,47 @@ func memoryBucketConfigToProto(config gen.MemoryBucketConfig) (*teamsv1.MemoryBu
 	}, nil
 }
 
+func variableFromProto(variable *teamsv1.Variable) (gen.Variable, error) {
+	if variable == nil {
+		return gen.Variable{}, fmt.Errorf("variable missing")
+	}
+
+	meta, err := metaFromProto(variable.GetMeta())
+	if err != nil {
+		return gen.Variable{}, err
+	}
+
+	result := gen.Variable{
+		Id:        meta.id,
+		CreatedAt: meta.createdAt,
+		UpdatedAt: meta.updatedAt,
+		Key:       variable.GetKey(),
+		Value:     variable.GetValue(),
+	}
+
+	if variable.Description != "" {
+		result.Description = stringPtr(variable.Description)
+	}
+
+	return result, nil
+}
+
+func variableCreateToProto(request gen.VariableCreateRequest) (*teamsv1.CreateVariableRequest, error) {
+	return &teamsv1.CreateVariableRequest{
+		Key:         request.Key,
+		Value:       request.Value,
+		Description: stringValue(request.Description),
+	}, nil
+}
+
+func variableUpdateToProto(request gen.VariableUpdateRequest) (*teamsv1.UpdateVariableRequest, error) {
+	return &teamsv1.UpdateVariableRequest{
+		Key:         request.Key,
+		Value:       request.Value,
+		Description: request.Description,
+	}, nil
+}
+
 func attachmentFromProto(attachment *teamsv1.Attachment) (gen.Attachment, error) {
 	if attachment == nil {
 		return gen.Attachment{}, fmt.Errorf("attachment missing")
@@ -685,6 +780,8 @@ func entityTypeFromProto(entity teamsv1.EntityType) (gen.EntityType, error) {
 		return gen.EntityTypeWorkspaceConfiguration, nil
 	case teamsv1.EntityType_ENTITY_TYPE_MEMORY_BUCKET:
 		return gen.EntityTypeMemoryBucket, nil
+	case teamsv1.EntityType_ENTITY_TYPE_VARIABLE:
+		return gen.EntityTypeVariable, nil
 	default:
 		return "", fmt.Errorf("unsupported entity type: %s", entity.String())
 	}
@@ -702,8 +799,32 @@ func entityTypeToProto(entity gen.EntityType) (teamsv1.EntityType, error) {
 		return teamsv1.EntityType_ENTITY_TYPE_WORKSPACE_CONFIGURATION, nil
 	case gen.EntityTypeMemoryBucket:
 		return teamsv1.EntityType_ENTITY_TYPE_MEMORY_BUCKET, nil
+	case gen.EntityTypeVariable:
+		return teamsv1.EntityType_ENTITY_TYPE_VARIABLE, nil
 	default:
 		return teamsv1.EntityType_ENTITY_TYPE_UNSPECIFIED, fmt.Errorf("unsupported entity type: %s", entity)
+	}
+}
+
+func mcpToolFilterModeFromProto(mode teamsv1.McpToolFilterMode) (gen.McpServerConfigToolFilterMode, error) {
+	switch mode {
+	case teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_ALLOW:
+		return gen.Allow, nil
+	case teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_DENY:
+		return gen.Deny, nil
+	default:
+		return "", fmt.Errorf("unsupported mcp tool filter mode: %s", mode.String())
+	}
+}
+
+func mcpToolFilterModeToProto(mode gen.McpServerConfigToolFilterMode) (teamsv1.McpToolFilterMode, error) {
+	switch mode {
+	case gen.Allow:
+		return teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_ALLOW, nil
+	case gen.Deny:
+		return teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_DENY, nil
+	default:
+		return teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_UNSPECIFIED, fmt.Errorf("unsupported mcp tool filter mode: %s", mode)
 	}
 }
 

@@ -287,6 +287,63 @@ func (s *stubTeamsClient) UpdateMemoryBucket(ctx context.Context, req *teamsv1.U
 	return resp, call.err
 }
 
+func (s *stubTeamsClient) ListVariables(ctx context.Context, req *teamsv1.ListVariablesRequest, _ ...grpc.CallOption) (*teamsv1.ListVariablesResponse, error) {
+	call := s.nextCall("ListVariables", req)
+	resp, ok := call.resp.(*teamsv1.ListVariablesResponse)
+	if call.resp != nil && !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
+func (s *stubTeamsClient) CreateVariable(ctx context.Context, req *teamsv1.CreateVariableRequest, _ ...grpc.CallOption) (*teamsv1.CreateVariableResponse, error) {
+	call := s.nextCall("CreateVariable", req)
+	if call.resp == nil {
+		return nil, call.err
+	}
+	resp, ok := call.resp.(*teamsv1.CreateVariableResponse)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
+func (s *stubTeamsClient) DeleteVariable(ctx context.Context, req *teamsv1.DeleteVariableRequest, _ ...grpc.CallOption) (*teamsv1.DeleteVariableResponse, error) {
+	call := s.nextCall("DeleteVariable", req)
+	resp, ok := call.resp.(*teamsv1.DeleteVariableResponse)
+	if call.resp != nil && !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
+func (s *stubTeamsClient) GetVariable(ctx context.Context, req *teamsv1.GetVariableRequest, _ ...grpc.CallOption) (*teamsv1.GetVariableResponse, error) {
+	call := s.nextCall("GetVariable", req)
+	resp, ok := call.resp.(*teamsv1.GetVariableResponse)
+	if call.resp != nil && !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
+func (s *stubTeamsClient) UpdateVariable(ctx context.Context, req *teamsv1.UpdateVariableRequest, _ ...grpc.CallOption) (*teamsv1.UpdateVariableResponse, error) {
+	call := s.nextCall("UpdateVariable", req)
+	resp, ok := call.resp.(*teamsv1.UpdateVariableResponse)
+	if call.resp != nil && !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
+func (s *stubTeamsClient) ResolveVariable(ctx context.Context, req *teamsv1.ResolveVariableRequest, _ ...grpc.CallOption) (*teamsv1.ResolveVariableResponse, error) {
+	call := s.nextCall("ResolveVariable", req)
+	resp, ok := call.resp.(*teamsv1.ResolveVariableResponse)
+	if call.resp != nil && !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
+	}
+	return resp, call.err
+}
+
 func (s *stubTeamsClient) ListAttachments(ctx context.Context, req *teamsv1.ListAttachmentsRequest, _ ...grpc.CallOption) (*teamsv1.ListAttachmentsResponse, error) {
 	call := s.nextCall("ListAttachments", req)
 	resp, ok := call.resp.(*teamsv1.ListAttachmentsResponse)
@@ -765,6 +822,9 @@ func TestTeamGetAttachments(t *testing.T) {
 func TestTeamPostMcpServers(t *testing.T) {
 	stub := &stubTeamsClient{t: t}
 	serverID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+	toolFilterRules := []struct {
+		Pattern string `json:"pattern"`
+	}{{Pattern: "mcp.*"}}
 	stub.Expect(teamsCall{
 		method: "CreateMcpServer",
 		assert: func(req any) {
@@ -781,6 +841,15 @@ func TestTeamPostMcpServers(t *testing.T) {
 			if input.Config.Restart == nil || input.Config.Restart.BackoffMs != 100 {
 				t.Fatalf("unexpected restart config: %+v", input.Config.Restart)
 			}
+			if input.Config.ToolFilter == nil {
+				t.Fatalf("missing tool filter")
+			}
+			if input.Config.ToolFilter.Mode != teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_ALLOW {
+				t.Fatalf("unexpected tool filter mode: %s", input.Config.ToolFilter.Mode.String())
+			}
+			if len(input.Config.ToolFilter.Rules) != 1 || input.Config.ToolFilter.Rules[0].Pattern != "mcp.*" {
+				t.Fatalf("unexpected tool filter rules: %+v", input.Config.ToolFilter.Rules)
+			}
 		},
 		resp: &teamsv1.CreateMcpServerResponse{McpServer: &teamsv1.McpServer{
 			Meta:        testMeta(serverID.String()),
@@ -790,6 +859,10 @@ func TestTeamPostMcpServers(t *testing.T) {
 				Command: "bash",
 				Env:     []*teamsv1.McpEnvItem{{Name: "FOO", Value: "bar"}},
 				Restart: &teamsv1.McpServerRestartConfig{BackoffMs: 100, MaxAttempts: 2},
+				ToolFilter: &teamsv1.McpToolFilter{
+					Mode:  teamsv1.McpToolFilterMode_MCP_TOOL_FILTER_MODE_ALLOW,
+					Rules: []*teamsv1.McpToolFilterRule{{Pattern: "mcp.*"}},
+				},
 			},
 		}},
 	})
@@ -798,10 +871,17 @@ func TestTeamPostMcpServers(t *testing.T) {
 		BackoffMs   *int `json:"backoffMs,omitempty"`
 		MaxAttempts *int `json:"maxAttempts,omitempty"`
 	}{BackoffMs: intPtr(100), MaxAttempts: intPtr(2)}
+	toolFilter := &struct {
+		Mode  gen.McpServerConfigToolFilterMode `json:"mode"`
+		Rules *[]struct {
+			Pattern string `json:"pattern"`
+		} `json:"rules,omitempty"`
+	}{Mode: gen.Allow, Rules: &toolFilterRules}
 	config := gen.McpServerConfig{
-		Command: strPtr("bash"),
-		Env:     &[]gen.McpEnvItem{{Name: "FOO", Value: "bar"}},
-		Restart: restart,
+		Command:    strPtr("bash"),
+		Env:        &[]gen.McpEnvItem{{Name: "FOO", Value: "bar"}},
+		Restart:    restart,
+		ToolFilter: toolFilter,
 	}
 	request := gen.PostMcpServersRequestObject{Body: &gen.McpServerCreateRequest{
 		Title:       strPtr("Test"),
@@ -821,6 +901,12 @@ func TestTeamPostMcpServers(t *testing.T) {
 	}
 	if created.Config.Command == nil || *created.Config.Command != "bash" {
 		t.Fatalf("unexpected command: %v", created.Config.Command)
+	}
+	if created.Config.ToolFilter == nil || created.Config.ToolFilter.Mode != gen.Allow {
+		t.Fatalf("unexpected tool filter: %+v", created.Config.ToolFilter)
+	}
+	if created.Config.ToolFilter.Rules == nil || len(*created.Config.ToolFilter.Rules) != 1 {
+		t.Fatalf("unexpected tool filter rules: %+v", created.Config.ToolFilter)
 	}
 
 	stub.AssertDone()
@@ -1074,6 +1160,319 @@ func TestTeamPatchMemoryBuckets(t *testing.T) {
 	}
 	if updated.Config.Scope == nil || *updated.Config.Scope != gen.PerThread {
 		t.Fatalf("unexpected scope: %v", updated.Config.Scope)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamGetVariablesPagination(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+	variableID1 := uuid.MustParse("f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1")
+	variableID2 := uuid.MustParse("f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2")
+	variableOne := &teamsv1.Variable{
+		Meta:        testMeta(variableID1.String()),
+		Key:         "first",
+		Value:       "alpha",
+		Description: "one",
+	}
+	variableTwo := &teamsv1.Variable{
+		Meta:  testMeta(variableID2.String()),
+		Key:   "second",
+		Value: "beta",
+	}
+
+	stub.Expect(teamsCall{
+		method: "ListVariables",
+		assert: func(req any) {
+			input := req.(*teamsv1.ListVariablesRequest)
+			if input.PageSize != 1 {
+				t.Fatalf("unexpected page size: %d", input.PageSize)
+			}
+			if input.Query != "search" {
+				t.Fatalf("unexpected query: %s", input.Query)
+			}
+		},
+		resp: &teamsv1.ListVariablesResponse{Variables: []*teamsv1.Variable{variableOne}, NextPageToken: "next"},
+	})
+	stub.Expect(teamsCall{
+		method: "ListVariables",
+		assert: func(req any) {
+			input := req.(*teamsv1.ListVariablesRequest)
+			if input.PageToken != "next" {
+				t.Fatalf("unexpected page token: %s", input.PageToken)
+			}
+		},
+		resp: &teamsv1.ListVariablesResponse{Variables: []*teamsv1.Variable{variableTwo}},
+	})
+
+	page := 2
+	perPage := 1
+	query := " search "
+	h := NewTeam(stub)
+	resp, err := h.GetVariables(context.Background(), gen.GetVariablesRequestObject{Params: gen.GetVariablesParams{
+		Q:       &query,
+		Page:    &page,
+		PerPage: &perPage,
+	}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	list, ok := resp.(gen.GetVariables200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if list.Total != 2 {
+		t.Fatalf("unexpected total: %d", list.Total)
+	}
+	if len(list.Items) != 1 {
+		t.Fatalf("expected 1 variable, got %d", len(list.Items))
+	}
+	if list.Items[0].Key != "second" {
+		t.Fatalf("unexpected key: %s", list.Items[0].Key)
+	}
+	if list.Items[0].Value != "beta" {
+		t.Fatalf("unexpected value: %s", list.Items[0].Value)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamPostVariables(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+	variableID := uuid.MustParse("f3f3f3f3-f3f3-f3f3-f3f3-f3f3f3f3f3f3")
+
+	stub.Expect(teamsCall{
+		method: "CreateVariable",
+		assert: func(req any) {
+			input := req.(*teamsv1.CreateVariableRequest)
+			if input.Key != "token" {
+				t.Fatalf("unexpected key: %s", input.Key)
+			}
+			if input.Value != "secret" {
+				t.Fatalf("unexpected value: %s", input.Value)
+			}
+			if input.Description != "primary" {
+				t.Fatalf("unexpected description: %s", input.Description)
+			}
+		},
+		resp: &teamsv1.CreateVariableResponse{Variable: &teamsv1.Variable{
+			Meta:        testMeta(variableID.String()),
+			Key:         "token",
+			Value:       "secret",
+			Description: "primary",
+		}},
+	})
+
+	description := "primary"
+	request := gen.PostVariablesRequestObject{Body: &gen.VariableCreateRequest{
+		Key:         "token",
+		Value:       "secret",
+		Description: &description,
+	}}
+
+	h := NewTeam(stub)
+	resp, err := h.PostVariables(context.Background(), request)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	created, ok := resp.(gen.PostVariables201JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if created.Key != "token" || created.Value != "secret" {
+		t.Fatalf("unexpected variable: %+v", created)
+	}
+	if created.Description == nil || *created.Description != "primary" {
+		t.Fatalf("unexpected description: %v", created.Description)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamGetVariablesId(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+	variableID := uuid.MustParse("f4f4f4f4-f4f4-f4f4-f4f4-f4f4f4f4f4f4")
+
+	stub.Expect(teamsCall{
+		method: "GetVariable",
+		assert: func(req any) {
+			input := req.(*teamsv1.GetVariableRequest)
+			if input.Id != variableID.String() {
+				t.Fatalf("unexpected id: %s", input.Id)
+			}
+		},
+		resp: &teamsv1.GetVariableResponse{Variable: &teamsv1.Variable{
+			Meta:  testMeta(variableID.String()),
+			Key:   "name",
+			Value: "casey",
+		}},
+	})
+
+	h := NewTeam(stub)
+	resp, err := h.GetVariablesId(context.Background(), gen.GetVariablesIdRequestObject{Id: variableID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	got, ok := resp.(gen.GetVariablesId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if got.Key != "name" || got.Value != "casey" {
+		t.Fatalf("unexpected variable: %+v", got)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamPatchVariables(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+	variableID := uuid.MustParse("f5f5f5f5-f5f5-f5f5-f5f5-f5f5f5f5f5f5")
+	key := "updated"
+	value := "new"
+	description := "rotated"
+
+	stub.Expect(teamsCall{
+		method: "UpdateVariable",
+		assert: func(req any) {
+			input := req.(*teamsv1.UpdateVariableRequest)
+			if input.Id != variableID.String() {
+				t.Fatalf("unexpected id: %s", input.Id)
+			}
+			if input.Key == nil || *input.Key != "updated" {
+				t.Fatalf("unexpected key: %v", input.Key)
+			}
+			if input.Value == nil || *input.Value != "new" {
+				t.Fatalf("unexpected value: %v", input.Value)
+			}
+			if input.Description == nil || *input.Description != "rotated" {
+				t.Fatalf("unexpected description: %v", input.Description)
+			}
+		},
+		resp: &teamsv1.UpdateVariableResponse{Variable: &teamsv1.Variable{
+			Meta:        testMeta(variableID.String()),
+			Key:         "updated",
+			Value:       "new",
+			Description: "rotated",
+		}},
+	})
+
+	request := gen.PatchVariablesIdRequestObject{
+		Id: variableID,
+		Body: &gen.VariableUpdateRequest{
+			Key:         &key,
+			Value:       &value,
+			Description: &description,
+		},
+	}
+
+	h := NewTeam(stub)
+	resp, err := h.PatchVariablesId(context.Background(), request)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated, ok := resp.(gen.PatchVariablesId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if updated.Key != "updated" || updated.Value != "new" {
+		t.Fatalf("unexpected variable: %+v", updated)
+	}
+	if updated.Description == nil || *updated.Description != "rotated" {
+		t.Fatalf("unexpected description: %v", updated.Description)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamDeleteVariables(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+	variableID := uuid.MustParse("f6f6f6f6-f6f6-f6f6-f6f6-f6f6f6f6f6f6")
+
+	stub.Expect(teamsCall{
+		method: "DeleteVariable",
+		assert: func(req any) {
+			input := req.(*teamsv1.DeleteVariableRequest)
+			if input.Id != variableID.String() {
+				t.Fatalf("unexpected id: %s", input.Id)
+			}
+		},
+		resp: &teamsv1.DeleteVariableResponse{},
+	})
+
+	h := NewTeam(stub)
+	resp, err := h.DeleteVariablesId(context.Background(), gen.DeleteVariablesIdRequestObject{Id: variableID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, ok := resp.(gen.DeleteVariablesId204Response); !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamResolveVariablesFound(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+
+	stub.Expect(teamsCall{
+		method: "ResolveVariable",
+		assert: func(req any) {
+			input := req.(*teamsv1.ResolveVariableRequest)
+			if input.Key != "token" {
+				t.Fatalf("unexpected key: %s", input.Key)
+			}
+		},
+		resp: &teamsv1.ResolveVariableResponse{Found: true, Value: "secret"},
+	})
+
+	h := NewTeam(stub)
+	resp, err := h.GetVariablesResolveKey(context.Background(), gen.GetVariablesResolveKeyRequestObject{Key: "token"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	resolved, ok := resp.(gen.GetVariablesResolveKey200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if !resolved.Found {
+		t.Fatalf("expected found true")
+	}
+	if resolved.Value == nil || *resolved.Value != "secret" {
+		t.Fatalf("unexpected value: %v", resolved.Value)
+	}
+
+	stub.AssertDone()
+}
+
+func TestTeamResolveVariablesNotFound(t *testing.T) {
+	stub := &stubTeamsClient{t: t}
+
+	stub.Expect(teamsCall{
+		method: "ResolveVariable",
+		resp:   &teamsv1.ResolveVariableResponse{Found: false},
+	})
+
+	h := NewTeam(stub)
+	resp, err := h.GetVariablesResolveKey(context.Background(), gen.GetVariablesResolveKeyRequestObject{Key: "missing"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	resolved, ok := resp.(gen.GetVariablesResolveKey200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if resolved.Found {
+		t.Fatalf("expected found false")
+	}
+	if resolved.Value != nil {
+		t.Fatalf("unexpected value: %v", resolved.Value)
 	}
 
 	stub.AssertDone()
