@@ -43,7 +43,14 @@ const (
 	EntityTypeMcpServer              EntityType = "mcpServer"
 	EntityTypeMemoryBucket           EntityType = "memoryBucket"
 	EntityTypeTool                   EntityType = "tool"
+	EntityTypeVariable               EntityType = "variable"
 	EntityTypeWorkspaceConfiguration EntityType = "workspaceConfiguration"
+)
+
+// Defines values for McpServerConfigToolFilterMode.
+const (
+	Allow McpServerConfigToolFilterMode = "allow"
+	Deny  McpServerConfigToolFilterMode = "deny"
 )
 
 // Defines values for MemoryBucketConfigScope.
@@ -181,10 +188,19 @@ type McpServerConfig struct {
 		BackoffMs   *int `json:"backoffMs,omitempty"`
 		MaxAttempts *int `json:"maxAttempts,omitempty"`
 	} `json:"restart,omitempty"`
-	StaleTimeoutMs   *int    `json:"staleTimeoutMs,omitempty"`
-	StartupTimeoutMs *int    `json:"startupTimeoutMs,omitempty"`
-	Workdir          *string `json:"workdir,omitempty"`
+	StaleTimeoutMs   *int `json:"staleTimeoutMs,omitempty"`
+	StartupTimeoutMs *int `json:"startupTimeoutMs,omitempty"`
+	ToolFilter       *struct {
+		Mode  McpServerConfigToolFilterMode `json:"mode"`
+		Rules *[]struct {
+			Pattern string `json:"pattern"`
+		} `json:"rules,omitempty"`
+	} `json:"toolFilter,omitempty"`
+	Workdir *string `json:"workdir,omitempty"`
 }
+
+// McpServerConfigToolFilterMode defines model for McpServerConfig.ToolFilter.Mode.
+type McpServerConfigToolFilterMode string
 
 // McpServerCreateRequest defines model for McpServerCreateRequest.
 type McpServerCreateRequest struct {
@@ -273,6 +289,14 @@ type PaginatedTools struct {
 	Total   int    `json:"total"`
 }
 
+// PaginatedVariables defines model for PaginatedVariables.
+type PaginatedVariables struct {
+	Items   []Variable `json:"items"`
+	Page    int        `json:"page"`
+	PerPage int        `json:"perPage"`
+	Total   int        `json:"total"`
+}
+
 // PaginatedWorkspaceConfigurations defines model for PaginatedWorkspaceConfigurations.
 type PaginatedWorkspaceConfigurations struct {
 	Items   []WorkspaceConfiguration `json:"items"`
@@ -317,6 +341,30 @@ type ToolUpdateRequest struct {
 	Config      *map[string]interface{} `json:"config,omitempty"`
 	Description *string                 `json:"description,omitempty"`
 	Name        *string                 `json:"name,omitempty"`
+}
+
+// Variable defines model for Variable.
+type Variable struct {
+	CreatedAt   time.Time          `json:"createdAt"`
+	Description *string            `json:"description,omitempty"`
+	Id          openapi_types.UUID `json:"id"`
+	Key         string             `json:"key"`
+	UpdatedAt   *time.Time         `json:"updatedAt,omitempty"`
+	Value       string             `json:"value"`
+}
+
+// VariableCreateRequest defines model for VariableCreateRequest.
+type VariableCreateRequest struct {
+	Description *string `json:"description,omitempty"`
+	Key         string  `json:"key"`
+	Value       string  `json:"value"`
+}
+
+// VariableUpdateRequest defines model for VariableUpdateRequest.
+type VariableUpdateRequest struct {
+	Description *string `json:"description,omitempty"`
+	Key         *string `json:"key,omitempty"`
+	Value       *string `json:"value,omitempty"`
 }
 
 // WorkspaceConfig defines model for WorkspaceConfig.
@@ -439,6 +487,14 @@ type GetToolsParams struct {
 	PerPage *int      `form:"perPage,omitempty" json:"perPage,omitempty"`
 }
 
+// GetVariablesParams defines parameters for GetVariables.
+type GetVariablesParams struct {
+	// Q Free-text search (key/description).
+	Q       *string `form:"q,omitempty" json:"q,omitempty"`
+	Page    *int    `form:"page,omitempty" json:"page,omitempty"`
+	PerPage *int    `form:"perPage,omitempty" json:"perPage,omitempty"`
+}
+
 // GetWorkspaceConfigurationsParams defines parameters for GetWorkspaceConfigurations.
 type GetWorkspaceConfigurationsParams struct {
 	Page    *int `form:"page,omitempty" json:"page,omitempty"`
@@ -471,6 +527,12 @@ type PostToolsJSONRequestBody = ToolCreateRequest
 
 // PatchToolsIdJSONRequestBody defines body for PatchToolsId for application/json ContentType.
 type PatchToolsIdJSONRequestBody = ToolUpdateRequest
+
+// PostVariablesJSONRequestBody defines body for PostVariables for application/json ContentType.
+type PostVariablesJSONRequestBody = VariableCreateRequest
+
+// PatchVariablesIdJSONRequestBody defines body for PatchVariablesId for application/json ContentType.
+type PatchVariablesIdJSONRequestBody = VariableUpdateRequest
 
 // PostWorkspaceConfigurationsJSONRequestBody defines body for PostWorkspaceConfigurations for application/json ContentType.
 type PostWorkspaceConfigurationsJSONRequestBody = WorkspaceConfigurationCreateRequest
@@ -673,6 +735,24 @@ type ServerInterface interface {
 	// Update tool (partial)
 	// (PATCH /tools/{id})
 	PatchToolsId(w http.ResponseWriter, r *http.Request, id IdPath)
+	// List variables
+	// (GET /variables)
+	GetVariables(w http.ResponseWriter, r *http.Request, params GetVariablesParams)
+	// Create variable
+	// (POST /variables)
+	PostVariables(w http.ResponseWriter, r *http.Request)
+	// Resolve variable by key
+	// (GET /variables/resolve/{key})
+	GetVariablesResolveKey(w http.ResponseWriter, r *http.Request, key string)
+	// Delete variable
+	// (DELETE /variables/{id})
+	DeleteVariablesId(w http.ResponseWriter, r *http.Request, id IdPath)
+	// Get variable by ID
+	// (GET /variables/{id})
+	GetVariablesId(w http.ResponseWriter, r *http.Request, id IdPath)
+	// Update variable (partial)
+	// (PATCH /variables/{id})
+	PatchVariablesId(w http.ResponseWriter, r *http.Request, id IdPath)
 	// List workspace configurations
 	// (GET /workspace-configurations)
 	GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request, params GetWorkspaceConfigurationsParams)
@@ -829,6 +909,42 @@ func (_ Unimplemented) GetToolsId(w http.ResponseWriter, r *http.Request, id IdP
 // Update tool (partial)
 // (PATCH /tools/{id})
 func (_ Unimplemented) PatchToolsId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// List variables
+// (GET /variables)
+func (_ Unimplemented) GetVariables(w http.ResponseWriter, r *http.Request, params GetVariablesParams) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Create variable
+// (POST /variables)
+func (_ Unimplemented) PostVariables(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Resolve variable by key
+// (GET /variables/resolve/{key})
+func (_ Unimplemented) GetVariablesResolveKey(w http.ResponseWriter, r *http.Request, key string) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Delete variable
+// (DELETE /variables/{id})
+func (_ Unimplemented) DeleteVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Get variable by ID
+// (GET /variables/{id})
+func (_ Unimplemented) GetVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Update variable (partial)
+// (PATCH /variables/{id})
+func (_ Unimplemented) PatchVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -1497,6 +1613,163 @@ func (siw *ServerInterfaceWrapper) PatchToolsId(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetVariables operation middleware
+func (siw *ServerInterfaceWrapper) GetVariables(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetVariablesParams
+
+	// ------------- Optional query parameter "q" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "q", r.URL.Query(), &params.Q)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "q", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "page" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "page", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "perPage" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "perPage", r.URL.Query(), &params.PerPage)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "perPage", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVariables(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PostVariables operation middleware
+func (siw *ServerInterfaceWrapper) PostVariables(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PostVariables(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVariablesResolveKey operation middleware
+func (siw *ServerInterfaceWrapper) GetVariablesResolveKey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "key" -------------
+	var key string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "key", chi.URLParam(r, "key"), &key, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVariablesResolveKey(w, r, key)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteVariablesId operation middleware
+func (siw *ServerInterfaceWrapper) DeleteVariablesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id IdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteVariablesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetVariablesId operation middleware
+func (siw *ServerInterfaceWrapper) GetVariablesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id IdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetVariablesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PatchVariablesId operation middleware
+func (siw *ServerInterfaceWrapper) PatchVariablesId(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id IdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", chi.URLParam(r, "id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PatchVariablesId(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetWorkspaceConfigurations operation middleware
 func (siw *ServerInterfaceWrapper) GetWorkspaceConfigurations(w http.ResponseWriter, r *http.Request) {
 
@@ -1802,6 +2075,24 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	})
 	r.Group(func(r chi.Router) {
 		r.Patch(options.BaseURL+"/tools/{id}", wrapper.PatchToolsId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/variables", wrapper.GetVariables)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/variables", wrapper.PostVariables)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/variables/resolve/{key}", wrapper.GetVariablesResolveKey)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/variables/{id}", wrapper.DeleteVariablesId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/variables/{id}", wrapper.GetVariablesId)
+	})
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/variables/{id}", wrapper.PatchVariablesId)
 	})
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/workspace-configurations", wrapper.GetWorkspaceConfigurations)
@@ -2490,6 +2781,185 @@ func (response PatchToolsIddefaultApplicationProblemPlusJSONResponse) VisitPatch
 	return json.NewEncoder(w).Encode(response.Body)
 }
 
+type GetVariablesRequestObject struct {
+	Params GetVariablesParams
+}
+
+type GetVariablesResponseObject interface {
+	VisitGetVariablesResponse(w http.ResponseWriter) error
+}
+
+type GetVariables200JSONResponse PaginatedVariables
+
+func (response GetVariables200JSONResponse) VisitGetVariablesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetVariablesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetVariablesdefaultApplicationProblemPlusJSONResponse) VisitGetVariablesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PostVariablesRequestObject struct {
+	Body *PostVariablesJSONRequestBody
+}
+
+type PostVariablesResponseObject interface {
+	VisitPostVariablesResponse(w http.ResponseWriter) error
+}
+
+type PostVariables201JSONResponse Variable
+
+func (response PostVariables201JSONResponse) VisitPostVariablesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostVariablesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PostVariablesdefaultApplicationProblemPlusJSONResponse) VisitPostVariablesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetVariablesResolveKeyRequestObject struct {
+	Key string `json:"key"`
+}
+
+type GetVariablesResolveKeyResponseObject interface {
+	VisitGetVariablesResolveKeyResponse(w http.ResponseWriter) error
+}
+
+type GetVariablesResolveKey200JSONResponse struct {
+	Found bool `json:"found"`
+
+	// Value Only present when found is true.
+	Value *string `json:"value,omitempty"`
+}
+
+func (response GetVariablesResolveKey200JSONResponse) VisitGetVariablesResolveKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetVariablesResolveKeydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetVariablesResolveKeydefaultApplicationProblemPlusJSONResponse) VisitGetVariablesResolveKeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type DeleteVariablesIdRequestObject struct {
+	Id IdPath `json:"id"`
+}
+
+type DeleteVariablesIdResponseObject interface {
+	VisitDeleteVariablesIdResponse(w http.ResponseWriter) error
+}
+
+type DeleteVariablesId204Response struct {
+}
+
+func (response DeleteVariablesId204Response) VisitDeleteVariablesIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteVariablesIddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response DeleteVariablesIddefaultApplicationProblemPlusJSONResponse) VisitDeleteVariablesIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type GetVariablesIdRequestObject struct {
+	Id IdPath `json:"id"`
+}
+
+type GetVariablesIdResponseObject interface {
+	VisitGetVariablesIdResponse(w http.ResponseWriter) error
+}
+
+type GetVariablesId200JSONResponse Variable
+
+func (response GetVariablesId200JSONResponse) VisitGetVariablesIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetVariablesIddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response GetVariablesIddefaultApplicationProblemPlusJSONResponse) VisitGetVariablesIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type PatchVariablesIdRequestObject struct {
+	Id   IdPath `json:"id"`
+	Body *PatchVariablesIdJSONRequestBody
+}
+
+type PatchVariablesIdResponseObject interface {
+	VisitPatchVariablesIdResponse(w http.ResponseWriter) error
+}
+
+type PatchVariablesId200JSONResponse Variable
+
+func (response PatchVariablesId200JSONResponse) VisitPatchVariablesIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchVariablesIddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	StatusCode int
+}
+
+func (response PatchVariablesIddefaultApplicationProblemPlusJSONResponse) VisitPatchVariablesIdResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
 type GetWorkspaceConfigurationsRequestObject struct {
 	Params GetWorkspaceConfigurationsParams
 }
@@ -2706,6 +3176,24 @@ type StrictServerInterface interface {
 	// Update tool (partial)
 	// (PATCH /tools/{id})
 	PatchToolsId(ctx context.Context, request PatchToolsIdRequestObject) (PatchToolsIdResponseObject, error)
+	// List variables
+	// (GET /variables)
+	GetVariables(ctx context.Context, request GetVariablesRequestObject) (GetVariablesResponseObject, error)
+	// Create variable
+	// (POST /variables)
+	PostVariables(ctx context.Context, request PostVariablesRequestObject) (PostVariablesResponseObject, error)
+	// Resolve variable by key
+	// (GET /variables/resolve/{key})
+	GetVariablesResolveKey(ctx context.Context, request GetVariablesResolveKeyRequestObject) (GetVariablesResolveKeyResponseObject, error)
+	// Delete variable
+	// (DELETE /variables/{id})
+	DeleteVariablesId(ctx context.Context, request DeleteVariablesIdRequestObject) (DeleteVariablesIdResponseObject, error)
+	// Get variable by ID
+	// (GET /variables/{id})
+	GetVariablesId(ctx context.Context, request GetVariablesIdRequestObject) (GetVariablesIdResponseObject, error)
+	// Update variable (partial)
+	// (PATCH /variables/{id})
+	PatchVariablesId(ctx context.Context, request PatchVariablesIdRequestObject) (PatchVariablesIdResponseObject, error)
 	// List workspace configurations
 	// (GET /workspace-configurations)
 	GetWorkspaceConfigurations(ctx context.Context, request GetWorkspaceConfigurationsRequestObject) (GetWorkspaceConfigurationsResponseObject, error)
@@ -3396,6 +3884,174 @@ func (sh *strictHandler) PatchToolsId(w http.ResponseWriter, r *http.Request, id
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PatchToolsIdResponseObject); ok {
 		if err := validResponse.VisitPatchToolsIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVariables operation middleware
+func (sh *strictHandler) GetVariables(w http.ResponseWriter, r *http.Request, params GetVariablesParams) {
+	var request GetVariablesRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVariables(ctx, request.(GetVariablesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVariables")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVariablesResponseObject); ok {
+		if err := validResponse.VisitGetVariablesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PostVariables operation middleware
+func (sh *strictHandler) PostVariables(w http.ResponseWriter, r *http.Request) {
+	var request PostVariablesRequestObject
+
+	var body PostVariablesJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PostVariables(ctx, request.(PostVariablesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostVariables")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PostVariablesResponseObject); ok {
+		if err := validResponse.VisitPostVariablesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVariablesResolveKey operation middleware
+func (sh *strictHandler) GetVariablesResolveKey(w http.ResponseWriter, r *http.Request, key string) {
+	var request GetVariablesResolveKeyRequestObject
+
+	request.Key = key
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVariablesResolveKey(ctx, request.(GetVariablesResolveKeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVariablesResolveKey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVariablesResolveKeyResponseObject); ok {
+		if err := validResponse.VisitGetVariablesResolveKeyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteVariablesId operation middleware
+func (sh *strictHandler) DeleteVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	var request DeleteVariablesIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteVariablesId(ctx, request.(DeleteVariablesIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteVariablesId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteVariablesIdResponseObject); ok {
+		if err := validResponse.VisitDeleteVariablesIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetVariablesId operation middleware
+func (sh *strictHandler) GetVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	var request GetVariablesIdRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetVariablesId(ctx, request.(GetVariablesIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetVariablesId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetVariablesIdResponseObject); ok {
+		if err := validResponse.VisitGetVariablesIdResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PatchVariablesId operation middleware
+func (sh *strictHandler) PatchVariablesId(w http.ResponseWriter, r *http.Request, id IdPath) {
+	var request PatchVariablesIdRequestObject
+
+	request.Id = id
+
+	var body PatchVariablesIdJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchVariablesId(ctx, request.(PatchVariablesIdRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchVariablesId")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PatchVariablesIdResponseObject); ok {
+		if err := validResponse.VisitPatchVariablesIdResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

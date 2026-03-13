@@ -99,6 +99,7 @@ const (
 	EntityType_ENTITY_TYPE_MCP_SERVER              EntityType = 3
 	EntityType_ENTITY_TYPE_WORKSPACE_CONFIGURATION EntityType = 4
 	EntityType_ENTITY_TYPE_MEMORY_BUCKET           EntityType = 5
+	EntityType_ENTITY_TYPE_VARIABLE                EntityType = 6
 )
 
 // Enum value maps for EntityType.
@@ -110,6 +111,7 @@ var (
 		3: "ENTITY_TYPE_MCP_SERVER",
 		4: "ENTITY_TYPE_WORKSPACE_CONFIGURATION",
 		5: "ENTITY_TYPE_MEMORY_BUCKET",
+		6: "ENTITY_TYPE_VARIABLE",
 	}
 	EntityType_value = map[string]int32{
 		"ENTITY_TYPE_UNSPECIFIED":             0,
@@ -118,6 +120,7 @@ var (
 		"ENTITY_TYPE_MCP_SERVER":              3,
 		"ENTITY_TYPE_WORKSPACE_CONFIGURATION": 4,
 		"ENTITY_TYPE_MEMORY_BUCKET":           5,
+		"ENTITY_TYPE_VARIABLE":                6,
 	}
 )
 
@@ -403,6 +406,55 @@ func (x AgentProcessBuffer) Number() protoreflect.EnumNumber {
 // Deprecated: Use AgentProcessBuffer.Descriptor instead.
 func (AgentProcessBuffer) EnumDescriptor() ([]byte, []int) {
 	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{6}
+}
+
+type McpToolFilterMode int32
+
+const (
+	McpToolFilterMode_MCP_TOOL_FILTER_MODE_UNSPECIFIED McpToolFilterMode = 0
+	McpToolFilterMode_MCP_TOOL_FILTER_MODE_ALLOW       McpToolFilterMode = 1
+	McpToolFilterMode_MCP_TOOL_FILTER_MODE_DENY        McpToolFilterMode = 2
+)
+
+// Enum value maps for McpToolFilterMode.
+var (
+	McpToolFilterMode_name = map[int32]string{
+		0: "MCP_TOOL_FILTER_MODE_UNSPECIFIED",
+		1: "MCP_TOOL_FILTER_MODE_ALLOW",
+		2: "MCP_TOOL_FILTER_MODE_DENY",
+	}
+	McpToolFilterMode_value = map[string]int32{
+		"MCP_TOOL_FILTER_MODE_UNSPECIFIED": 0,
+		"MCP_TOOL_FILTER_MODE_ALLOW":       1,
+		"MCP_TOOL_FILTER_MODE_DENY":        2,
+	}
+)
+
+func (x McpToolFilterMode) Enum() *McpToolFilterMode {
+	p := new(McpToolFilterMode)
+	*p = x
+	return p
+}
+
+func (x McpToolFilterMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (McpToolFilterMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_agynio_api_teams_v1_teams_proto_enumTypes[7].Descriptor()
+}
+
+func (McpToolFilterMode) Type() protoreflect.EnumType {
+	return &file_agynio_api_teams_v1_teams_proto_enumTypes[7]
+}
+
+func (x McpToolFilterMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use McpToolFilterMode.Descriptor instead.
+func (McpToolFilterMode) EnumDescriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{7}
 }
 
 // Metadata shared by every team resource.
@@ -1802,6 +1854,102 @@ func (x *McpEnvItem) GetValue() string {
 	return ""
 }
 
+type McpToolFilterRule struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pattern       string                 `protobuf:"bytes,1,opt,name=pattern,proto3" json:"pattern,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *McpToolFilterRule) Reset() {
+	*x = McpToolFilterRule{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *McpToolFilterRule) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*McpToolFilterRule) ProtoMessage() {}
+
+func (x *McpToolFilterRule) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use McpToolFilterRule.ProtoReflect.Descriptor instead.
+func (*McpToolFilterRule) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *McpToolFilterRule) GetPattern() string {
+	if x != nil {
+		return x.Pattern
+	}
+	return ""
+}
+
+type McpToolFilter struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mode          McpToolFilterMode      `protobuf:"varint,1,opt,name=mode,proto3,enum=agynio.api.teams.v1.McpToolFilterMode" json:"mode,omitempty"`
+	Rules         []*McpToolFilterRule   `protobuf:"bytes,2,rep,name=rules,proto3" json:"rules,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *McpToolFilter) Reset() {
+	*x = McpToolFilter{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *McpToolFilter) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*McpToolFilter) ProtoMessage() {}
+
+func (x *McpToolFilter) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use McpToolFilter.ProtoReflect.Descriptor instead.
+func (*McpToolFilter) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *McpToolFilter) GetMode() McpToolFilterMode {
+	if x != nil {
+		return x.Mode
+	}
+	return McpToolFilterMode_MCP_TOOL_FILTER_MODE_UNSPECIFIED
+}
+
+func (x *McpToolFilter) GetRules() []*McpToolFilterRule {
+	if x != nil {
+		return x.Rules
+	}
+	return nil
+}
+
 type McpServerRestartConfig struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MaxAttempts   int32                  `protobuf:"varint,1,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
@@ -1812,7 +1960,7 @@ type McpServerRestartConfig struct {
 
 func (x *McpServerRestartConfig) Reset() {
 	*x = McpServerRestartConfig{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[25]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1824,7 +1972,7 @@ func (x *McpServerRestartConfig) String() string {
 func (*McpServerRestartConfig) ProtoMessage() {}
 
 func (x *McpServerRestartConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[25]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1837,7 +1985,7 @@ func (x *McpServerRestartConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use McpServerRestartConfig.ProtoReflect.Descriptor instead.
 func (*McpServerRestartConfig) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{25}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *McpServerRestartConfig) GetMaxAttempts() int32 {
@@ -1865,13 +2013,14 @@ type McpServerConfig struct {
 	HeartbeatIntervalMs int32                   `protobuf:"varint,7,opt,name=heartbeat_interval_ms,json=heartbeatIntervalMs,proto3" json:"heartbeat_interval_ms,omitempty"`
 	StaleTimeoutMs      int32                   `protobuf:"varint,8,opt,name=stale_timeout_ms,json=staleTimeoutMs,proto3" json:"stale_timeout_ms,omitempty"`
 	Restart             *McpServerRestartConfig `protobuf:"bytes,9,opt,name=restart,proto3" json:"restart,omitempty"`
+	ToolFilter          *McpToolFilter          `protobuf:"bytes,10,opt,name=tool_filter,json=toolFilter,proto3" json:"tool_filter,omitempty"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
 
 func (x *McpServerConfig) Reset() {
 	*x = McpServerConfig{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[26]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1883,7 +2032,7 @@ func (x *McpServerConfig) String() string {
 func (*McpServerConfig) ProtoMessage() {}
 
 func (x *McpServerConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[26]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1896,7 +2045,7 @@ func (x *McpServerConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use McpServerConfig.ProtoReflect.Descriptor instead.
 func (*McpServerConfig) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{26}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *McpServerConfig) GetNamespace() string {
@@ -1962,6 +2111,13 @@ func (x *McpServerConfig) GetRestart() *McpServerRestartConfig {
 	return nil
 }
 
+func (x *McpServerConfig) GetToolFilter() *McpToolFilter {
+	if x != nil {
+		return x.ToolFilter
+	}
+	return nil
+}
+
 type McpServer struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Meta          *EntityMeta            `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -1974,7 +2130,7 @@ type McpServer struct {
 
 func (x *McpServer) Reset() {
 	*x = McpServer{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[27]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1986,7 +2142,7 @@ func (x *McpServer) String() string {
 func (*McpServer) ProtoMessage() {}
 
 func (x *McpServer) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[27]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1999,7 +2155,7 @@ func (x *McpServer) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use McpServer.ProtoReflect.Descriptor instead.
 func (*McpServer) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{27}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *McpServer) GetMeta() *EntityMeta {
@@ -2041,7 +2197,7 @@ type CreateMcpServerRequest struct {
 
 func (x *CreateMcpServerRequest) Reset() {
 	*x = CreateMcpServerRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[28]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2053,7 +2209,7 @@ func (x *CreateMcpServerRequest) String() string {
 func (*CreateMcpServerRequest) ProtoMessage() {}
 
 func (x *CreateMcpServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[28]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2066,7 +2222,7 @@ func (x *CreateMcpServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateMcpServerRequest.ProtoReflect.Descriptor instead.
 func (*CreateMcpServerRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{28}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CreateMcpServerRequest) GetTitle() string {
@@ -2099,7 +2255,7 @@ type CreateMcpServerResponse struct {
 
 func (x *CreateMcpServerResponse) Reset() {
 	*x = CreateMcpServerResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[29]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2111,7 +2267,7 @@ func (x *CreateMcpServerResponse) String() string {
 func (*CreateMcpServerResponse) ProtoMessage() {}
 
 func (x *CreateMcpServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[29]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2124,7 +2280,7 @@ func (x *CreateMcpServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateMcpServerResponse.ProtoReflect.Descriptor instead.
 func (*CreateMcpServerResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{29}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *CreateMcpServerResponse) GetMcpServer() *McpServer {
@@ -2143,7 +2299,7 @@ type GetMcpServerRequest struct {
 
 func (x *GetMcpServerRequest) Reset() {
 	*x = GetMcpServerRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[30]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2155,7 +2311,7 @@ func (x *GetMcpServerRequest) String() string {
 func (*GetMcpServerRequest) ProtoMessage() {}
 
 func (x *GetMcpServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[30]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2168,7 +2324,7 @@ func (x *GetMcpServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMcpServerRequest.ProtoReflect.Descriptor instead.
 func (*GetMcpServerRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{30}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetMcpServerRequest) GetId() string {
@@ -2187,7 +2343,7 @@ type GetMcpServerResponse struct {
 
 func (x *GetMcpServerResponse) Reset() {
 	*x = GetMcpServerResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[31]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2199,7 +2355,7 @@ func (x *GetMcpServerResponse) String() string {
 func (*GetMcpServerResponse) ProtoMessage() {}
 
 func (x *GetMcpServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[31]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2212,7 +2368,7 @@ func (x *GetMcpServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMcpServerResponse.ProtoReflect.Descriptor instead.
 func (*GetMcpServerResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{31}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetMcpServerResponse) GetMcpServer() *McpServer {
@@ -2234,7 +2390,7 @@ type UpdateMcpServerRequest struct {
 
 func (x *UpdateMcpServerRequest) Reset() {
 	*x = UpdateMcpServerRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[32]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2246,7 +2402,7 @@ func (x *UpdateMcpServerRequest) String() string {
 func (*UpdateMcpServerRequest) ProtoMessage() {}
 
 func (x *UpdateMcpServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[32]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2259,7 +2415,7 @@ func (x *UpdateMcpServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMcpServerRequest.ProtoReflect.Descriptor instead.
 func (*UpdateMcpServerRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{32}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *UpdateMcpServerRequest) GetId() string {
@@ -2299,7 +2455,7 @@ type UpdateMcpServerResponse struct {
 
 func (x *UpdateMcpServerResponse) Reset() {
 	*x = UpdateMcpServerResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[33]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2311,7 +2467,7 @@ func (x *UpdateMcpServerResponse) String() string {
 func (*UpdateMcpServerResponse) ProtoMessage() {}
 
 func (x *UpdateMcpServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[33]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2324,7 +2480,7 @@ func (x *UpdateMcpServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMcpServerResponse.ProtoReflect.Descriptor instead.
 func (*UpdateMcpServerResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{33}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *UpdateMcpServerResponse) GetMcpServer() *McpServer {
@@ -2343,7 +2499,7 @@ type DeleteMcpServerRequest struct {
 
 func (x *DeleteMcpServerRequest) Reset() {
 	*x = DeleteMcpServerRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[34]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2355,7 +2511,7 @@ func (x *DeleteMcpServerRequest) String() string {
 func (*DeleteMcpServerRequest) ProtoMessage() {}
 
 func (x *DeleteMcpServerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[34]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2368,7 +2524,7 @@ func (x *DeleteMcpServerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMcpServerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteMcpServerRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{34}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *DeleteMcpServerRequest) GetId() string {
@@ -2386,7 +2542,7 @@ type DeleteMcpServerResponse struct {
 
 func (x *DeleteMcpServerResponse) Reset() {
 	*x = DeleteMcpServerResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[35]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2398,7 +2554,7 @@ func (x *DeleteMcpServerResponse) String() string {
 func (*DeleteMcpServerResponse) ProtoMessage() {}
 
 func (x *DeleteMcpServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[35]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2411,7 +2567,7 @@ func (x *DeleteMcpServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMcpServerResponse.ProtoReflect.Descriptor instead.
 func (*DeleteMcpServerResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{35}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{37}
 }
 
 type ListMcpServersRequest struct {
@@ -2424,7 +2580,7 @@ type ListMcpServersRequest struct {
 
 func (x *ListMcpServersRequest) Reset() {
 	*x = ListMcpServersRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[36]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2436,7 +2592,7 @@ func (x *ListMcpServersRequest) String() string {
 func (*ListMcpServersRequest) ProtoMessage() {}
 
 func (x *ListMcpServersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[36]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2449,7 +2605,7 @@ func (x *ListMcpServersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMcpServersRequest.ProtoReflect.Descriptor instead.
 func (*ListMcpServersRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{36}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ListMcpServersRequest) GetPageSize() int32 {
@@ -2476,7 +2632,7 @@ type ListMcpServersResponse struct {
 
 func (x *ListMcpServersResponse) Reset() {
 	*x = ListMcpServersResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[37]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2488,7 +2644,7 @@ func (x *ListMcpServersResponse) String() string {
 func (*ListMcpServersResponse) ProtoMessage() {}
 
 func (x *ListMcpServersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[37]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2501,7 +2657,7 @@ func (x *ListMcpServersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMcpServersResponse.ProtoReflect.Descriptor instead.
 func (*ListMcpServersResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{37}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *ListMcpServersResponse) GetMcpServers() []*McpServer {
@@ -2528,7 +2684,7 @@ type WorkspaceEnvItem struct {
 
 func (x *WorkspaceEnvItem) Reset() {
 	*x = WorkspaceEnvItem{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[38]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2540,7 +2696,7 @@ func (x *WorkspaceEnvItem) String() string {
 func (*WorkspaceEnvItem) ProtoMessage() {}
 
 func (x *WorkspaceEnvItem) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[38]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2553,7 +2709,7 @@ func (x *WorkspaceEnvItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkspaceEnvItem.ProtoReflect.Descriptor instead.
 func (*WorkspaceEnvItem) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{38}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *WorkspaceEnvItem) GetName() string {
@@ -2580,7 +2736,7 @@ type WorkspaceVolumeConfig struct {
 
 func (x *WorkspaceVolumeConfig) Reset() {
 	*x = WorkspaceVolumeConfig{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[39]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2592,7 +2748,7 @@ func (x *WorkspaceVolumeConfig) String() string {
 func (*WorkspaceVolumeConfig) ProtoMessage() {}
 
 func (x *WorkspaceVolumeConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[39]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2605,7 +2761,7 @@ func (x *WorkspaceVolumeConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkspaceVolumeConfig.ProtoReflect.Descriptor instead.
 func (*WorkspaceVolumeConfig) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{39}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *WorkspaceVolumeConfig) GetEnabled() bool {
@@ -2640,7 +2796,7 @@ type WorkspaceConfig struct {
 
 func (x *WorkspaceConfig) Reset() {
 	*x = WorkspaceConfig{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[40]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2652,7 +2808,7 @@ func (x *WorkspaceConfig) String() string {
 func (*WorkspaceConfig) ProtoMessage() {}
 
 func (x *WorkspaceConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[40]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2665,7 +2821,7 @@ func (x *WorkspaceConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkspaceConfig.ProtoReflect.Descriptor instead.
 func (*WorkspaceConfig) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{40}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *WorkspaceConfig) GetImage() string {
@@ -2750,7 +2906,7 @@ type WorkspaceConfiguration struct {
 
 func (x *WorkspaceConfiguration) Reset() {
 	*x = WorkspaceConfiguration{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[41]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2762,7 +2918,7 @@ func (x *WorkspaceConfiguration) String() string {
 func (*WorkspaceConfiguration) ProtoMessage() {}
 
 func (x *WorkspaceConfiguration) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[41]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2775,7 +2931,7 @@ func (x *WorkspaceConfiguration) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WorkspaceConfiguration.ProtoReflect.Descriptor instead.
 func (*WorkspaceConfiguration) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{41}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *WorkspaceConfiguration) GetMeta() *EntityMeta {
@@ -2817,7 +2973,7 @@ type CreateWorkspaceConfigurationRequest struct {
 
 func (x *CreateWorkspaceConfigurationRequest) Reset() {
 	*x = CreateWorkspaceConfigurationRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[42]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2829,7 +2985,7 @@ func (x *CreateWorkspaceConfigurationRequest) String() string {
 func (*CreateWorkspaceConfigurationRequest) ProtoMessage() {}
 
 func (x *CreateWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[42]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2842,7 +2998,7 @@ func (x *CreateWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use CreateWorkspaceConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*CreateWorkspaceConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{42}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *CreateWorkspaceConfigurationRequest) GetTitle() string {
@@ -2875,7 +3031,7 @@ type CreateWorkspaceConfigurationResponse struct {
 
 func (x *CreateWorkspaceConfigurationResponse) Reset() {
 	*x = CreateWorkspaceConfigurationResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[43]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2887,7 +3043,7 @@ func (x *CreateWorkspaceConfigurationResponse) String() string {
 func (*CreateWorkspaceConfigurationResponse) ProtoMessage() {}
 
 func (x *CreateWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[43]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2900,7 +3056,7 @@ func (x *CreateWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use CreateWorkspaceConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*CreateWorkspaceConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{43}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *CreateWorkspaceConfigurationResponse) GetWorkspaceConfiguration() *WorkspaceConfiguration {
@@ -2919,7 +3075,7 @@ type GetWorkspaceConfigurationRequest struct {
 
 func (x *GetWorkspaceConfigurationRequest) Reset() {
 	*x = GetWorkspaceConfigurationRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[44]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2931,7 +3087,7 @@ func (x *GetWorkspaceConfigurationRequest) String() string {
 func (*GetWorkspaceConfigurationRequest) ProtoMessage() {}
 
 func (x *GetWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[44]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2944,7 +3100,7 @@ func (x *GetWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetWorkspaceConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*GetWorkspaceConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{44}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *GetWorkspaceConfigurationRequest) GetId() string {
@@ -2963,7 +3119,7 @@ type GetWorkspaceConfigurationResponse struct {
 
 func (x *GetWorkspaceConfigurationResponse) Reset() {
 	*x = GetWorkspaceConfigurationResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[45]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2975,7 +3131,7 @@ func (x *GetWorkspaceConfigurationResponse) String() string {
 func (*GetWorkspaceConfigurationResponse) ProtoMessage() {}
 
 func (x *GetWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[45]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2988,7 +3144,7 @@ func (x *GetWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetWorkspaceConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*GetWorkspaceConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{45}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *GetWorkspaceConfigurationResponse) GetWorkspaceConfiguration() *WorkspaceConfiguration {
@@ -3010,7 +3166,7 @@ type UpdateWorkspaceConfigurationRequest struct {
 
 func (x *UpdateWorkspaceConfigurationRequest) Reset() {
 	*x = UpdateWorkspaceConfigurationRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[46]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3022,7 +3178,7 @@ func (x *UpdateWorkspaceConfigurationRequest) String() string {
 func (*UpdateWorkspaceConfigurationRequest) ProtoMessage() {}
 
 func (x *UpdateWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[46]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3035,7 +3191,7 @@ func (x *UpdateWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use UpdateWorkspaceConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*UpdateWorkspaceConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{46}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *UpdateWorkspaceConfigurationRequest) GetId() string {
@@ -3075,7 +3231,7 @@ type UpdateWorkspaceConfigurationResponse struct {
 
 func (x *UpdateWorkspaceConfigurationResponse) Reset() {
 	*x = UpdateWorkspaceConfigurationResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[47]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3087,7 +3243,7 @@ func (x *UpdateWorkspaceConfigurationResponse) String() string {
 func (*UpdateWorkspaceConfigurationResponse) ProtoMessage() {}
 
 func (x *UpdateWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[47]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3100,7 +3256,7 @@ func (x *UpdateWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use UpdateWorkspaceConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*UpdateWorkspaceConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{47}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *UpdateWorkspaceConfigurationResponse) GetWorkspaceConfiguration() *WorkspaceConfiguration {
@@ -3119,7 +3275,7 @@ type DeleteWorkspaceConfigurationRequest struct {
 
 func (x *DeleteWorkspaceConfigurationRequest) Reset() {
 	*x = DeleteWorkspaceConfigurationRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[48]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3131,7 +3287,7 @@ func (x *DeleteWorkspaceConfigurationRequest) String() string {
 func (*DeleteWorkspaceConfigurationRequest) ProtoMessage() {}
 
 func (x *DeleteWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[48]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3144,7 +3300,7 @@ func (x *DeleteWorkspaceConfigurationRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use DeleteWorkspaceConfigurationRequest.ProtoReflect.Descriptor instead.
 func (*DeleteWorkspaceConfigurationRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{48}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *DeleteWorkspaceConfigurationRequest) GetId() string {
@@ -3162,7 +3318,7 @@ type DeleteWorkspaceConfigurationResponse struct {
 
 func (x *DeleteWorkspaceConfigurationResponse) Reset() {
 	*x = DeleteWorkspaceConfigurationResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[49]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3174,7 +3330,7 @@ func (x *DeleteWorkspaceConfigurationResponse) String() string {
 func (*DeleteWorkspaceConfigurationResponse) ProtoMessage() {}
 
 func (x *DeleteWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[49]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3187,7 +3343,7 @@ func (x *DeleteWorkspaceConfigurationResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use DeleteWorkspaceConfigurationResponse.ProtoReflect.Descriptor instead.
 func (*DeleteWorkspaceConfigurationResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{49}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{51}
 }
 
 type ListWorkspaceConfigurationsRequest struct {
@@ -3200,7 +3356,7 @@ type ListWorkspaceConfigurationsRequest struct {
 
 func (x *ListWorkspaceConfigurationsRequest) Reset() {
 	*x = ListWorkspaceConfigurationsRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[50]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3212,7 +3368,7 @@ func (x *ListWorkspaceConfigurationsRequest) String() string {
 func (*ListWorkspaceConfigurationsRequest) ProtoMessage() {}
 
 func (x *ListWorkspaceConfigurationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[50]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3225,7 +3381,7 @@ func (x *ListWorkspaceConfigurationsRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use ListWorkspaceConfigurationsRequest.ProtoReflect.Descriptor instead.
 func (*ListWorkspaceConfigurationsRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{50}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListWorkspaceConfigurationsRequest) GetPageSize() int32 {
@@ -3252,7 +3408,7 @@ type ListWorkspaceConfigurationsResponse struct {
 
 func (x *ListWorkspaceConfigurationsResponse) Reset() {
 	*x = ListWorkspaceConfigurationsResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[51]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3264,7 +3420,7 @@ func (x *ListWorkspaceConfigurationsResponse) String() string {
 func (*ListWorkspaceConfigurationsResponse) ProtoMessage() {}
 
 func (x *ListWorkspaceConfigurationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[51]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3277,7 +3433,7 @@ func (x *ListWorkspaceConfigurationsResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ListWorkspaceConfigurationsResponse.ProtoReflect.Descriptor instead.
 func (*ListWorkspaceConfigurationsResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{51}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ListWorkspaceConfigurationsResponse) GetWorkspaceConfigurations() []*WorkspaceConfiguration {
@@ -3304,7 +3460,7 @@ type MemoryBucketConfig struct {
 
 func (x *MemoryBucketConfig) Reset() {
 	*x = MemoryBucketConfig{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[52]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3316,7 +3472,7 @@ func (x *MemoryBucketConfig) String() string {
 func (*MemoryBucketConfig) ProtoMessage() {}
 
 func (x *MemoryBucketConfig) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[52]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3329,7 +3485,7 @@ func (x *MemoryBucketConfig) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryBucketConfig.ProtoReflect.Descriptor instead.
 func (*MemoryBucketConfig) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{52}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *MemoryBucketConfig) GetScope() MemoryBucketScope {
@@ -3358,7 +3514,7 @@ type MemoryBucket struct {
 
 func (x *MemoryBucket) Reset() {
 	*x = MemoryBucket{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[53]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3370,7 +3526,7 @@ func (x *MemoryBucket) String() string {
 func (*MemoryBucket) ProtoMessage() {}
 
 func (x *MemoryBucket) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[53]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3383,7 +3539,7 @@ func (x *MemoryBucket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MemoryBucket.ProtoReflect.Descriptor instead.
 func (*MemoryBucket) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{53}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *MemoryBucket) GetMeta() *EntityMeta {
@@ -3425,7 +3581,7 @@ type CreateMemoryBucketRequest struct {
 
 func (x *CreateMemoryBucketRequest) Reset() {
 	*x = CreateMemoryBucketRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[54]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3437,7 +3593,7 @@ func (x *CreateMemoryBucketRequest) String() string {
 func (*CreateMemoryBucketRequest) ProtoMessage() {}
 
 func (x *CreateMemoryBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[54]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3450,7 +3606,7 @@ func (x *CreateMemoryBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateMemoryBucketRequest.ProtoReflect.Descriptor instead.
 func (*CreateMemoryBucketRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{54}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *CreateMemoryBucketRequest) GetTitle() string {
@@ -3483,7 +3639,7 @@ type CreateMemoryBucketResponse struct {
 
 func (x *CreateMemoryBucketResponse) Reset() {
 	*x = CreateMemoryBucketResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[55]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3495,7 +3651,7 @@ func (x *CreateMemoryBucketResponse) String() string {
 func (*CreateMemoryBucketResponse) ProtoMessage() {}
 
 func (x *CreateMemoryBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[55]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3508,7 +3664,7 @@ func (x *CreateMemoryBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateMemoryBucketResponse.ProtoReflect.Descriptor instead.
 func (*CreateMemoryBucketResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{55}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *CreateMemoryBucketResponse) GetMemoryBucket() *MemoryBucket {
@@ -3527,7 +3683,7 @@ type GetMemoryBucketRequest struct {
 
 func (x *GetMemoryBucketRequest) Reset() {
 	*x = GetMemoryBucketRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[56]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3539,7 +3695,7 @@ func (x *GetMemoryBucketRequest) String() string {
 func (*GetMemoryBucketRequest) ProtoMessage() {}
 
 func (x *GetMemoryBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[56]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3552,7 +3708,7 @@ func (x *GetMemoryBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMemoryBucketRequest.ProtoReflect.Descriptor instead.
 func (*GetMemoryBucketRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{56}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *GetMemoryBucketRequest) GetId() string {
@@ -3571,7 +3727,7 @@ type GetMemoryBucketResponse struct {
 
 func (x *GetMemoryBucketResponse) Reset() {
 	*x = GetMemoryBucketResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[57]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3583,7 +3739,7 @@ func (x *GetMemoryBucketResponse) String() string {
 func (*GetMemoryBucketResponse) ProtoMessage() {}
 
 func (x *GetMemoryBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[57]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3596,7 +3752,7 @@ func (x *GetMemoryBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMemoryBucketResponse.ProtoReflect.Descriptor instead.
 func (*GetMemoryBucketResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{57}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *GetMemoryBucketResponse) GetMemoryBucket() *MemoryBucket {
@@ -3618,7 +3774,7 @@ type UpdateMemoryBucketRequest struct {
 
 func (x *UpdateMemoryBucketRequest) Reset() {
 	*x = UpdateMemoryBucketRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[58]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3630,7 +3786,7 @@ func (x *UpdateMemoryBucketRequest) String() string {
 func (*UpdateMemoryBucketRequest) ProtoMessage() {}
 
 func (x *UpdateMemoryBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[58]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3643,7 +3799,7 @@ func (x *UpdateMemoryBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMemoryBucketRequest.ProtoReflect.Descriptor instead.
 func (*UpdateMemoryBucketRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{58}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *UpdateMemoryBucketRequest) GetId() string {
@@ -3683,7 +3839,7 @@ type UpdateMemoryBucketResponse struct {
 
 func (x *UpdateMemoryBucketResponse) Reset() {
 	*x = UpdateMemoryBucketResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[59]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3695,7 +3851,7 @@ func (x *UpdateMemoryBucketResponse) String() string {
 func (*UpdateMemoryBucketResponse) ProtoMessage() {}
 
 func (x *UpdateMemoryBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[59]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3708,7 +3864,7 @@ func (x *UpdateMemoryBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMemoryBucketResponse.ProtoReflect.Descriptor instead.
 func (*UpdateMemoryBucketResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{59}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *UpdateMemoryBucketResponse) GetMemoryBucket() *MemoryBucket {
@@ -3727,7 +3883,7 @@ type DeleteMemoryBucketRequest struct {
 
 func (x *DeleteMemoryBucketRequest) Reset() {
 	*x = DeleteMemoryBucketRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[60]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3739,7 +3895,7 @@ func (x *DeleteMemoryBucketRequest) String() string {
 func (*DeleteMemoryBucketRequest) ProtoMessage() {}
 
 func (x *DeleteMemoryBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[60]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3752,7 +3908,7 @@ func (x *DeleteMemoryBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMemoryBucketRequest.ProtoReflect.Descriptor instead.
 func (*DeleteMemoryBucketRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{60}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *DeleteMemoryBucketRequest) GetId() string {
@@ -3770,7 +3926,7 @@ type DeleteMemoryBucketResponse struct {
 
 func (x *DeleteMemoryBucketResponse) Reset() {
 	*x = DeleteMemoryBucketResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[61]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3782,7 +3938,7 @@ func (x *DeleteMemoryBucketResponse) String() string {
 func (*DeleteMemoryBucketResponse) ProtoMessage() {}
 
 func (x *DeleteMemoryBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[61]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3795,7 +3951,7 @@ func (x *DeleteMemoryBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMemoryBucketResponse.ProtoReflect.Descriptor instead.
 func (*DeleteMemoryBucketResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{61}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{63}
 }
 
 type ListMemoryBucketsRequest struct {
@@ -3808,7 +3964,7 @@ type ListMemoryBucketsRequest struct {
 
 func (x *ListMemoryBucketsRequest) Reset() {
 	*x = ListMemoryBucketsRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[62]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3820,7 +3976,7 @@ func (x *ListMemoryBucketsRequest) String() string {
 func (*ListMemoryBucketsRequest) ProtoMessage() {}
 
 func (x *ListMemoryBucketsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[62]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3833,7 +3989,7 @@ func (x *ListMemoryBucketsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMemoryBucketsRequest.ProtoReflect.Descriptor instead.
 func (*ListMemoryBucketsRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{62}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *ListMemoryBucketsRequest) GetPageSize() int32 {
@@ -3860,7 +4016,7 @@ type ListMemoryBucketsResponse struct {
 
 func (x *ListMemoryBucketsResponse) Reset() {
 	*x = ListMemoryBucketsResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[63]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3872,7 +4028,7 @@ func (x *ListMemoryBucketsResponse) String() string {
 func (*ListMemoryBucketsResponse) ProtoMessage() {}
 
 func (x *ListMemoryBucketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[63]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3885,7 +4041,7 @@ func (x *ListMemoryBucketsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMemoryBucketsResponse.ProtoReflect.Descriptor instead.
 func (*ListMemoryBucketsResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{63}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ListMemoryBucketsResponse) GetMemoryBuckets() []*MemoryBucket {
@@ -3902,6 +4058,666 @@ func (x *ListMemoryBucketsResponse) GetNextPageToken() string {
 	return ""
 }
 
+type Variable struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Meta          *EntityMeta            `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,3,opt,name=value,proto3" json:"value,omitempty"`
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Variable) Reset() {
+	*x = Variable{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[66]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Variable) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Variable) ProtoMessage() {}
+
+func (x *Variable) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[66]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Variable.ProtoReflect.Descriptor instead.
+func (*Variable) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{66}
+}
+
+func (x *Variable) GetMeta() *EntityMeta {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
+func (x *Variable) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *Variable) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *Variable) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+type CreateVariableRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value         string                 `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVariableRequest) Reset() {
+	*x = CreateVariableRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[67]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVariableRequest) ProtoMessage() {}
+
+func (x *CreateVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[67]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVariableRequest.ProtoReflect.Descriptor instead.
+func (*CreateVariableRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{67}
+}
+
+func (x *CreateVariableRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *CreateVariableRequest) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *CreateVariableRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+type CreateVariableResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Variable      *Variable              `protobuf:"bytes,1,opt,name=variable,proto3" json:"variable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateVariableResponse) Reset() {
+	*x = CreateVariableResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[68]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateVariableResponse) ProtoMessage() {}
+
+func (x *CreateVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[68]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateVariableResponse.ProtoReflect.Descriptor instead.
+func (*CreateVariableResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{68}
+}
+
+func (x *CreateVariableResponse) GetVariable() *Variable {
+	if x != nil {
+		return x.Variable
+	}
+	return nil
+}
+
+type GetVariableRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVariableRequest) Reset() {
+	*x = GetVariableRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[69]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariableRequest) ProtoMessage() {}
+
+func (x *GetVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[69]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariableRequest.ProtoReflect.Descriptor instead.
+func (*GetVariableRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{69}
+}
+
+func (x *GetVariableRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetVariableResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Variable      *Variable              `protobuf:"bytes,1,opt,name=variable,proto3" json:"variable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetVariableResponse) Reset() {
+	*x = GetVariableResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[70]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetVariableResponse) ProtoMessage() {}
+
+func (x *GetVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[70]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetVariableResponse.ProtoReflect.Descriptor instead.
+func (*GetVariableResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{70}
+}
+
+func (x *GetVariableResponse) GetVariable() *Variable {
+	if x != nil {
+		return x.Variable
+	}
+	return nil
+}
+
+type UpdateVariableRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Key           *string                `protobuf:"bytes,2,opt,name=key,proto3,oneof" json:"key,omitempty"`
+	Value         *string                `protobuf:"bytes,3,opt,name=value,proto3,oneof" json:"value,omitempty"`
+	Description   *string                `protobuf:"bytes,4,opt,name=description,proto3,oneof" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateVariableRequest) Reset() {
+	*x = UpdateVariableRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[71]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateVariableRequest) ProtoMessage() {}
+
+func (x *UpdateVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[71]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateVariableRequest.ProtoReflect.Descriptor instead.
+func (*UpdateVariableRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{71}
+}
+
+func (x *UpdateVariableRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateVariableRequest) GetKey() string {
+	if x != nil && x.Key != nil {
+		return *x.Key
+	}
+	return ""
+}
+
+func (x *UpdateVariableRequest) GetValue() string {
+	if x != nil && x.Value != nil {
+		return *x.Value
+	}
+	return ""
+}
+
+func (x *UpdateVariableRequest) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
+	}
+	return ""
+}
+
+type UpdateVariableResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Variable      *Variable              `protobuf:"bytes,1,opt,name=variable,proto3" json:"variable,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateVariableResponse) Reset() {
+	*x = UpdateVariableResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateVariableResponse) ProtoMessage() {}
+
+func (x *UpdateVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateVariableResponse.ProtoReflect.Descriptor instead.
+func (*UpdateVariableResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *UpdateVariableResponse) GetVariable() *Variable {
+	if x != nil {
+		return x.Variable
+	}
+	return nil
+}
+
+type DeleteVariableRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteVariableRequest) Reset() {
+	*x = DeleteVariableRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVariableRequest) ProtoMessage() {}
+
+func (x *DeleteVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVariableRequest.ProtoReflect.Descriptor instead.
+func (*DeleteVariableRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *DeleteVariableRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type DeleteVariableResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteVariableResponse) Reset() {
+	*x = DeleteVariableResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteVariableResponse) ProtoMessage() {}
+
+func (x *DeleteVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteVariableResponse.ProtoReflect.Descriptor instead.
+func (*DeleteVariableResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{74}
+}
+
+type ListVariablesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      int32                  `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Query         string                 `protobuf:"bytes,3,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVariablesRequest) Reset() {
+	*x = ListVariablesRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVariablesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVariablesRequest) ProtoMessage() {}
+
+func (x *ListVariablesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVariablesRequest.ProtoReflect.Descriptor instead.
+func (*ListVariablesRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *ListVariablesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListVariablesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListVariablesRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+type ListVariablesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Variables     []*Variable            `protobuf:"bytes,1,rep,name=variables,proto3" json:"variables,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListVariablesResponse) Reset() {
+	*x = ListVariablesResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[76]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListVariablesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListVariablesResponse) ProtoMessage() {}
+
+func (x *ListVariablesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[76]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListVariablesResponse.ProtoReflect.Descriptor instead.
+func (*ListVariablesResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{76}
+}
+
+func (x *ListVariablesResponse) GetVariables() []*Variable {
+	if x != nil {
+		return x.Variables
+	}
+	return nil
+}
+
+func (x *ListVariablesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type ResolveVariableRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveVariableRequest) Reset() {
+	*x = ResolveVariableRequest{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[77]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveVariableRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveVariableRequest) ProtoMessage() {}
+
+func (x *ResolveVariableRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[77]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveVariableRequest.ProtoReflect.Descriptor instead.
+func (*ResolveVariableRequest) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{77}
+}
+
+func (x *ResolveVariableRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type ResolveVariableResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+	Found         bool                   `protobuf:"varint,2,opt,name=found,proto3" json:"found,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ResolveVariableResponse) Reset() {
+	*x = ResolveVariableResponse{}
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[78]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResolveVariableResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResolveVariableResponse) ProtoMessage() {}
+
+func (x *ResolveVariableResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[78]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResolveVariableResponse.ProtoReflect.Descriptor instead.
+func (*ResolveVariableResponse) Descriptor() ([]byte, []int) {
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{78}
+}
+
+func (x *ResolveVariableResponse) GetValue() string {
+	if x != nil {
+		return x.Value
+	}
+	return ""
+}
+
+func (x *ResolveVariableResponse) GetFound() bool {
+	if x != nil {
+		return x.Found
+	}
+	return false
+}
+
 type Attachment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Meta          *EntityMeta            `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -3916,7 +4732,7 @@ type Attachment struct {
 
 func (x *Attachment) Reset() {
 	*x = Attachment{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[64]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3928,7 +4744,7 @@ func (x *Attachment) String() string {
 func (*Attachment) ProtoMessage() {}
 
 func (x *Attachment) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[64]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3941,7 +4757,7 @@ func (x *Attachment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Attachment.ProtoReflect.Descriptor instead.
 func (*Attachment) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{64}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *Attachment) GetMeta() *EntityMeta {
@@ -3997,7 +4813,7 @@ type CreateAttachmentRequest struct {
 
 func (x *CreateAttachmentRequest) Reset() {
 	*x = CreateAttachmentRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[65]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4009,7 +4825,7 @@ func (x *CreateAttachmentRequest) String() string {
 func (*CreateAttachmentRequest) ProtoMessage() {}
 
 func (x *CreateAttachmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[65]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4022,7 +4838,7 @@ func (x *CreateAttachmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAttachmentRequest.ProtoReflect.Descriptor instead.
 func (*CreateAttachmentRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{65}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *CreateAttachmentRequest) GetKind() AttachmentKind {
@@ -4055,7 +4871,7 @@ type CreateAttachmentResponse struct {
 
 func (x *CreateAttachmentResponse) Reset() {
 	*x = CreateAttachmentResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[66]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4067,7 +4883,7 @@ func (x *CreateAttachmentResponse) String() string {
 func (*CreateAttachmentResponse) ProtoMessage() {}
 
 func (x *CreateAttachmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[66]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4080,7 +4896,7 @@ func (x *CreateAttachmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateAttachmentResponse.ProtoReflect.Descriptor instead.
 func (*CreateAttachmentResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{66}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *CreateAttachmentResponse) GetAttachment() *Attachment {
@@ -4099,7 +4915,7 @@ type GetAttachmentRequest struct {
 
 func (x *GetAttachmentRequest) Reset() {
 	*x = GetAttachmentRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[67]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4111,7 +4927,7 @@ func (x *GetAttachmentRequest) String() string {
 func (*GetAttachmentRequest) ProtoMessage() {}
 
 func (x *GetAttachmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[67]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4124,7 +4940,7 @@ func (x *GetAttachmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttachmentRequest.ProtoReflect.Descriptor instead.
 func (*GetAttachmentRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{67}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *GetAttachmentRequest) GetId() string {
@@ -4143,7 +4959,7 @@ type GetAttachmentResponse struct {
 
 func (x *GetAttachmentResponse) Reset() {
 	*x = GetAttachmentResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[68]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4155,7 +4971,7 @@ func (x *GetAttachmentResponse) String() string {
 func (*GetAttachmentResponse) ProtoMessage() {}
 
 func (x *GetAttachmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[68]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4168,7 +4984,7 @@ func (x *GetAttachmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAttachmentResponse.ProtoReflect.Descriptor instead.
 func (*GetAttachmentResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{68}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *GetAttachmentResponse) GetAttachment() *Attachment {
@@ -4187,7 +5003,7 @@ type DeleteAttachmentRequest struct {
 
 func (x *DeleteAttachmentRequest) Reset() {
 	*x = DeleteAttachmentRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[69]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4199,7 +5015,7 @@ func (x *DeleteAttachmentRequest) String() string {
 func (*DeleteAttachmentRequest) ProtoMessage() {}
 
 func (x *DeleteAttachmentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[69]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4212,7 +5028,7 @@ func (x *DeleteAttachmentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAttachmentRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAttachmentRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{69}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *DeleteAttachmentRequest) GetId() string {
@@ -4230,7 +5046,7 @@ type DeleteAttachmentResponse struct {
 
 func (x *DeleteAttachmentResponse) Reset() {
 	*x = DeleteAttachmentResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[70]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4242,7 +5058,7 @@ func (x *DeleteAttachmentResponse) String() string {
 func (*DeleteAttachmentResponse) ProtoMessage() {}
 
 func (x *DeleteAttachmentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[70]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4255,7 +5071,7 @@ func (x *DeleteAttachmentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAttachmentResponse.ProtoReflect.Descriptor instead.
 func (*DeleteAttachmentResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{70}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{85}
 }
 
 type ListAttachmentsRequest struct {
@@ -4273,7 +5089,7 @@ type ListAttachmentsRequest struct {
 
 func (x *ListAttachmentsRequest) Reset() {
 	*x = ListAttachmentsRequest{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[71]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4285,7 +5101,7 @@ func (x *ListAttachmentsRequest) String() string {
 func (*ListAttachmentsRequest) ProtoMessage() {}
 
 func (x *ListAttachmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[71]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4298,7 +5114,7 @@ func (x *ListAttachmentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAttachmentsRequest.ProtoReflect.Descriptor instead.
 func (*ListAttachmentsRequest) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{71}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *ListAttachmentsRequest) GetPageSize() int32 {
@@ -4360,7 +5176,7 @@ type ListAttachmentsResponse struct {
 
 func (x *ListAttachmentsResponse) Reset() {
 	*x = ListAttachmentsResponse{}
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[72]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4372,7 +5188,7 @@ func (x *ListAttachmentsResponse) String() string {
 func (*ListAttachmentsResponse) ProtoMessage() {}
 
 func (x *ListAttachmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[72]
+	mi := &file_agynio_api_teams_v1_teams_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4385,7 +5201,7 @@ func (x *ListAttachmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListAttachmentsResponse.ProtoReflect.Descriptor instead.
 func (*ListAttachmentsResponse) Descriptor() ([]byte, []int) {
-	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{72}
+	return file_agynio_api_teams_v1_teams_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ListAttachmentsResponse) GetAttachments() []*Attachment {
@@ -4507,11 +5323,16 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\n" +
 	"McpEnvItem\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value\"Z\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\"-\n" +
+	"\x11McpToolFilterRule\x12\x18\n" +
+	"\apattern\x18\x01 \x01(\tR\apattern\"\x89\x01\n" +
+	"\rMcpToolFilter\x12:\n" +
+	"\x04mode\x18\x01 \x01(\x0e2&.agynio.api.teams.v1.McpToolFilterModeR\x04mode\x12<\n" +
+	"\x05rules\x18\x02 \x03(\v2&.agynio.api.teams.v1.McpToolFilterRuleR\x05rules\"Z\n" +
 	"\x16McpServerRestartConfig\x12!\n" +
 	"\fmax_attempts\x18\x01 \x01(\x05R\vmaxAttempts\x12\x1d\n" +
 	"\n" +
-	"backoff_ms\x18\x02 \x01(\x05R\tbackoffMs\"\x97\x03\n" +
+	"backoff_ms\x18\x02 \x01(\x05R\tbackoffMs\"\xdc\x03\n" +
 	"\x0fMcpServerConfig\x12\x1c\n" +
 	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x12\x18\n" +
 	"\acommand\x18\x02 \x01(\tR\acommand\x12\x18\n" +
@@ -4521,7 +5342,10 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\x12startup_timeout_ms\x18\x06 \x01(\x05R\x10startupTimeoutMs\x122\n" +
 	"\x15heartbeat_interval_ms\x18\a \x01(\x05R\x13heartbeatIntervalMs\x12(\n" +
 	"\x10stale_timeout_ms\x18\b \x01(\x05R\x0estaleTimeoutMs\x12E\n" +
-	"\arestart\x18\t \x01(\v2+.agynio.api.teams.v1.McpServerRestartConfigR\arestart\"\xb6\x01\n" +
+	"\arestart\x18\t \x01(\v2+.agynio.api.teams.v1.McpServerRestartConfigR\arestart\x12C\n" +
+	"\vtool_filter\x18\n" +
+	" \x01(\v2\".agynio.api.teams.v1.McpToolFilterR\n" +
+	"toolFilter\"\xb6\x01\n" +
 	"\tMcpServer\x123\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1f.agynio.api.teams.v1.EntityMetaR\x04meta\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -4654,7 +5478,48 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"page_token\x18\x02 \x01(\tR\tpageToken\"\x8d\x01\n" +
 	"\x19ListMemoryBucketsResponse\x12H\n" +
 	"\x0ememory_buckets\x18\x01 \x03(\v2!.agynio.api.teams.v1.MemoryBucketR\rmemoryBuckets\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xb8\x02\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x89\x01\n" +
+	"\bVariable\x123\n" +
+	"\x04meta\x18\x01 \x01(\v2\x1f.agynio.api.teams.v1.EntityMetaR\x04meta\x12\x10\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x03 \x01(\tR\x05value\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\"a\n" +
+	"\x15CreateVariableRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"S\n" +
+	"\x16CreateVariableResponse\x129\n" +
+	"\bvariable\x18\x01 \x01(\v2\x1d.agynio.api.teams.v1.VariableR\bvariable\"$\n" +
+	"\x12GetVariableRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"P\n" +
+	"\x13GetVariableResponse\x129\n" +
+	"\bvariable\x18\x01 \x01(\v2\x1d.agynio.api.teams.v1.VariableR\bvariable\"\xa2\x01\n" +
+	"\x15UpdateVariableRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
+	"\x03key\x18\x02 \x01(\tH\x00R\x03key\x88\x01\x01\x12\x19\n" +
+	"\x05value\x18\x03 \x01(\tH\x01R\x05value\x88\x01\x01\x12%\n" +
+	"\vdescription\x18\x04 \x01(\tH\x02R\vdescription\x88\x01\x01B\x06\n" +
+	"\x04_keyB\b\n" +
+	"\x06_valueB\x0e\n" +
+	"\f_description\"S\n" +
+	"\x16UpdateVariableResponse\x129\n" +
+	"\bvariable\x18\x01 \x01(\v2\x1d.agynio.api.teams.v1.VariableR\bvariable\"'\n" +
+	"\x15DeleteVariableRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"\x18\n" +
+	"\x16DeleteVariableResponse\"h\n" +
+	"\x14ListVariablesRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x14\n" +
+	"\x05query\x18\x03 \x01(\tR\x05query\"|\n" +
+	"\x15ListVariablesResponse\x12;\n" +
+	"\tvariables\x18\x01 \x03(\v2\x1d.agynio.api.teams.v1.VariableR\tvariables\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"*\n" +
+	"\x16ResolveVariableRequest\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\"E\n" +
+	"\x17ResolveVariableResponse\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x12\x14\n" +
+	"\x05found\x18\x02 \x01(\bR\x05found\"\xb8\x02\n" +
 	"\n" +
 	"Attachment\x123\n" +
 	"\x04meta\x18\x01 \x01(\v2\x1f.agynio.api.teams.v1.EntityMetaR\x04meta\x127\n" +
@@ -4705,7 +5570,7 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\x1cTOOL_TYPE_SEND_SLACK_MESSAGE\x10\x05\x12\x17\n" +
 	"\x13TOOL_TYPE_REMIND_ME\x10\x06\x12\x1f\n" +
 	"\x1bTOOL_TYPE_GITHUB_CLONE_REPO\x10\a\x12\x18\n" +
-	"\x14TOOL_TYPE_CALL_AGENT\x10\b*\xba\x01\n" +
+	"\x14TOOL_TYPE_CALL_AGENT\x10\b*\xd4\x01\n" +
 	"\n" +
 	"EntityType\x12\x1b\n" +
 	"\x17ENTITY_TYPE_UNSPECIFIED\x10\x00\x12\x15\n" +
@@ -4713,7 +5578,8 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\x10ENTITY_TYPE_TOOL\x10\x02\x12\x1a\n" +
 	"\x16ENTITY_TYPE_MCP_SERVER\x10\x03\x12'\n" +
 	"#ENTITY_TYPE_WORKSPACE_CONFIGURATION\x10\x04\x12\x1d\n" +
-	"\x19ENTITY_TYPE_MEMORY_BUCKET\x10\x05*\x8b\x02\n" +
+	"\x19ENTITY_TYPE_MEMORY_BUCKET\x10\x05\x12\x18\n" +
+	"\x14ENTITY_TYPE_VARIABLE\x10\x06*\x8b\x02\n" +
 	"\x0eAttachmentKind\x12\x1f\n" +
 	"\x1bATTACHMENT_KIND_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aATTACHMENT_KIND_AGENT_TOOL\x10\x01\x12'\n" +
@@ -4737,7 +5603,11 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\x12AgentProcessBuffer\x12$\n" +
 	" AGENT_PROCESS_BUFFER_UNSPECIFIED\x10\x00\x12%\n" +
 	"!AGENT_PROCESS_BUFFER_ALL_TOGETHER\x10\x01\x12#\n" +
-	"\x1fAGENT_PROCESS_BUFFER_ONE_BY_ONE\x10\x022\xb6\x19\n" +
+	"\x1fAGENT_PROCESS_BUFFER_ONE_BY_ONE\x10\x02*x\n" +
+	"\x11McpToolFilterMode\x12$\n" +
+	" MCP_TOOL_FILTER_MODE_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aMCP_TOOL_FILTER_MODE_ALLOW\x10\x01\x12\x1d\n" +
+	"\x19MCP_TOOL_FILTER_MODE_DENY\x10\x022\xaf\x1e\n" +
 	"\fTeamsService\x12`\n" +
 	"\vCreateAgent\x12'.agynio.api.teams.v1.CreateAgentRequest\x1a(.agynio.api.teams.v1.CreateAgentResponse\x12W\n" +
 	"\bGetAgent\x12$.agynio.api.teams.v1.GetAgentRequest\x1a%.agynio.api.teams.v1.GetAgentResponse\x12`\n" +
@@ -4767,7 +5637,13 @@ const file_agynio_api_teams_v1_teams_proto_rawDesc = "" +
 	"\x0fGetMemoryBucket\x12+.agynio.api.teams.v1.GetMemoryBucketRequest\x1a,.agynio.api.teams.v1.GetMemoryBucketResponse\x12u\n" +
 	"\x12UpdateMemoryBucket\x12..agynio.api.teams.v1.UpdateMemoryBucketRequest\x1a/.agynio.api.teams.v1.UpdateMemoryBucketResponse\x12u\n" +
 	"\x12DeleteMemoryBucket\x12..agynio.api.teams.v1.DeleteMemoryBucketRequest\x1a/.agynio.api.teams.v1.DeleteMemoryBucketResponse\x12r\n" +
-	"\x11ListMemoryBuckets\x12-.agynio.api.teams.v1.ListMemoryBucketsRequest\x1a..agynio.api.teams.v1.ListMemoryBucketsResponse\x12o\n" +
+	"\x11ListMemoryBuckets\x12-.agynio.api.teams.v1.ListMemoryBucketsRequest\x1a..agynio.api.teams.v1.ListMemoryBucketsResponse\x12i\n" +
+	"\x0eCreateVariable\x12*.agynio.api.teams.v1.CreateVariableRequest\x1a+.agynio.api.teams.v1.CreateVariableResponse\x12`\n" +
+	"\vGetVariable\x12'.agynio.api.teams.v1.GetVariableRequest\x1a(.agynio.api.teams.v1.GetVariableResponse\x12i\n" +
+	"\x0eUpdateVariable\x12*.agynio.api.teams.v1.UpdateVariableRequest\x1a+.agynio.api.teams.v1.UpdateVariableResponse\x12i\n" +
+	"\x0eDeleteVariable\x12*.agynio.api.teams.v1.DeleteVariableRequest\x1a+.agynio.api.teams.v1.DeleteVariableResponse\x12f\n" +
+	"\rListVariables\x12).agynio.api.teams.v1.ListVariablesRequest\x1a*.agynio.api.teams.v1.ListVariablesResponse\x12l\n" +
+	"\x0fResolveVariable\x12+.agynio.api.teams.v1.ResolveVariableRequest\x1a,.agynio.api.teams.v1.ResolveVariableResponse\x12o\n" +
 	"\x10CreateAttachment\x12,.agynio.api.teams.v1.CreateAttachmentRequest\x1a-.agynio.api.teams.v1.CreateAttachmentResponse\x12f\n" +
 	"\rGetAttachment\x12).agynio.api.teams.v1.GetAttachmentRequest\x1a*.agynio.api.teams.v1.GetAttachmentResponse\x12o\n" +
 	"\x10DeleteAttachment\x12,.agynio.api.teams.v1.DeleteAttachmentRequest\x1a-.agynio.api.teams.v1.DeleteAttachmentResponse\x12l\n" +
@@ -4785,8 +5661,8 @@ func file_agynio_api_teams_v1_teams_proto_rawDescGZIP() []byte {
 	return file_agynio_api_teams_v1_teams_proto_rawDescData
 }
 
-var file_agynio_api_teams_v1_teams_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_agynio_api_teams_v1_teams_proto_msgTypes = make([]protoimpl.MessageInfo, 73)
+var file_agynio_api_teams_v1_teams_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_agynio_api_teams_v1_teams_proto_msgTypes = make([]protoimpl.MessageInfo, 88)
 var file_agynio_api_teams_v1_teams_proto_goTypes = []any{
 	(ToolType)(0),                                // 0: agynio.api.teams.v1.ToolType
 	(EntityType)(0),                              // 1: agynio.api.teams.v1.EntityType
@@ -4795,211 +5671,247 @@ var file_agynio_api_teams_v1_teams_proto_goTypes = []any{
 	(WorkspacePlatform)(0),                       // 4: agynio.api.teams.v1.WorkspacePlatform
 	(AgentWhenBusy)(0),                           // 5: agynio.api.teams.v1.AgentWhenBusy
 	(AgentProcessBuffer)(0),                      // 6: agynio.api.teams.v1.AgentProcessBuffer
-	(*EntityMeta)(nil),                           // 7: agynio.api.teams.v1.EntityMeta
-	(*AgentConfig)(nil),                          // 8: agynio.api.teams.v1.AgentConfig
-	(*Agent)(nil),                                // 9: agynio.api.teams.v1.Agent
-	(*CreateAgentRequest)(nil),                   // 10: agynio.api.teams.v1.CreateAgentRequest
-	(*CreateAgentResponse)(nil),                  // 11: agynio.api.teams.v1.CreateAgentResponse
-	(*GetAgentRequest)(nil),                      // 12: agynio.api.teams.v1.GetAgentRequest
-	(*GetAgentResponse)(nil),                     // 13: agynio.api.teams.v1.GetAgentResponse
-	(*UpdateAgentRequest)(nil),                   // 14: agynio.api.teams.v1.UpdateAgentRequest
-	(*UpdateAgentResponse)(nil),                  // 15: agynio.api.teams.v1.UpdateAgentResponse
-	(*DeleteAgentRequest)(nil),                   // 16: agynio.api.teams.v1.DeleteAgentRequest
-	(*DeleteAgentResponse)(nil),                  // 17: agynio.api.teams.v1.DeleteAgentResponse
-	(*ListAgentsRequest)(nil),                    // 18: agynio.api.teams.v1.ListAgentsRequest
-	(*ListAgentsResponse)(nil),                   // 19: agynio.api.teams.v1.ListAgentsResponse
-	(*Tool)(nil),                                 // 20: agynio.api.teams.v1.Tool
-	(*CreateToolRequest)(nil),                    // 21: agynio.api.teams.v1.CreateToolRequest
-	(*CreateToolResponse)(nil),                   // 22: agynio.api.teams.v1.CreateToolResponse
-	(*GetToolRequest)(nil),                       // 23: agynio.api.teams.v1.GetToolRequest
-	(*GetToolResponse)(nil),                      // 24: agynio.api.teams.v1.GetToolResponse
-	(*UpdateToolRequest)(nil),                    // 25: agynio.api.teams.v1.UpdateToolRequest
-	(*UpdateToolResponse)(nil),                   // 26: agynio.api.teams.v1.UpdateToolResponse
-	(*DeleteToolRequest)(nil),                    // 27: agynio.api.teams.v1.DeleteToolRequest
-	(*DeleteToolResponse)(nil),                   // 28: agynio.api.teams.v1.DeleteToolResponse
-	(*ListToolsRequest)(nil),                     // 29: agynio.api.teams.v1.ListToolsRequest
-	(*ListToolsResponse)(nil),                    // 30: agynio.api.teams.v1.ListToolsResponse
-	(*McpEnvItem)(nil),                           // 31: agynio.api.teams.v1.McpEnvItem
-	(*McpServerRestartConfig)(nil),               // 32: agynio.api.teams.v1.McpServerRestartConfig
-	(*McpServerConfig)(nil),                      // 33: agynio.api.teams.v1.McpServerConfig
-	(*McpServer)(nil),                            // 34: agynio.api.teams.v1.McpServer
-	(*CreateMcpServerRequest)(nil),               // 35: agynio.api.teams.v1.CreateMcpServerRequest
-	(*CreateMcpServerResponse)(nil),              // 36: agynio.api.teams.v1.CreateMcpServerResponse
-	(*GetMcpServerRequest)(nil),                  // 37: agynio.api.teams.v1.GetMcpServerRequest
-	(*GetMcpServerResponse)(nil),                 // 38: agynio.api.teams.v1.GetMcpServerResponse
-	(*UpdateMcpServerRequest)(nil),               // 39: agynio.api.teams.v1.UpdateMcpServerRequest
-	(*UpdateMcpServerResponse)(nil),              // 40: agynio.api.teams.v1.UpdateMcpServerResponse
-	(*DeleteMcpServerRequest)(nil),               // 41: agynio.api.teams.v1.DeleteMcpServerRequest
-	(*DeleteMcpServerResponse)(nil),              // 42: agynio.api.teams.v1.DeleteMcpServerResponse
-	(*ListMcpServersRequest)(nil),                // 43: agynio.api.teams.v1.ListMcpServersRequest
-	(*ListMcpServersResponse)(nil),               // 44: agynio.api.teams.v1.ListMcpServersResponse
-	(*WorkspaceEnvItem)(nil),                     // 45: agynio.api.teams.v1.WorkspaceEnvItem
-	(*WorkspaceVolumeConfig)(nil),                // 46: agynio.api.teams.v1.WorkspaceVolumeConfig
-	(*WorkspaceConfig)(nil),                      // 47: agynio.api.teams.v1.WorkspaceConfig
-	(*WorkspaceConfiguration)(nil),               // 48: agynio.api.teams.v1.WorkspaceConfiguration
-	(*CreateWorkspaceConfigurationRequest)(nil),  // 49: agynio.api.teams.v1.CreateWorkspaceConfigurationRequest
-	(*CreateWorkspaceConfigurationResponse)(nil), // 50: agynio.api.teams.v1.CreateWorkspaceConfigurationResponse
-	(*GetWorkspaceConfigurationRequest)(nil),     // 51: agynio.api.teams.v1.GetWorkspaceConfigurationRequest
-	(*GetWorkspaceConfigurationResponse)(nil),    // 52: agynio.api.teams.v1.GetWorkspaceConfigurationResponse
-	(*UpdateWorkspaceConfigurationRequest)(nil),  // 53: agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest
-	(*UpdateWorkspaceConfigurationResponse)(nil), // 54: agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse
-	(*DeleteWorkspaceConfigurationRequest)(nil),  // 55: agynio.api.teams.v1.DeleteWorkspaceConfigurationRequest
-	(*DeleteWorkspaceConfigurationResponse)(nil), // 56: agynio.api.teams.v1.DeleteWorkspaceConfigurationResponse
-	(*ListWorkspaceConfigurationsRequest)(nil),   // 57: agynio.api.teams.v1.ListWorkspaceConfigurationsRequest
-	(*ListWorkspaceConfigurationsResponse)(nil),  // 58: agynio.api.teams.v1.ListWorkspaceConfigurationsResponse
-	(*MemoryBucketConfig)(nil),                   // 59: agynio.api.teams.v1.MemoryBucketConfig
-	(*MemoryBucket)(nil),                         // 60: agynio.api.teams.v1.MemoryBucket
-	(*CreateMemoryBucketRequest)(nil),            // 61: agynio.api.teams.v1.CreateMemoryBucketRequest
-	(*CreateMemoryBucketResponse)(nil),           // 62: agynio.api.teams.v1.CreateMemoryBucketResponse
-	(*GetMemoryBucketRequest)(nil),               // 63: agynio.api.teams.v1.GetMemoryBucketRequest
-	(*GetMemoryBucketResponse)(nil),              // 64: agynio.api.teams.v1.GetMemoryBucketResponse
-	(*UpdateMemoryBucketRequest)(nil),            // 65: agynio.api.teams.v1.UpdateMemoryBucketRequest
-	(*UpdateMemoryBucketResponse)(nil),           // 66: agynio.api.teams.v1.UpdateMemoryBucketResponse
-	(*DeleteMemoryBucketRequest)(nil),            // 67: agynio.api.teams.v1.DeleteMemoryBucketRequest
-	(*DeleteMemoryBucketResponse)(nil),           // 68: agynio.api.teams.v1.DeleteMemoryBucketResponse
-	(*ListMemoryBucketsRequest)(nil),             // 69: agynio.api.teams.v1.ListMemoryBucketsRequest
-	(*ListMemoryBucketsResponse)(nil),            // 70: agynio.api.teams.v1.ListMemoryBucketsResponse
-	(*Attachment)(nil),                           // 71: agynio.api.teams.v1.Attachment
-	(*CreateAttachmentRequest)(nil),              // 72: agynio.api.teams.v1.CreateAttachmentRequest
-	(*CreateAttachmentResponse)(nil),             // 73: agynio.api.teams.v1.CreateAttachmentResponse
-	(*GetAttachmentRequest)(nil),                 // 74: agynio.api.teams.v1.GetAttachmentRequest
-	(*GetAttachmentResponse)(nil),                // 75: agynio.api.teams.v1.GetAttachmentResponse
-	(*DeleteAttachmentRequest)(nil),              // 76: agynio.api.teams.v1.DeleteAttachmentRequest
-	(*DeleteAttachmentResponse)(nil),             // 77: agynio.api.teams.v1.DeleteAttachmentResponse
-	(*ListAttachmentsRequest)(nil),               // 78: agynio.api.teams.v1.ListAttachmentsRequest
-	(*ListAttachmentsResponse)(nil),              // 79: agynio.api.teams.v1.ListAttachmentsResponse
-	(*timestamppb.Timestamp)(nil),                // 80: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),                      // 81: google.protobuf.Struct
+	(McpToolFilterMode)(0),                       // 7: agynio.api.teams.v1.McpToolFilterMode
+	(*EntityMeta)(nil),                           // 8: agynio.api.teams.v1.EntityMeta
+	(*AgentConfig)(nil),                          // 9: agynio.api.teams.v1.AgentConfig
+	(*Agent)(nil),                                // 10: agynio.api.teams.v1.Agent
+	(*CreateAgentRequest)(nil),                   // 11: agynio.api.teams.v1.CreateAgentRequest
+	(*CreateAgentResponse)(nil),                  // 12: agynio.api.teams.v1.CreateAgentResponse
+	(*GetAgentRequest)(nil),                      // 13: agynio.api.teams.v1.GetAgentRequest
+	(*GetAgentResponse)(nil),                     // 14: agynio.api.teams.v1.GetAgentResponse
+	(*UpdateAgentRequest)(nil),                   // 15: agynio.api.teams.v1.UpdateAgentRequest
+	(*UpdateAgentResponse)(nil),                  // 16: agynio.api.teams.v1.UpdateAgentResponse
+	(*DeleteAgentRequest)(nil),                   // 17: agynio.api.teams.v1.DeleteAgentRequest
+	(*DeleteAgentResponse)(nil),                  // 18: agynio.api.teams.v1.DeleteAgentResponse
+	(*ListAgentsRequest)(nil),                    // 19: agynio.api.teams.v1.ListAgentsRequest
+	(*ListAgentsResponse)(nil),                   // 20: agynio.api.teams.v1.ListAgentsResponse
+	(*Tool)(nil),                                 // 21: agynio.api.teams.v1.Tool
+	(*CreateToolRequest)(nil),                    // 22: agynio.api.teams.v1.CreateToolRequest
+	(*CreateToolResponse)(nil),                   // 23: agynio.api.teams.v1.CreateToolResponse
+	(*GetToolRequest)(nil),                       // 24: agynio.api.teams.v1.GetToolRequest
+	(*GetToolResponse)(nil),                      // 25: agynio.api.teams.v1.GetToolResponse
+	(*UpdateToolRequest)(nil),                    // 26: agynio.api.teams.v1.UpdateToolRequest
+	(*UpdateToolResponse)(nil),                   // 27: agynio.api.teams.v1.UpdateToolResponse
+	(*DeleteToolRequest)(nil),                    // 28: agynio.api.teams.v1.DeleteToolRequest
+	(*DeleteToolResponse)(nil),                   // 29: agynio.api.teams.v1.DeleteToolResponse
+	(*ListToolsRequest)(nil),                     // 30: agynio.api.teams.v1.ListToolsRequest
+	(*ListToolsResponse)(nil),                    // 31: agynio.api.teams.v1.ListToolsResponse
+	(*McpEnvItem)(nil),                           // 32: agynio.api.teams.v1.McpEnvItem
+	(*McpToolFilterRule)(nil),                    // 33: agynio.api.teams.v1.McpToolFilterRule
+	(*McpToolFilter)(nil),                        // 34: agynio.api.teams.v1.McpToolFilter
+	(*McpServerRestartConfig)(nil),               // 35: agynio.api.teams.v1.McpServerRestartConfig
+	(*McpServerConfig)(nil),                      // 36: agynio.api.teams.v1.McpServerConfig
+	(*McpServer)(nil),                            // 37: agynio.api.teams.v1.McpServer
+	(*CreateMcpServerRequest)(nil),               // 38: agynio.api.teams.v1.CreateMcpServerRequest
+	(*CreateMcpServerResponse)(nil),              // 39: agynio.api.teams.v1.CreateMcpServerResponse
+	(*GetMcpServerRequest)(nil),                  // 40: agynio.api.teams.v1.GetMcpServerRequest
+	(*GetMcpServerResponse)(nil),                 // 41: agynio.api.teams.v1.GetMcpServerResponse
+	(*UpdateMcpServerRequest)(nil),               // 42: agynio.api.teams.v1.UpdateMcpServerRequest
+	(*UpdateMcpServerResponse)(nil),              // 43: agynio.api.teams.v1.UpdateMcpServerResponse
+	(*DeleteMcpServerRequest)(nil),               // 44: agynio.api.teams.v1.DeleteMcpServerRequest
+	(*DeleteMcpServerResponse)(nil),              // 45: agynio.api.teams.v1.DeleteMcpServerResponse
+	(*ListMcpServersRequest)(nil),                // 46: agynio.api.teams.v1.ListMcpServersRequest
+	(*ListMcpServersResponse)(nil),               // 47: agynio.api.teams.v1.ListMcpServersResponse
+	(*WorkspaceEnvItem)(nil),                     // 48: agynio.api.teams.v1.WorkspaceEnvItem
+	(*WorkspaceVolumeConfig)(nil),                // 49: agynio.api.teams.v1.WorkspaceVolumeConfig
+	(*WorkspaceConfig)(nil),                      // 50: agynio.api.teams.v1.WorkspaceConfig
+	(*WorkspaceConfiguration)(nil),               // 51: agynio.api.teams.v1.WorkspaceConfiguration
+	(*CreateWorkspaceConfigurationRequest)(nil),  // 52: agynio.api.teams.v1.CreateWorkspaceConfigurationRequest
+	(*CreateWorkspaceConfigurationResponse)(nil), // 53: agynio.api.teams.v1.CreateWorkspaceConfigurationResponse
+	(*GetWorkspaceConfigurationRequest)(nil),     // 54: agynio.api.teams.v1.GetWorkspaceConfigurationRequest
+	(*GetWorkspaceConfigurationResponse)(nil),    // 55: agynio.api.teams.v1.GetWorkspaceConfigurationResponse
+	(*UpdateWorkspaceConfigurationRequest)(nil),  // 56: agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest
+	(*UpdateWorkspaceConfigurationResponse)(nil), // 57: agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse
+	(*DeleteWorkspaceConfigurationRequest)(nil),  // 58: agynio.api.teams.v1.DeleteWorkspaceConfigurationRequest
+	(*DeleteWorkspaceConfigurationResponse)(nil), // 59: agynio.api.teams.v1.DeleteWorkspaceConfigurationResponse
+	(*ListWorkspaceConfigurationsRequest)(nil),   // 60: agynio.api.teams.v1.ListWorkspaceConfigurationsRequest
+	(*ListWorkspaceConfigurationsResponse)(nil),  // 61: agynio.api.teams.v1.ListWorkspaceConfigurationsResponse
+	(*MemoryBucketConfig)(nil),                   // 62: agynio.api.teams.v1.MemoryBucketConfig
+	(*MemoryBucket)(nil),                         // 63: agynio.api.teams.v1.MemoryBucket
+	(*CreateMemoryBucketRequest)(nil),            // 64: agynio.api.teams.v1.CreateMemoryBucketRequest
+	(*CreateMemoryBucketResponse)(nil),           // 65: agynio.api.teams.v1.CreateMemoryBucketResponse
+	(*GetMemoryBucketRequest)(nil),               // 66: agynio.api.teams.v1.GetMemoryBucketRequest
+	(*GetMemoryBucketResponse)(nil),              // 67: agynio.api.teams.v1.GetMemoryBucketResponse
+	(*UpdateMemoryBucketRequest)(nil),            // 68: agynio.api.teams.v1.UpdateMemoryBucketRequest
+	(*UpdateMemoryBucketResponse)(nil),           // 69: agynio.api.teams.v1.UpdateMemoryBucketResponse
+	(*DeleteMemoryBucketRequest)(nil),            // 70: agynio.api.teams.v1.DeleteMemoryBucketRequest
+	(*DeleteMemoryBucketResponse)(nil),           // 71: agynio.api.teams.v1.DeleteMemoryBucketResponse
+	(*ListMemoryBucketsRequest)(nil),             // 72: agynio.api.teams.v1.ListMemoryBucketsRequest
+	(*ListMemoryBucketsResponse)(nil),            // 73: agynio.api.teams.v1.ListMemoryBucketsResponse
+	(*Variable)(nil),                             // 74: agynio.api.teams.v1.Variable
+	(*CreateVariableRequest)(nil),                // 75: agynio.api.teams.v1.CreateVariableRequest
+	(*CreateVariableResponse)(nil),               // 76: agynio.api.teams.v1.CreateVariableResponse
+	(*GetVariableRequest)(nil),                   // 77: agynio.api.teams.v1.GetVariableRequest
+	(*GetVariableResponse)(nil),                  // 78: agynio.api.teams.v1.GetVariableResponse
+	(*UpdateVariableRequest)(nil),                // 79: agynio.api.teams.v1.UpdateVariableRequest
+	(*UpdateVariableResponse)(nil),               // 80: agynio.api.teams.v1.UpdateVariableResponse
+	(*DeleteVariableRequest)(nil),                // 81: agynio.api.teams.v1.DeleteVariableRequest
+	(*DeleteVariableResponse)(nil),               // 82: agynio.api.teams.v1.DeleteVariableResponse
+	(*ListVariablesRequest)(nil),                 // 83: agynio.api.teams.v1.ListVariablesRequest
+	(*ListVariablesResponse)(nil),                // 84: agynio.api.teams.v1.ListVariablesResponse
+	(*ResolveVariableRequest)(nil),               // 85: agynio.api.teams.v1.ResolveVariableRequest
+	(*ResolveVariableResponse)(nil),              // 86: agynio.api.teams.v1.ResolveVariableResponse
+	(*Attachment)(nil),                           // 87: agynio.api.teams.v1.Attachment
+	(*CreateAttachmentRequest)(nil),              // 88: agynio.api.teams.v1.CreateAttachmentRequest
+	(*CreateAttachmentResponse)(nil),             // 89: agynio.api.teams.v1.CreateAttachmentResponse
+	(*GetAttachmentRequest)(nil),                 // 90: agynio.api.teams.v1.GetAttachmentRequest
+	(*GetAttachmentResponse)(nil),                // 91: agynio.api.teams.v1.GetAttachmentResponse
+	(*DeleteAttachmentRequest)(nil),              // 92: agynio.api.teams.v1.DeleteAttachmentRequest
+	(*DeleteAttachmentResponse)(nil),             // 93: agynio.api.teams.v1.DeleteAttachmentResponse
+	(*ListAttachmentsRequest)(nil),               // 94: agynio.api.teams.v1.ListAttachmentsRequest
+	(*ListAttachmentsResponse)(nil),              // 95: agynio.api.teams.v1.ListAttachmentsResponse
+	(*timestamppb.Timestamp)(nil),                // 96: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),                      // 97: google.protobuf.Struct
 }
 var file_agynio_api_teams_v1_teams_proto_depIdxs = []int32{
-	80, // 0: agynio.api.teams.v1.EntityMeta.created_at:type_name -> google.protobuf.Timestamp
-	80, // 1: agynio.api.teams.v1.EntityMeta.updated_at:type_name -> google.protobuf.Timestamp
-	5,  // 2: agynio.api.teams.v1.AgentConfig.when_busy:type_name -> agynio.api.teams.v1.AgentWhenBusy
-	6,  // 3: agynio.api.teams.v1.AgentConfig.process_buffer:type_name -> agynio.api.teams.v1.AgentProcessBuffer
-	7,  // 4: agynio.api.teams.v1.Agent.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	8,  // 5: agynio.api.teams.v1.Agent.config:type_name -> agynio.api.teams.v1.AgentConfig
-	8,  // 6: agynio.api.teams.v1.CreateAgentRequest.config:type_name -> agynio.api.teams.v1.AgentConfig
-	9,  // 7: agynio.api.teams.v1.CreateAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
-	9,  // 8: agynio.api.teams.v1.GetAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
-	8,  // 9: agynio.api.teams.v1.UpdateAgentRequest.config:type_name -> agynio.api.teams.v1.AgentConfig
-	9,  // 10: agynio.api.teams.v1.UpdateAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
-	9,  // 11: agynio.api.teams.v1.ListAgentsResponse.agents:type_name -> agynio.api.teams.v1.Agent
-	7,  // 12: agynio.api.teams.v1.Tool.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	0,  // 13: agynio.api.teams.v1.Tool.type:type_name -> agynio.api.teams.v1.ToolType
-	81, // 14: agynio.api.teams.v1.Tool.config:type_name -> google.protobuf.Struct
-	0,  // 15: agynio.api.teams.v1.CreateToolRequest.type:type_name -> agynio.api.teams.v1.ToolType
-	81, // 16: agynio.api.teams.v1.CreateToolRequest.config:type_name -> google.protobuf.Struct
-	20, // 17: agynio.api.teams.v1.CreateToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
-	20, // 18: agynio.api.teams.v1.GetToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
-	81, // 19: agynio.api.teams.v1.UpdateToolRequest.config:type_name -> google.protobuf.Struct
-	20, // 20: agynio.api.teams.v1.UpdateToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
-	0,  // 21: agynio.api.teams.v1.ListToolsRequest.type:type_name -> agynio.api.teams.v1.ToolType
-	20, // 22: agynio.api.teams.v1.ListToolsResponse.tools:type_name -> agynio.api.teams.v1.Tool
-	31, // 23: agynio.api.teams.v1.McpServerConfig.env:type_name -> agynio.api.teams.v1.McpEnvItem
-	32, // 24: agynio.api.teams.v1.McpServerConfig.restart:type_name -> agynio.api.teams.v1.McpServerRestartConfig
-	7,  // 25: agynio.api.teams.v1.McpServer.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	33, // 26: agynio.api.teams.v1.McpServer.config:type_name -> agynio.api.teams.v1.McpServerConfig
-	33, // 27: agynio.api.teams.v1.CreateMcpServerRequest.config:type_name -> agynio.api.teams.v1.McpServerConfig
-	34, // 28: agynio.api.teams.v1.CreateMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
-	34, // 29: agynio.api.teams.v1.GetMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
-	33, // 30: agynio.api.teams.v1.UpdateMcpServerRequest.config:type_name -> agynio.api.teams.v1.McpServerConfig
-	34, // 31: agynio.api.teams.v1.UpdateMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
-	34, // 32: agynio.api.teams.v1.ListMcpServersResponse.mcp_servers:type_name -> agynio.api.teams.v1.McpServer
-	45, // 33: agynio.api.teams.v1.WorkspaceConfig.env:type_name -> agynio.api.teams.v1.WorkspaceEnvItem
-	4,  // 34: agynio.api.teams.v1.WorkspaceConfig.platform:type_name -> agynio.api.teams.v1.WorkspacePlatform
-	81, // 35: agynio.api.teams.v1.WorkspaceConfig.nix:type_name -> google.protobuf.Struct
-	46, // 36: agynio.api.teams.v1.WorkspaceConfig.volumes:type_name -> agynio.api.teams.v1.WorkspaceVolumeConfig
-	7,  // 37: agynio.api.teams.v1.WorkspaceConfiguration.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	47, // 38: agynio.api.teams.v1.WorkspaceConfiguration.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
-	47, // 39: agynio.api.teams.v1.CreateWorkspaceConfigurationRequest.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
-	48, // 40: agynio.api.teams.v1.CreateWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
-	48, // 41: agynio.api.teams.v1.GetWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
-	47, // 42: agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
-	48, // 43: agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
-	48, // 44: agynio.api.teams.v1.ListWorkspaceConfigurationsResponse.workspace_configurations:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
-	3,  // 45: agynio.api.teams.v1.MemoryBucketConfig.scope:type_name -> agynio.api.teams.v1.MemoryBucketScope
-	7,  // 46: agynio.api.teams.v1.MemoryBucket.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	59, // 47: agynio.api.teams.v1.MemoryBucket.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
-	59, // 48: agynio.api.teams.v1.CreateMemoryBucketRequest.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
-	60, // 49: agynio.api.teams.v1.CreateMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
-	60, // 50: agynio.api.teams.v1.GetMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
-	59, // 51: agynio.api.teams.v1.UpdateMemoryBucketRequest.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
-	60, // 52: agynio.api.teams.v1.UpdateMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
-	60, // 53: agynio.api.teams.v1.ListMemoryBucketsResponse.memory_buckets:type_name -> agynio.api.teams.v1.MemoryBucket
-	7,  // 54: agynio.api.teams.v1.Attachment.meta:type_name -> agynio.api.teams.v1.EntityMeta
-	2,  // 55: agynio.api.teams.v1.Attachment.kind:type_name -> agynio.api.teams.v1.AttachmentKind
-	1,  // 56: agynio.api.teams.v1.Attachment.source_type:type_name -> agynio.api.teams.v1.EntityType
-	1,  // 57: agynio.api.teams.v1.Attachment.target_type:type_name -> agynio.api.teams.v1.EntityType
-	2,  // 58: agynio.api.teams.v1.CreateAttachmentRequest.kind:type_name -> agynio.api.teams.v1.AttachmentKind
-	71, // 59: agynio.api.teams.v1.CreateAttachmentResponse.attachment:type_name -> agynio.api.teams.v1.Attachment
-	71, // 60: agynio.api.teams.v1.GetAttachmentResponse.attachment:type_name -> agynio.api.teams.v1.Attachment
-	1,  // 61: agynio.api.teams.v1.ListAttachmentsRequest.source_type:type_name -> agynio.api.teams.v1.EntityType
-	1,  // 62: agynio.api.teams.v1.ListAttachmentsRequest.target_type:type_name -> agynio.api.teams.v1.EntityType
-	2,  // 63: agynio.api.teams.v1.ListAttachmentsRequest.kind:type_name -> agynio.api.teams.v1.AttachmentKind
-	71, // 64: agynio.api.teams.v1.ListAttachmentsResponse.attachments:type_name -> agynio.api.teams.v1.Attachment
-	10, // 65: agynio.api.teams.v1.TeamsService.CreateAgent:input_type -> agynio.api.teams.v1.CreateAgentRequest
-	12, // 66: agynio.api.teams.v1.TeamsService.GetAgent:input_type -> agynio.api.teams.v1.GetAgentRequest
-	14, // 67: agynio.api.teams.v1.TeamsService.UpdateAgent:input_type -> agynio.api.teams.v1.UpdateAgentRequest
-	16, // 68: agynio.api.teams.v1.TeamsService.DeleteAgent:input_type -> agynio.api.teams.v1.DeleteAgentRequest
-	18, // 69: agynio.api.teams.v1.TeamsService.ListAgents:input_type -> agynio.api.teams.v1.ListAgentsRequest
-	21, // 70: agynio.api.teams.v1.TeamsService.CreateTool:input_type -> agynio.api.teams.v1.CreateToolRequest
-	23, // 71: agynio.api.teams.v1.TeamsService.GetTool:input_type -> agynio.api.teams.v1.GetToolRequest
-	25, // 72: agynio.api.teams.v1.TeamsService.UpdateTool:input_type -> agynio.api.teams.v1.UpdateToolRequest
-	27, // 73: agynio.api.teams.v1.TeamsService.DeleteTool:input_type -> agynio.api.teams.v1.DeleteToolRequest
-	29, // 74: agynio.api.teams.v1.TeamsService.ListTools:input_type -> agynio.api.teams.v1.ListToolsRequest
-	35, // 75: agynio.api.teams.v1.TeamsService.CreateMcpServer:input_type -> agynio.api.teams.v1.CreateMcpServerRequest
-	37, // 76: agynio.api.teams.v1.TeamsService.GetMcpServer:input_type -> agynio.api.teams.v1.GetMcpServerRequest
-	39, // 77: agynio.api.teams.v1.TeamsService.UpdateMcpServer:input_type -> agynio.api.teams.v1.UpdateMcpServerRequest
-	41, // 78: agynio.api.teams.v1.TeamsService.DeleteMcpServer:input_type -> agynio.api.teams.v1.DeleteMcpServerRequest
-	43, // 79: agynio.api.teams.v1.TeamsService.ListMcpServers:input_type -> agynio.api.teams.v1.ListMcpServersRequest
-	49, // 80: agynio.api.teams.v1.TeamsService.CreateWorkspaceConfiguration:input_type -> agynio.api.teams.v1.CreateWorkspaceConfigurationRequest
-	51, // 81: agynio.api.teams.v1.TeamsService.GetWorkspaceConfiguration:input_type -> agynio.api.teams.v1.GetWorkspaceConfigurationRequest
-	53, // 82: agynio.api.teams.v1.TeamsService.UpdateWorkspaceConfiguration:input_type -> agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest
-	55, // 83: agynio.api.teams.v1.TeamsService.DeleteWorkspaceConfiguration:input_type -> agynio.api.teams.v1.DeleteWorkspaceConfigurationRequest
-	57, // 84: agynio.api.teams.v1.TeamsService.ListWorkspaceConfigurations:input_type -> agynio.api.teams.v1.ListWorkspaceConfigurationsRequest
-	61, // 85: agynio.api.teams.v1.TeamsService.CreateMemoryBucket:input_type -> agynio.api.teams.v1.CreateMemoryBucketRequest
-	63, // 86: agynio.api.teams.v1.TeamsService.GetMemoryBucket:input_type -> agynio.api.teams.v1.GetMemoryBucketRequest
-	65, // 87: agynio.api.teams.v1.TeamsService.UpdateMemoryBucket:input_type -> agynio.api.teams.v1.UpdateMemoryBucketRequest
-	67, // 88: agynio.api.teams.v1.TeamsService.DeleteMemoryBucket:input_type -> agynio.api.teams.v1.DeleteMemoryBucketRequest
-	69, // 89: agynio.api.teams.v1.TeamsService.ListMemoryBuckets:input_type -> agynio.api.teams.v1.ListMemoryBucketsRequest
-	72, // 90: agynio.api.teams.v1.TeamsService.CreateAttachment:input_type -> agynio.api.teams.v1.CreateAttachmentRequest
-	74, // 91: agynio.api.teams.v1.TeamsService.GetAttachment:input_type -> agynio.api.teams.v1.GetAttachmentRequest
-	76, // 92: agynio.api.teams.v1.TeamsService.DeleteAttachment:input_type -> agynio.api.teams.v1.DeleteAttachmentRequest
-	78, // 93: agynio.api.teams.v1.TeamsService.ListAttachments:input_type -> agynio.api.teams.v1.ListAttachmentsRequest
-	11, // 94: agynio.api.teams.v1.TeamsService.CreateAgent:output_type -> agynio.api.teams.v1.CreateAgentResponse
-	13, // 95: agynio.api.teams.v1.TeamsService.GetAgent:output_type -> agynio.api.teams.v1.GetAgentResponse
-	15, // 96: agynio.api.teams.v1.TeamsService.UpdateAgent:output_type -> agynio.api.teams.v1.UpdateAgentResponse
-	17, // 97: agynio.api.teams.v1.TeamsService.DeleteAgent:output_type -> agynio.api.teams.v1.DeleteAgentResponse
-	19, // 98: agynio.api.teams.v1.TeamsService.ListAgents:output_type -> agynio.api.teams.v1.ListAgentsResponse
-	22, // 99: agynio.api.teams.v1.TeamsService.CreateTool:output_type -> agynio.api.teams.v1.CreateToolResponse
-	24, // 100: agynio.api.teams.v1.TeamsService.GetTool:output_type -> agynio.api.teams.v1.GetToolResponse
-	26, // 101: agynio.api.teams.v1.TeamsService.UpdateTool:output_type -> agynio.api.teams.v1.UpdateToolResponse
-	28, // 102: agynio.api.teams.v1.TeamsService.DeleteTool:output_type -> agynio.api.teams.v1.DeleteToolResponse
-	30, // 103: agynio.api.teams.v1.TeamsService.ListTools:output_type -> agynio.api.teams.v1.ListToolsResponse
-	36, // 104: agynio.api.teams.v1.TeamsService.CreateMcpServer:output_type -> agynio.api.teams.v1.CreateMcpServerResponse
-	38, // 105: agynio.api.teams.v1.TeamsService.GetMcpServer:output_type -> agynio.api.teams.v1.GetMcpServerResponse
-	40, // 106: agynio.api.teams.v1.TeamsService.UpdateMcpServer:output_type -> agynio.api.teams.v1.UpdateMcpServerResponse
-	42, // 107: agynio.api.teams.v1.TeamsService.DeleteMcpServer:output_type -> agynio.api.teams.v1.DeleteMcpServerResponse
-	44, // 108: agynio.api.teams.v1.TeamsService.ListMcpServers:output_type -> agynio.api.teams.v1.ListMcpServersResponse
-	50, // 109: agynio.api.teams.v1.TeamsService.CreateWorkspaceConfiguration:output_type -> agynio.api.teams.v1.CreateWorkspaceConfigurationResponse
-	52, // 110: agynio.api.teams.v1.TeamsService.GetWorkspaceConfiguration:output_type -> agynio.api.teams.v1.GetWorkspaceConfigurationResponse
-	54, // 111: agynio.api.teams.v1.TeamsService.UpdateWorkspaceConfiguration:output_type -> agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse
-	56, // 112: agynio.api.teams.v1.TeamsService.DeleteWorkspaceConfiguration:output_type -> agynio.api.teams.v1.DeleteWorkspaceConfigurationResponse
-	58, // 113: agynio.api.teams.v1.TeamsService.ListWorkspaceConfigurations:output_type -> agynio.api.teams.v1.ListWorkspaceConfigurationsResponse
-	62, // 114: agynio.api.teams.v1.TeamsService.CreateMemoryBucket:output_type -> agynio.api.teams.v1.CreateMemoryBucketResponse
-	64, // 115: agynio.api.teams.v1.TeamsService.GetMemoryBucket:output_type -> agynio.api.teams.v1.GetMemoryBucketResponse
-	66, // 116: agynio.api.teams.v1.TeamsService.UpdateMemoryBucket:output_type -> agynio.api.teams.v1.UpdateMemoryBucketResponse
-	68, // 117: agynio.api.teams.v1.TeamsService.DeleteMemoryBucket:output_type -> agynio.api.teams.v1.DeleteMemoryBucketResponse
-	70, // 118: agynio.api.teams.v1.TeamsService.ListMemoryBuckets:output_type -> agynio.api.teams.v1.ListMemoryBucketsResponse
-	73, // 119: agynio.api.teams.v1.TeamsService.CreateAttachment:output_type -> agynio.api.teams.v1.CreateAttachmentResponse
-	75, // 120: agynio.api.teams.v1.TeamsService.GetAttachment:output_type -> agynio.api.teams.v1.GetAttachmentResponse
-	77, // 121: agynio.api.teams.v1.TeamsService.DeleteAttachment:output_type -> agynio.api.teams.v1.DeleteAttachmentResponse
-	79, // 122: agynio.api.teams.v1.TeamsService.ListAttachments:output_type -> agynio.api.teams.v1.ListAttachmentsResponse
-	94, // [94:123] is the sub-list for method output_type
-	65, // [65:94] is the sub-list for method input_type
-	65, // [65:65] is the sub-list for extension type_name
-	65, // [65:65] is the sub-list for extension extendee
-	0,  // [0:65] is the sub-list for field type_name
+	96,  // 0: agynio.api.teams.v1.EntityMeta.created_at:type_name -> google.protobuf.Timestamp
+	96,  // 1: agynio.api.teams.v1.EntityMeta.updated_at:type_name -> google.protobuf.Timestamp
+	5,   // 2: agynio.api.teams.v1.AgentConfig.when_busy:type_name -> agynio.api.teams.v1.AgentWhenBusy
+	6,   // 3: agynio.api.teams.v1.AgentConfig.process_buffer:type_name -> agynio.api.teams.v1.AgentProcessBuffer
+	8,   // 4: agynio.api.teams.v1.Agent.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	9,   // 5: agynio.api.teams.v1.Agent.config:type_name -> agynio.api.teams.v1.AgentConfig
+	9,   // 6: agynio.api.teams.v1.CreateAgentRequest.config:type_name -> agynio.api.teams.v1.AgentConfig
+	10,  // 7: agynio.api.teams.v1.CreateAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
+	10,  // 8: agynio.api.teams.v1.GetAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
+	9,   // 9: agynio.api.teams.v1.UpdateAgentRequest.config:type_name -> agynio.api.teams.v1.AgentConfig
+	10,  // 10: agynio.api.teams.v1.UpdateAgentResponse.agent:type_name -> agynio.api.teams.v1.Agent
+	10,  // 11: agynio.api.teams.v1.ListAgentsResponse.agents:type_name -> agynio.api.teams.v1.Agent
+	8,   // 12: agynio.api.teams.v1.Tool.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	0,   // 13: agynio.api.teams.v1.Tool.type:type_name -> agynio.api.teams.v1.ToolType
+	97,  // 14: agynio.api.teams.v1.Tool.config:type_name -> google.protobuf.Struct
+	0,   // 15: agynio.api.teams.v1.CreateToolRequest.type:type_name -> agynio.api.teams.v1.ToolType
+	97,  // 16: agynio.api.teams.v1.CreateToolRequest.config:type_name -> google.protobuf.Struct
+	21,  // 17: agynio.api.teams.v1.CreateToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
+	21,  // 18: agynio.api.teams.v1.GetToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
+	97,  // 19: agynio.api.teams.v1.UpdateToolRequest.config:type_name -> google.protobuf.Struct
+	21,  // 20: agynio.api.teams.v1.UpdateToolResponse.tool:type_name -> agynio.api.teams.v1.Tool
+	0,   // 21: agynio.api.teams.v1.ListToolsRequest.type:type_name -> agynio.api.teams.v1.ToolType
+	21,  // 22: agynio.api.teams.v1.ListToolsResponse.tools:type_name -> agynio.api.teams.v1.Tool
+	7,   // 23: agynio.api.teams.v1.McpToolFilter.mode:type_name -> agynio.api.teams.v1.McpToolFilterMode
+	33,  // 24: agynio.api.teams.v1.McpToolFilter.rules:type_name -> agynio.api.teams.v1.McpToolFilterRule
+	32,  // 25: agynio.api.teams.v1.McpServerConfig.env:type_name -> agynio.api.teams.v1.McpEnvItem
+	35,  // 26: agynio.api.teams.v1.McpServerConfig.restart:type_name -> agynio.api.teams.v1.McpServerRestartConfig
+	34,  // 27: agynio.api.teams.v1.McpServerConfig.tool_filter:type_name -> agynio.api.teams.v1.McpToolFilter
+	8,   // 28: agynio.api.teams.v1.McpServer.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	36,  // 29: agynio.api.teams.v1.McpServer.config:type_name -> agynio.api.teams.v1.McpServerConfig
+	36,  // 30: agynio.api.teams.v1.CreateMcpServerRequest.config:type_name -> agynio.api.teams.v1.McpServerConfig
+	37,  // 31: agynio.api.teams.v1.CreateMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
+	37,  // 32: agynio.api.teams.v1.GetMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
+	36,  // 33: agynio.api.teams.v1.UpdateMcpServerRequest.config:type_name -> agynio.api.teams.v1.McpServerConfig
+	37,  // 34: agynio.api.teams.v1.UpdateMcpServerResponse.mcp_server:type_name -> agynio.api.teams.v1.McpServer
+	37,  // 35: agynio.api.teams.v1.ListMcpServersResponse.mcp_servers:type_name -> agynio.api.teams.v1.McpServer
+	48,  // 36: agynio.api.teams.v1.WorkspaceConfig.env:type_name -> agynio.api.teams.v1.WorkspaceEnvItem
+	4,   // 37: agynio.api.teams.v1.WorkspaceConfig.platform:type_name -> agynio.api.teams.v1.WorkspacePlatform
+	97,  // 38: agynio.api.teams.v1.WorkspaceConfig.nix:type_name -> google.protobuf.Struct
+	49,  // 39: agynio.api.teams.v1.WorkspaceConfig.volumes:type_name -> agynio.api.teams.v1.WorkspaceVolumeConfig
+	8,   // 40: agynio.api.teams.v1.WorkspaceConfiguration.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	50,  // 41: agynio.api.teams.v1.WorkspaceConfiguration.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
+	50,  // 42: agynio.api.teams.v1.CreateWorkspaceConfigurationRequest.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
+	51,  // 43: agynio.api.teams.v1.CreateWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
+	51,  // 44: agynio.api.teams.v1.GetWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
+	50,  // 45: agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest.config:type_name -> agynio.api.teams.v1.WorkspaceConfig
+	51,  // 46: agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse.workspace_configuration:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
+	51,  // 47: agynio.api.teams.v1.ListWorkspaceConfigurationsResponse.workspace_configurations:type_name -> agynio.api.teams.v1.WorkspaceConfiguration
+	3,   // 48: agynio.api.teams.v1.MemoryBucketConfig.scope:type_name -> agynio.api.teams.v1.MemoryBucketScope
+	8,   // 49: agynio.api.teams.v1.MemoryBucket.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	62,  // 50: agynio.api.teams.v1.MemoryBucket.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
+	62,  // 51: agynio.api.teams.v1.CreateMemoryBucketRequest.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
+	63,  // 52: agynio.api.teams.v1.CreateMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
+	63,  // 53: agynio.api.teams.v1.GetMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
+	62,  // 54: agynio.api.teams.v1.UpdateMemoryBucketRequest.config:type_name -> agynio.api.teams.v1.MemoryBucketConfig
+	63,  // 55: agynio.api.teams.v1.UpdateMemoryBucketResponse.memory_bucket:type_name -> agynio.api.teams.v1.MemoryBucket
+	63,  // 56: agynio.api.teams.v1.ListMemoryBucketsResponse.memory_buckets:type_name -> agynio.api.teams.v1.MemoryBucket
+	8,   // 57: agynio.api.teams.v1.Variable.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	74,  // 58: agynio.api.teams.v1.CreateVariableResponse.variable:type_name -> agynio.api.teams.v1.Variable
+	74,  // 59: agynio.api.teams.v1.GetVariableResponse.variable:type_name -> agynio.api.teams.v1.Variable
+	74,  // 60: agynio.api.teams.v1.UpdateVariableResponse.variable:type_name -> agynio.api.teams.v1.Variable
+	74,  // 61: agynio.api.teams.v1.ListVariablesResponse.variables:type_name -> agynio.api.teams.v1.Variable
+	8,   // 62: agynio.api.teams.v1.Attachment.meta:type_name -> agynio.api.teams.v1.EntityMeta
+	2,   // 63: agynio.api.teams.v1.Attachment.kind:type_name -> agynio.api.teams.v1.AttachmentKind
+	1,   // 64: agynio.api.teams.v1.Attachment.source_type:type_name -> agynio.api.teams.v1.EntityType
+	1,   // 65: agynio.api.teams.v1.Attachment.target_type:type_name -> agynio.api.teams.v1.EntityType
+	2,   // 66: agynio.api.teams.v1.CreateAttachmentRequest.kind:type_name -> agynio.api.teams.v1.AttachmentKind
+	87,  // 67: agynio.api.teams.v1.CreateAttachmentResponse.attachment:type_name -> agynio.api.teams.v1.Attachment
+	87,  // 68: agynio.api.teams.v1.GetAttachmentResponse.attachment:type_name -> agynio.api.teams.v1.Attachment
+	1,   // 69: agynio.api.teams.v1.ListAttachmentsRequest.source_type:type_name -> agynio.api.teams.v1.EntityType
+	1,   // 70: agynio.api.teams.v1.ListAttachmentsRequest.target_type:type_name -> agynio.api.teams.v1.EntityType
+	2,   // 71: agynio.api.teams.v1.ListAttachmentsRequest.kind:type_name -> agynio.api.teams.v1.AttachmentKind
+	87,  // 72: agynio.api.teams.v1.ListAttachmentsResponse.attachments:type_name -> agynio.api.teams.v1.Attachment
+	11,  // 73: agynio.api.teams.v1.TeamsService.CreateAgent:input_type -> agynio.api.teams.v1.CreateAgentRequest
+	13,  // 74: agynio.api.teams.v1.TeamsService.GetAgent:input_type -> agynio.api.teams.v1.GetAgentRequest
+	15,  // 75: agynio.api.teams.v1.TeamsService.UpdateAgent:input_type -> agynio.api.teams.v1.UpdateAgentRequest
+	17,  // 76: agynio.api.teams.v1.TeamsService.DeleteAgent:input_type -> agynio.api.teams.v1.DeleteAgentRequest
+	19,  // 77: agynio.api.teams.v1.TeamsService.ListAgents:input_type -> agynio.api.teams.v1.ListAgentsRequest
+	22,  // 78: agynio.api.teams.v1.TeamsService.CreateTool:input_type -> agynio.api.teams.v1.CreateToolRequest
+	24,  // 79: agynio.api.teams.v1.TeamsService.GetTool:input_type -> agynio.api.teams.v1.GetToolRequest
+	26,  // 80: agynio.api.teams.v1.TeamsService.UpdateTool:input_type -> agynio.api.teams.v1.UpdateToolRequest
+	28,  // 81: agynio.api.teams.v1.TeamsService.DeleteTool:input_type -> agynio.api.teams.v1.DeleteToolRequest
+	30,  // 82: agynio.api.teams.v1.TeamsService.ListTools:input_type -> agynio.api.teams.v1.ListToolsRequest
+	38,  // 83: agynio.api.teams.v1.TeamsService.CreateMcpServer:input_type -> agynio.api.teams.v1.CreateMcpServerRequest
+	40,  // 84: agynio.api.teams.v1.TeamsService.GetMcpServer:input_type -> agynio.api.teams.v1.GetMcpServerRequest
+	42,  // 85: agynio.api.teams.v1.TeamsService.UpdateMcpServer:input_type -> agynio.api.teams.v1.UpdateMcpServerRequest
+	44,  // 86: agynio.api.teams.v1.TeamsService.DeleteMcpServer:input_type -> agynio.api.teams.v1.DeleteMcpServerRequest
+	46,  // 87: agynio.api.teams.v1.TeamsService.ListMcpServers:input_type -> agynio.api.teams.v1.ListMcpServersRequest
+	52,  // 88: agynio.api.teams.v1.TeamsService.CreateWorkspaceConfiguration:input_type -> agynio.api.teams.v1.CreateWorkspaceConfigurationRequest
+	54,  // 89: agynio.api.teams.v1.TeamsService.GetWorkspaceConfiguration:input_type -> agynio.api.teams.v1.GetWorkspaceConfigurationRequest
+	56,  // 90: agynio.api.teams.v1.TeamsService.UpdateWorkspaceConfiguration:input_type -> agynio.api.teams.v1.UpdateWorkspaceConfigurationRequest
+	58,  // 91: agynio.api.teams.v1.TeamsService.DeleteWorkspaceConfiguration:input_type -> agynio.api.teams.v1.DeleteWorkspaceConfigurationRequest
+	60,  // 92: agynio.api.teams.v1.TeamsService.ListWorkspaceConfigurations:input_type -> agynio.api.teams.v1.ListWorkspaceConfigurationsRequest
+	64,  // 93: agynio.api.teams.v1.TeamsService.CreateMemoryBucket:input_type -> agynio.api.teams.v1.CreateMemoryBucketRequest
+	66,  // 94: agynio.api.teams.v1.TeamsService.GetMemoryBucket:input_type -> agynio.api.teams.v1.GetMemoryBucketRequest
+	68,  // 95: agynio.api.teams.v1.TeamsService.UpdateMemoryBucket:input_type -> agynio.api.teams.v1.UpdateMemoryBucketRequest
+	70,  // 96: agynio.api.teams.v1.TeamsService.DeleteMemoryBucket:input_type -> agynio.api.teams.v1.DeleteMemoryBucketRequest
+	72,  // 97: agynio.api.teams.v1.TeamsService.ListMemoryBuckets:input_type -> agynio.api.teams.v1.ListMemoryBucketsRequest
+	75,  // 98: agynio.api.teams.v1.TeamsService.CreateVariable:input_type -> agynio.api.teams.v1.CreateVariableRequest
+	77,  // 99: agynio.api.teams.v1.TeamsService.GetVariable:input_type -> agynio.api.teams.v1.GetVariableRequest
+	79,  // 100: agynio.api.teams.v1.TeamsService.UpdateVariable:input_type -> agynio.api.teams.v1.UpdateVariableRequest
+	81,  // 101: agynio.api.teams.v1.TeamsService.DeleteVariable:input_type -> agynio.api.teams.v1.DeleteVariableRequest
+	83,  // 102: agynio.api.teams.v1.TeamsService.ListVariables:input_type -> agynio.api.teams.v1.ListVariablesRequest
+	85,  // 103: agynio.api.teams.v1.TeamsService.ResolveVariable:input_type -> agynio.api.teams.v1.ResolveVariableRequest
+	88,  // 104: agynio.api.teams.v1.TeamsService.CreateAttachment:input_type -> agynio.api.teams.v1.CreateAttachmentRequest
+	90,  // 105: agynio.api.teams.v1.TeamsService.GetAttachment:input_type -> agynio.api.teams.v1.GetAttachmentRequest
+	92,  // 106: agynio.api.teams.v1.TeamsService.DeleteAttachment:input_type -> agynio.api.teams.v1.DeleteAttachmentRequest
+	94,  // 107: agynio.api.teams.v1.TeamsService.ListAttachments:input_type -> agynio.api.teams.v1.ListAttachmentsRequest
+	12,  // 108: agynio.api.teams.v1.TeamsService.CreateAgent:output_type -> agynio.api.teams.v1.CreateAgentResponse
+	14,  // 109: agynio.api.teams.v1.TeamsService.GetAgent:output_type -> agynio.api.teams.v1.GetAgentResponse
+	16,  // 110: agynio.api.teams.v1.TeamsService.UpdateAgent:output_type -> agynio.api.teams.v1.UpdateAgentResponse
+	18,  // 111: agynio.api.teams.v1.TeamsService.DeleteAgent:output_type -> agynio.api.teams.v1.DeleteAgentResponse
+	20,  // 112: agynio.api.teams.v1.TeamsService.ListAgents:output_type -> agynio.api.teams.v1.ListAgentsResponse
+	23,  // 113: agynio.api.teams.v1.TeamsService.CreateTool:output_type -> agynio.api.teams.v1.CreateToolResponse
+	25,  // 114: agynio.api.teams.v1.TeamsService.GetTool:output_type -> agynio.api.teams.v1.GetToolResponse
+	27,  // 115: agynio.api.teams.v1.TeamsService.UpdateTool:output_type -> agynio.api.teams.v1.UpdateToolResponse
+	29,  // 116: agynio.api.teams.v1.TeamsService.DeleteTool:output_type -> agynio.api.teams.v1.DeleteToolResponse
+	31,  // 117: agynio.api.teams.v1.TeamsService.ListTools:output_type -> agynio.api.teams.v1.ListToolsResponse
+	39,  // 118: agynio.api.teams.v1.TeamsService.CreateMcpServer:output_type -> agynio.api.teams.v1.CreateMcpServerResponse
+	41,  // 119: agynio.api.teams.v1.TeamsService.GetMcpServer:output_type -> agynio.api.teams.v1.GetMcpServerResponse
+	43,  // 120: agynio.api.teams.v1.TeamsService.UpdateMcpServer:output_type -> agynio.api.teams.v1.UpdateMcpServerResponse
+	45,  // 121: agynio.api.teams.v1.TeamsService.DeleteMcpServer:output_type -> agynio.api.teams.v1.DeleteMcpServerResponse
+	47,  // 122: agynio.api.teams.v1.TeamsService.ListMcpServers:output_type -> agynio.api.teams.v1.ListMcpServersResponse
+	53,  // 123: agynio.api.teams.v1.TeamsService.CreateWorkspaceConfiguration:output_type -> agynio.api.teams.v1.CreateWorkspaceConfigurationResponse
+	55,  // 124: agynio.api.teams.v1.TeamsService.GetWorkspaceConfiguration:output_type -> agynio.api.teams.v1.GetWorkspaceConfigurationResponse
+	57,  // 125: agynio.api.teams.v1.TeamsService.UpdateWorkspaceConfiguration:output_type -> agynio.api.teams.v1.UpdateWorkspaceConfigurationResponse
+	59,  // 126: agynio.api.teams.v1.TeamsService.DeleteWorkspaceConfiguration:output_type -> agynio.api.teams.v1.DeleteWorkspaceConfigurationResponse
+	61,  // 127: agynio.api.teams.v1.TeamsService.ListWorkspaceConfigurations:output_type -> agynio.api.teams.v1.ListWorkspaceConfigurationsResponse
+	65,  // 128: agynio.api.teams.v1.TeamsService.CreateMemoryBucket:output_type -> agynio.api.teams.v1.CreateMemoryBucketResponse
+	67,  // 129: agynio.api.teams.v1.TeamsService.GetMemoryBucket:output_type -> agynio.api.teams.v1.GetMemoryBucketResponse
+	69,  // 130: agynio.api.teams.v1.TeamsService.UpdateMemoryBucket:output_type -> agynio.api.teams.v1.UpdateMemoryBucketResponse
+	71,  // 131: agynio.api.teams.v1.TeamsService.DeleteMemoryBucket:output_type -> agynio.api.teams.v1.DeleteMemoryBucketResponse
+	73,  // 132: agynio.api.teams.v1.TeamsService.ListMemoryBuckets:output_type -> agynio.api.teams.v1.ListMemoryBucketsResponse
+	76,  // 133: agynio.api.teams.v1.TeamsService.CreateVariable:output_type -> agynio.api.teams.v1.CreateVariableResponse
+	78,  // 134: agynio.api.teams.v1.TeamsService.GetVariable:output_type -> agynio.api.teams.v1.GetVariableResponse
+	80,  // 135: agynio.api.teams.v1.TeamsService.UpdateVariable:output_type -> agynio.api.teams.v1.UpdateVariableResponse
+	82,  // 136: agynio.api.teams.v1.TeamsService.DeleteVariable:output_type -> agynio.api.teams.v1.DeleteVariableResponse
+	84,  // 137: agynio.api.teams.v1.TeamsService.ListVariables:output_type -> agynio.api.teams.v1.ListVariablesResponse
+	86,  // 138: agynio.api.teams.v1.TeamsService.ResolveVariable:output_type -> agynio.api.teams.v1.ResolveVariableResponse
+	89,  // 139: agynio.api.teams.v1.TeamsService.CreateAttachment:output_type -> agynio.api.teams.v1.CreateAttachmentResponse
+	91,  // 140: agynio.api.teams.v1.TeamsService.GetAttachment:output_type -> agynio.api.teams.v1.GetAttachmentResponse
+	93,  // 141: agynio.api.teams.v1.TeamsService.DeleteAttachment:output_type -> agynio.api.teams.v1.DeleteAttachmentResponse
+	95,  // 142: agynio.api.teams.v1.TeamsService.ListAttachments:output_type -> agynio.api.teams.v1.ListAttachmentsResponse
+	108, // [108:143] is the sub-list for method output_type
+	73,  // [73:108] is the sub-list for method input_type
+	73,  // [73:73] is the sub-list for extension type_name
+	73,  // [73:73] is the sub-list for extension extendee
+	0,   // [0:73] is the sub-list for field type_name
 }
 
 func init() { file_agynio_api_teams_v1_teams_proto_init() }
@@ -5009,16 +5921,17 @@ func file_agynio_api_teams_v1_teams_proto_init() {
 	}
 	file_agynio_api_teams_v1_teams_proto_msgTypes[7].OneofWrappers = []any{}
 	file_agynio_api_teams_v1_teams_proto_msgTypes[18].OneofWrappers = []any{}
-	file_agynio_api_teams_v1_teams_proto_msgTypes[32].OneofWrappers = []any{}
-	file_agynio_api_teams_v1_teams_proto_msgTypes[46].OneofWrappers = []any{}
-	file_agynio_api_teams_v1_teams_proto_msgTypes[58].OneofWrappers = []any{}
+	file_agynio_api_teams_v1_teams_proto_msgTypes[34].OneofWrappers = []any{}
+	file_agynio_api_teams_v1_teams_proto_msgTypes[48].OneofWrappers = []any{}
+	file_agynio_api_teams_v1_teams_proto_msgTypes[60].OneofWrappers = []any{}
+	file_agynio_api_teams_v1_teams_proto_msgTypes[71].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_agynio_api_teams_v1_teams_proto_rawDesc), len(file_agynio_api_teams_v1_teams_proto_rawDesc)),
-			NumEnums:      7,
-			NumMessages:   73,
+			NumEnums:      8,
+			NumMessages:   88,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

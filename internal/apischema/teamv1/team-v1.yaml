@@ -10,6 +10,7 @@ tags:
   - name: MCP Servers
   - name: WorkspaceConfigurations
   - name: MemoryBuckets
+  - name: Variables
   - name: Attachments
 paths:
   /agents:
@@ -497,6 +498,135 @@ paths:
           description: No Content
         default:
           $ref: '#/components/responses/ProblemResponse'
+  /variables:
+    get:
+      tags:
+        - Variables
+      summary: List variables
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Free-text search (key/description).
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: perPage
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedVariables'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    post:
+      tags:
+        - Variables
+      summary: Create variable
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableCreateRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variable'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /variables/{id}:
+    get:
+      tags:
+        - Variables
+      summary: Get variable by ID
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variable'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    patch:
+      tags:
+        - Variables
+      summary: Update variable (partial)
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VariableUpdateRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Variable'
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+    delete:
+      tags:
+        - Variables
+      summary: Delete variable
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '204':
+          description: No Content
+        default:
+          $ref: '#/components/responses/ProblemResponse'
+  /variables/resolve/{key}:
+    get:
+      tags:
+        - Variables
+      summary: Resolve variable by key
+      parameters:
+        - in: path
+          name: key
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: string
+                    description: Only present when found is true.
+                  found:
+                    type: boolean
+                required:
+                  - found
+                additionalProperties: false
+        default:
+          $ref: '#/components/responses/ProblemResponse'
   /attachments:
     get:
       tags:
@@ -861,6 +991,28 @@ components:
               type: integer
               minimum: 1
           additionalProperties: false
+        toolFilter:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum:
+                - allow
+                - deny
+            rules:
+              type: array
+              items:
+                type: object
+                properties:
+                  pattern:
+                    type: string
+                    minLength: 1
+                required:
+                  - pattern
+                additionalProperties: false
+          required:
+            - mode
+          additionalProperties: false
       additionalProperties: false
     McpServerCreateRequest:
       type: object
@@ -1072,6 +1224,62 @@ components:
         - page
         - perPage
         - total
+    Variable:
+      allOf:
+        - $ref: '#/components/schemas/EntityMeta'
+        - type: object
+          properties:
+            key:
+              type: string
+            value:
+              type: string
+            description:
+              type: string
+          required:
+            - key
+            - value
+    VariableCreateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+        value:
+          type: string
+        description:
+          type: string
+      required:
+        - key
+        - value
+    VariableUpdateRequest:
+      type: object
+      properties:
+        key:
+          type: string
+          minLength: 1
+        value:
+          type: string
+        description:
+          type: string
+      additionalProperties: false
+    PaginatedVariables:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Variable'
+        page:
+          type: integer
+        perPage:
+          type: integer
+        total:
+          type: integer
+      required:
+        - items
+        - page
+        - perPage
+        - total
     EntityType:
       type: string
       enum:
@@ -1080,6 +1288,7 @@ components:
         - mcpServer
         - workspaceConfiguration
         - memoryBucket
+        - variable
     AttachmentKind:
       type: string
       description: Relation type between entities
