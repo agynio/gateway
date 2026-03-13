@@ -2,18 +2,23 @@ package handlers
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net/http"
 	"strconv"
-	"strings"
 
-	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/agynio/gateway/internal/llmclient"
+	"github.com/agynio/gateway/internal/llmgen"
 )
+
+const (
+	llmBasePath    = "/llm/v1"
+	llmTotalAbsent = -1
+)
+
+func LLMBasePath() string {
+	return llmBasePath
+}
 
 type LLMClient interface {
 	CreateProvider(ctx context.Context, params llmclient.CreateProviderParams) (llmclient.LLMProvider, error)
@@ -28,14 +33,10 @@ type LLMClient interface {
 	ListModels(ctx context.Context, pageSize int32, pageToken, llmProviderID string) ([]llmclient.Model, string, error)
 }
 
+// LLMHandler implements llmgen.StrictServerInterface for the LLM API.
 type LLMHandler struct {
 	client LLMClient
 }
-
-const (
-	defaultPageSize = 20
-	maxPageSize     = 100
-)
 
 func NewLLMHandler(client LLMClient) *LLMHandler {
 	if client == nil {
@@ -44,405 +45,207 @@ func NewLLMHandler(client LLMClient) *LLMHandler {
 	return &LLMHandler{client: client}
 }
 
-type createProviderRequest struct {
-	Endpoint   string `json:"endpoint"`
-	AuthMethod string `json:"authMethod"`
-	Token      string `json:"token"`
-}
-
-type updateProviderRequest struct {
-	Endpoint   *string `json:"endpoint"`
-	AuthMethod *string `json:"authMethod"`
-	Token      *string `json:"token"`
-}
-
-type createModelRequest struct {
-	Name          string `json:"name"`
-	LLMProviderID string `json:"llmProviderId"`
-	RemoteName    string `json:"remoteName"`
-}
-
-type updateModelRequest struct {
-	Name          *string `json:"name"`
-	LLMProviderID *string `json:"llmProviderId"`
-	RemoteName    *string `json:"remoteName"`
-}
-
-type providerListResponse struct {
-	Items         []llmclient.LLMProvider `json:"items"`
-	NextPageToken string                  `json:"nextPageToken"`
-}
-
-type modelListResponse struct {
-	Items         []llmclient.Model `json:"items"`
-	NextPageToken string            `json:"nextPageToken"`
-}
-
-func (h *LLMHandler) CreateProvider(w http.ResponseWriter, r *http.Request) {
-	var payload createProviderRequest
-	if err := decodeLLMJSON(r, &payload); err != nil {
-		writeLLMBadRequest(w, err)
-		return
+func (h *LLMHandler) GetModels(ctx context.Context, request llmgen.GetModelsRequestObject) (llmgen.GetModelsResponseObject, error) {
+	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
+	pageToken := llmPageToken(page, perPage)
+	providerID := ""
+	if request.Params.ProviderId != nil {
+		providerID = request.Params.ProviderId.String()
 	}
 
-	endpoint := strings.TrimSpace(payload.Endpoint)
-	if endpoint == "" {
-		writeLLMValidationMessage(w, "endpoint is required")
-		return
-	}
-
-	authMethod, err := parseAuthMethod(payload.AuthMethod)
+	models, _, err := h.client.ListModels(ctx, int32(perPage), pageToken, providerID)
 	if err != nil {
-		writeLLMBadRequest(w, err)
-		return
+		return nil, grpcErrorToProblem(err)
 	}
 
-	token := strings.TrimSpace(payload.Token)
-	if authMethod == llmclient.AuthMethodBearer && token == "" {
-		writeLLMValidationMessage(w, "token is required for bearer auth")
-		return
-	}
-
-	provider, err := h.client.CreateProvider(r.Context(), llmclient.CreateProviderParams{
-		Endpoint:   endpoint,
-		AuthMethod: authMethod,
-		Token:      token,
-	})
-	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
-	}
-
-	writeLLMJSON(w, http.StatusCreated, provider)
-}
-
-func (h *LLMHandler) GetProvider(w http.ResponseWriter, r *http.Request) {
-	providerID := strings.TrimSpace(chi.URLParam(r, "providerId"))
-	if providerID == "" {
-		writeLLMValidationMessage(w, "providerId is required")
-		return
-	}
-
-	provider, err := h.client.GetProvider(r.Context(), providerID)
-	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
-	}
-
-	writeLLMJSON(w, http.StatusOK, provider)
-}
-
-func (h *LLMHandler) UpdateProvider(w http.ResponseWriter, r *http.Request) {
-	providerID := strings.TrimSpace(chi.URLParam(r, "providerId"))
-	if providerID == "" {
-		writeLLMValidationMessage(w, "providerId is required")
-		return
-	}
-
-	var payload updateProviderRequest
-	if err := decodeLLMJSON(r, &payload); err != nil {
-		writeLLMBadRequest(w, err)
-		return
-	}
-
-	params := llmclient.UpdateProviderParams{}
-	if payload.Endpoint != nil {
-		endpoint := strings.TrimSpace(*payload.Endpoint)
-		if endpoint == "" {
-			writeLLMValidationMessage(w, "endpoint must not be empty")
-			return
-		}
-		params.Endpoint = &endpoint
-	}
-	if payload.AuthMethod != nil {
-		method, err := parseAuthMethod(*payload.AuthMethod)
+	items := make([]llmgen.Model, 0, len(models))
+	for _, model := range models {
+		converted, err := modelFromClient(model)
 		if err != nil {
-			writeLLMBadRequest(w, err)
-			return
+			return nil, responseProblem(err)
 		}
-		params.AuthMethod = &method
+		items = append(items, converted)
 	}
-	if payload.Token != nil {
-		token := strings.TrimSpace(*payload.Token)
-		if token == "" {
-			writeLLMValidationMessage(w, "token must not be empty")
-			return
+
+	payload := llmgen.PaginatedModels{
+		Items:   items,
+		Page:    page,
+		PerPage: perPage,
+		Total:   llmTotalAbsent,
+	}
+
+	return llmgen.GetModels200JSONResponse(payload), nil
+}
+
+func (h *LLMHandler) PostModels(ctx context.Context, request llmgen.PostModelsRequestObject) (llmgen.PostModelsResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	params, err := modelCreateToParams(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	model, err := h.client.CreateModel(ctx, params)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	converted, err := modelFromClient(model)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return llmgen.PostModels201JSONResponse(converted), nil
+}
+
+func (h *LLMHandler) DeleteModelsId(ctx context.Context, request llmgen.DeleteModelsIdRequestObject) (llmgen.DeleteModelsIdResponseObject, error) {
+	if err := h.client.DeleteModel(ctx, request.Id.String()); err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return llmgen.DeleteModelsId204Response{}, nil
+}
+
+func (h *LLMHandler) GetModelsId(ctx context.Context, request llmgen.GetModelsIdRequestObject) (llmgen.GetModelsIdResponseObject, error) {
+	model, err := h.client.GetModel(ctx, request.Id.String())
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	converted, err := modelFromClient(model)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return llmgen.GetModelsId200JSONResponse(converted), nil
+}
+
+func (h *LLMHandler) PatchModelsId(ctx context.Context, request llmgen.PatchModelsIdRequestObject) (llmgen.PatchModelsIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	params, err := modelUpdateToParams(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	model, err := h.client.UpdateModel(ctx, request.Id.String(), params)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	converted, err := modelFromClient(model)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return llmgen.PatchModelsId200JSONResponse(converted), nil
+}
+
+func (h *LLMHandler) GetProviders(ctx context.Context, request llmgen.GetProvidersRequestObject) (llmgen.GetProvidersResponseObject, error) {
+	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
+	pageToken := llmPageToken(page, perPage)
+
+	providers, _, err := h.client.ListProviders(ctx, int32(perPage), pageToken)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	items := make([]llmgen.LLMProvider, 0, len(providers))
+	for _, provider := range providers {
+		converted, err := providerFromClient(provider)
+		if err != nil {
+			return nil, responseProblem(err)
 		}
-		params.Token = &token
+		items = append(items, converted)
 	}
 
-	if params.Endpoint == nil && params.AuthMethod == nil && params.Token == nil {
-		writeLLMValidationMessage(w, "at least one field must be provided")
-		return
+	payload := llmgen.PaginatedLLMProviders{
+		Items:   items,
+		Page:    page,
+		PerPage: perPage,
+		Total:   llmTotalAbsent,
 	}
 
-	provider, err := h.client.UpdateProvider(r.Context(), providerID, params)
+	return llmgen.GetProviders200JSONResponse(payload), nil
+}
+
+func (h *LLMHandler) PostProviders(ctx context.Context, request llmgen.PostProvidersRequestObject) (llmgen.PostProvidersResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	params, err := providerCreateToParams(*request.Body)
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, requestProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusOK, provider)
-}
-
-func (h *LLMHandler) DeleteProvider(w http.ResponseWriter, r *http.Request) {
-	providerID := strings.TrimSpace(chi.URLParam(r, "providerId"))
-	if providerID == "" {
-		writeLLMValidationMessage(w, "providerId is required")
-		return
-	}
-
-	if err := h.client.DeleteProvider(r.Context(), providerID); err != nil {
-		writeLLMGRPCError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *LLMHandler) ListProviders(w http.ResponseWriter, r *http.Request) {
-	pageSize, pageToken, err := parsePagination(r)
+	provider, err := h.client.CreateProvider(ctx, params)
 	if err != nil {
-		writeLLMBadRequest(w, err)
-		return
+		return nil, grpcErrorToProblem(err)
 	}
 
-	providers, nextToken, err := h.client.ListProviders(r.Context(), int32(pageSize), pageToken)
+	converted, err := providerFromClient(provider)
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, responseProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusOK, providerListResponse{
-		Items:         providers,
-		NextPageToken: nextToken,
-	})
+	return llmgen.PostProviders201JSONResponse(converted), nil
 }
 
-func (h *LLMHandler) CreateModel(w http.ResponseWriter, r *http.Request) {
-	var payload createModelRequest
-	if err := decodeLLMJSON(r, &payload); err != nil {
-		writeLLMBadRequest(w, err)
-		return
+func (h *LLMHandler) DeleteProvidersId(ctx context.Context, request llmgen.DeleteProvidersIdRequestObject) (llmgen.DeleteProvidersIdResponseObject, error) {
+	if err := h.client.DeleteProvider(ctx, request.Id.String()); err != nil {
+		return nil, grpcErrorToProblem(err)
 	}
+	return llmgen.DeleteProvidersId204Response{}, nil
+}
 
-	name := strings.TrimSpace(payload.Name)
-	if name == "" {
-		writeLLMValidationMessage(w, "name is required")
-		return
-	}
-
-	providerID := strings.TrimSpace(payload.LLMProviderID)
-	if providerID == "" {
-		writeLLMValidationMessage(w, "llmProviderId is required")
-		return
-	}
-
-	remoteName := strings.TrimSpace(payload.RemoteName)
-	if remoteName == "" {
-		writeLLMValidationMessage(w, "remoteName is required")
-		return
-	}
-
-	model, err := h.client.CreateModel(r.Context(), llmclient.CreateModelParams{
-		Name:          name,
-		LLMProviderID: providerID,
-		RemoteName:    remoteName,
-	})
+func (h *LLMHandler) GetProvidersId(ctx context.Context, request llmgen.GetProvidersIdRequestObject) (llmgen.GetProvidersIdResponseObject, error) {
+	provider, err := h.client.GetProvider(ctx, request.Id.String())
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, grpcErrorToProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusCreated, model)
-}
-
-func (h *LLMHandler) GetModel(w http.ResponseWriter, r *http.Request) {
-	modelID := strings.TrimSpace(chi.URLParam(r, "modelId"))
-	if modelID == "" {
-		writeLLMValidationMessage(w, "modelId is required")
-		return
-	}
-
-	model, err := h.client.GetModel(r.Context(), modelID)
+	converted, err := providerFromClient(provider)
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, responseProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusOK, model)
+	return llmgen.GetProvidersId200JSONResponse(converted), nil
 }
 
-func (h *LLMHandler) UpdateModel(w http.ResponseWriter, r *http.Request) {
-	modelID := strings.TrimSpace(chi.URLParam(r, "modelId"))
-	if modelID == "" {
-		writeLLMValidationMessage(w, "modelId is required")
-		return
+func (h *LLMHandler) PatchProvidersId(ctx context.Context, request llmgen.PatchProvidersIdRequestObject) (llmgen.PatchProvidersIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
 	}
 
-	var payload updateModelRequest
-	if err := decodeLLMJSON(r, &payload); err != nil {
-		writeLLMBadRequest(w, err)
-		return
-	}
-
-	params := llmclient.UpdateModelParams{}
-	if payload.Name != nil {
-		name := strings.TrimSpace(*payload.Name)
-		if name == "" {
-			writeLLMValidationMessage(w, "name must not be empty")
-			return
-		}
-		params.Name = &name
-	}
-	if payload.LLMProviderID != nil {
-		providerID := strings.TrimSpace(*payload.LLMProviderID)
-		if providerID == "" {
-			writeLLMValidationMessage(w, "llmProviderId must not be empty")
-			return
-		}
-		params.LLMProviderID = &providerID
-	}
-	if payload.RemoteName != nil {
-		remoteName := strings.TrimSpace(*payload.RemoteName)
-		if remoteName == "" {
-			writeLLMValidationMessage(w, "remoteName must not be empty")
-			return
-		}
-		params.RemoteName = &remoteName
-	}
-
-	if params.Name == nil && params.LLMProviderID == nil && params.RemoteName == nil {
-		writeLLMValidationMessage(w, "at least one field must be provided")
-		return
-	}
-
-	model, err := h.client.UpdateModel(r.Context(), modelID, params)
+	params, err := providerUpdateToParams(*request.Body)
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, requestProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusOK, model)
-}
-
-func (h *LLMHandler) DeleteModel(w http.ResponseWriter, r *http.Request) {
-	modelID := strings.TrimSpace(chi.URLParam(r, "modelId"))
-	if modelID == "" {
-		writeLLMValidationMessage(w, "modelId is required")
-		return
-	}
-
-	if err := h.client.DeleteModel(r.Context(), modelID); err != nil {
-		writeLLMGRPCError(w, err)
-		return
-	}
-
-	w.WriteHeader(http.StatusNoContent)
-}
-
-func (h *LLMHandler) ListModels(w http.ResponseWriter, r *http.Request) {
-	pageSize, pageToken, err := parsePagination(r)
+	provider, err := h.client.UpdateProvider(ctx, request.Id.String(), params)
 	if err != nil {
-		writeLLMBadRequest(w, err)
-		return
+		return nil, grpcErrorToProblem(err)
 	}
 
-	providerID := strings.TrimSpace(r.URL.Query().Get("llmProviderId"))
-	models, nextToken, err := h.client.ListModels(r.Context(), int32(pageSize), pageToken, providerID)
+	converted, err := providerFromClient(provider)
 	if err != nil {
-		writeLLMGRPCError(w, err)
-		return
+		return nil, responseProblem(err)
 	}
 
-	writeLLMJSON(w, http.StatusOK, modelListResponse{
-		Items:         models,
-		NextPageToken: nextToken,
-	})
+	return llmgen.PatchProvidersId200JSONResponse(converted), nil
 }
 
-func parsePagination(r *http.Request) (int, string, error) {
-	pageSize := defaultPageSize
-	pageToken := strings.TrimSpace(r.URL.Query().Get("pageToken"))
-
-	if raw := strings.TrimSpace(r.URL.Query().Get("pageSize")); raw != "" {
-		parsed, err := strconv.Atoi(raw)
-		if err != nil || parsed < 1 {
-			return 0, "", fmt.Errorf("pageSize must be a positive integer")
-		}
-		pageSize = parsed
-	}
-
-	if pageSize > maxPageSize {
-		pageSize = maxPageSize
-	}
-
-	return pageSize, pageToken, nil
+func (h *LLMHandler) PostResponses(ctx context.Context, request llmgen.PostResponsesRequestObject) (llmgen.PostResponsesResponseObject, error) {
+	return nil, grpcErrorToProblem(status.Error(codes.Unimplemented, "responses endpoint must be proxied"))
 }
 
-func writeLLMGRPCError(w http.ResponseWriter, err error) {
-	grpcStatus, ok := status.FromError(err)
-	if !ok {
-		log.Printf("llm grpc error: %v", err)
-		problem := NewProblem(http.StatusBadGateway, http.StatusText(http.StatusBadGateway), err.Error())
-		WriteProblem(w, problem)
-		return
+func llmPageToken(page, perPage int) string {
+	if page <= 1 {
+		return ""
 	}
-
-	statusCode := http.StatusBadGateway
-	switch grpcStatus.Code() {
-	case codes.NotFound:
-		statusCode = http.StatusNotFound
-	case codes.InvalidArgument:
-		statusCode = http.StatusBadRequest
-	case codes.AlreadyExists, codes.FailedPrecondition:
-		statusCode = http.StatusConflict
-	case codes.Unavailable:
-		statusCode = http.StatusServiceUnavailable
-	case codes.PermissionDenied:
-		statusCode = http.StatusForbidden
-	case codes.Unauthenticated:
-		statusCode = http.StatusUnauthorized
-	}
-
-	if statusCode >= http.StatusInternalServerError {
-		log.Printf("llm grpc error: %v", err)
-	}
-
-	message := strings.TrimSpace(grpcStatus.Message())
-	if message == "" {
-		message = http.StatusText(statusCode)
-	}
-	problem := NewProblem(statusCode, http.StatusText(statusCode), message)
-	WriteProblem(w, problem)
-}
-
-func decodeLLMJSON(r *http.Request, out any) error {
-	return decodeJSONBody(r, out)
-}
-
-func parseAuthMethod(raw string) (llmclient.AuthMethod, error) {
-	normalized := strings.TrimSpace(raw)
-	if normalized == "" {
-		return "", fmt.Errorf("authMethod is required")
-	}
-	normalized = strings.ToLower(normalized)
-	switch normalized {
-	case string(llmclient.AuthMethodBearer):
-		return llmclient.AuthMethodBearer, nil
-	default:
-		return "", fmt.Errorf("authMethod must be \"bearer\"")
-	}
-}
-
-func writeLLMBadRequest(w http.ResponseWriter, err error) {
-	writeBadRequest(w, err)
-}
-
-func writeLLMValidationMessage(w http.ResponseWriter, message string) {
-	writeValidationMessage(w, message)
-}
-
-func writeLLMJSON(w http.ResponseWriter, status int, payload any) {
-	writeJSONResponse(w, status, payload, "llm")
+	return strconv.Itoa((page - 1) * perPage)
 }

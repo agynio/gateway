@@ -2,30 +2,25 @@
 set -euo pipefail
 
 REGISTRY="${OPENAPI_REGISTRY:-ghcr.io}"
-IMAGE="${OPENAPI_IMAGE:-agynio/openapi/team:1}"
 OUTPUT_DIR=".openapi"
-OUTPUT_FILE="${OUTPUT_DIR}/team-v1.yaml"
-DIST_FILE="${OUTPUT_DIR}/dist/team-v1.yaml"
 
 if ! command -v oras &>/dev/null; then
-  echo "ERROR: oras CLI not found. Install from https://oras.land" >&2
-  exit 1
+  echo "ERROR: oras CLI not found" >&2; exit 1
 fi
 
 mkdir -p "${OUTPUT_DIR}"
 
-echo "Pulling ${REGISTRY}/${IMAGE} -> ${OUTPUT_FILE}"
-oras pull "${REGISTRY}/${IMAGE}" \
-  --output "${OUTPUT_DIR}"
+pull_spec() {
+  local image="$1" filename="$2"
+  local output_file="${OUTPUT_DIR}/${filename}" dist_file="${OUTPUT_DIR}/dist/${filename}"
+  echo "Pulling ${REGISTRY}/${image} -> ${output_file}"
+  oras pull "${REGISTRY}/${image}" --output "${OUTPUT_DIR}"
+  [[ -f "${dist_file}" ]] && cp "${dist_file}" "${output_file}"
+  if [[ ! -f "${output_file}" ]]; then
+    echo "ERROR: expected ${output_file} not found" >&2; ls -la "${OUTPUT_DIR}" >&2; exit 1
+  fi
+  echo "Spec downloaded: ${output_file} ($(wc -c < "${output_file}") bytes)"
+}
 
-if [[ -f "${DIST_FILE}" ]]; then
-	cp "${DIST_FILE}" "${OUTPUT_FILE}"
-fi
-
-if [[ ! -f "${OUTPUT_FILE}" ]]; then
-	echo "ERROR: expected ${OUTPUT_FILE} not found after pull" >&2
-	ls -la "${OUTPUT_DIR}" >&2
-	exit 1
-fi
-
-echo "Spec downloaded: ${OUTPUT_FILE} ($(wc -c < "${OUTPUT_FILE}") bytes)"
+pull_spec "${TEAM_OPENAPI_IMAGE:-agynio/openapi/team:1}" "team-v1.yaml"
+pull_spec "${LLM_OPENAPI_IMAGE:-agynio/openapi/llm:1}" "llm-v1.yaml"

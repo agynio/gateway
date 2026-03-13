@@ -1,3 +1,8 @@
+// All API domains must be wired through oapi-codegen generated strict servers
+// with request validation middleware. Do NOT register raw http.Handler routes
+// for CRUD endpoints. The only exception is streaming/proxy endpoints (e.g.,
+// SSE /responses) which must still be defined in the OpenAPI spec for request
+// validation but mounted as raw handlers outside the strict server group.
 package main
 
 import (
@@ -12,11 +17,13 @@ import (
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/cors"
 
+	llmv1schema "github.com/agynio/gateway/internal/apischema/llmv1"
 	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
 	"github.com/agynio/gateway/internal/filesclient"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
 	"github.com/agynio/gateway/internal/llmclient"
+	"github.com/agynio/gateway/internal/llmgen"
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/secretsclient"
 	"github.com/agynio/gateway/internal/teamsclient"
@@ -27,9 +34,9 @@ const (
 )
 
 func main() {
-	swagger, err := loadSpec()
+	teamSpec, err := loadTeamSpec()
 	if err != nil {
-		log.Fatalf("failed to load OpenAPI spec: %v", err)
+		log.Fatalf("failed to load team OpenAPI spec: %v", err)
 	}
 
 	config, err := platform.LoadConfigFromEnv()
@@ -67,14 +74,14 @@ func main() {
 
 	teamRouter := chi.NewRouter()
 
-	requestValidator, err := handlers.NewRequestValidationMiddleware(swagger)
+	requestValidator, err := handlers.NewRequestValidationMiddleware(teamSpec)
 	if err != nil {
 		log.Fatalf("failed to initialise request validation: %v", err)
 	}
 	teamRouter.Use(requestValidator)
 
 	if isResponseValidationEnabled() {
-		responseValidator, err := handlers.NewResponseValidationMiddleware(swagger)
+		responseValidator, err := handlers.NewResponseValidationMiddleware(teamSpec)
 		if err != nil {
 			log.Fatalf("failed to initialise response validation: %v", err)
 		}
@@ -109,7 +116,19 @@ func main() {
 	llmHTTPEnabled := config.LLMHTTPBaseURL != nil
 
 	if llmGRPCEnabled || llmHTTPEnabled {
-		var llmHandler *handlers.LLMHandler
+		llmSpec, err := loadLLMSpec()
+		if err != nil {
+			log.Fatalf("failed to load llm OpenAPI spec: %v", err)
+		}
+
+		llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
+		if err != nil {
+			log.Fatalf("failed to initialise llm request validation: %v", err)
+		}
+
+		llmRouter := chi.NewRouter()
+		llmRouter.Use(llmRequestValidator)
+
 		if llmGRPCEnabled {
 			llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
 			if err != nil {
@@ -120,31 +139,35 @@ func main() {
 					log.Printf("failed to close llm gRPC client: %v", err)
 				}
 			}()
-			llmHandler = handlers.NewLLMHandler(llmClient)
+
+			llmHandler := handlers.NewLLMHandler(llmClient)
+			llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
+				RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
+				ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
+			})
+
+			var llmResponseValidator func(http.Handler) http.Handler
+			if isResponseValidationEnabled() {
+				llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
+				if err != nil {
+					log.Fatalf("failed to initialise llm response validation: %v", err)
+				}
+			}
+
+			llmRouter.Group(func(r chi.Router) {
+				if llmResponseValidator != nil {
+					r.Use(llmResponseValidator)
+				}
+				llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
+			})
 		}
 
-		var llmProxy http.Handler
 		if llmHTTPEnabled {
-			llmProxy = handlers.NewLLMResponseProxy(config.LLMHTTPBaseURL)
+			llmProxy := handlers.NewLLMResponseProxy(config.LLMHTTPBaseURL)
+			llmRouter.Post("/responses", llmProxy.ServeHTTP)
 		}
 
-		root.Route("/llm/v1", func(r chi.Router) {
-			if llmGRPCEnabled {
-				r.Post("/providers", llmHandler.CreateProvider)
-				r.Get("/providers", llmHandler.ListProviders)
-				r.Get("/providers/{providerId}", llmHandler.GetProvider)
-				r.Patch("/providers/{providerId}", llmHandler.UpdateProvider)
-				r.Delete("/providers/{providerId}", llmHandler.DeleteProvider)
-				r.Post("/models", llmHandler.CreateModel)
-				r.Get("/models", llmHandler.ListModels)
-				r.Get("/models/{modelId}", llmHandler.GetModel)
-				r.Patch("/models/{modelId}", llmHandler.UpdateModel)
-				r.Delete("/models/{modelId}", llmHandler.DeleteModel)
-			}
-			if llmHTTPEnabled {
-				r.Post("/responses", llmProxy.ServeHTTP)
-			}
-		})
+		root.Mount(handlers.LLMBasePath(), llmRouter)
 	}
 
 	if config.SecretsGRPCTarget != "" {
@@ -192,12 +215,21 @@ func main() {
 	}
 }
 
-func loadSpec() (*openapi3.T, error) {
+func loadTeamSpec() (*openapi3.T, error) {
 	swagger, err := teamv1schema.LoadSpec()
 	if err != nil {
 		return nil, err
 	}
 	swagger.Servers = []*openapi3.Server{{URL: handlers.TeamBasePath()}}
+	return swagger, nil
+}
+
+func loadLLMSpec() (*openapi3.T, error) {
+	swagger, err := llmv1schema.LoadSpec()
+	if err != nil {
+		return nil, err
+	}
+	swagger.Servers = []*openapi3.Server{{URL: handlers.LLMBasePath()}}
 	return swagger, nil
 }
 
