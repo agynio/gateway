@@ -7,7 +7,6 @@ pipelines:
   dev:
     flags:
       - name: no-logs
-        short: n
         description: "Disable container log streaming"
     run: |-
       if kubectl get application gateway -n argocd >/dev/null 2>&1; then
