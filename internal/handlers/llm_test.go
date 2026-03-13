@@ -1,893 +1,683 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"reflect"
+	"errors"
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/agynio/gateway/internal/llmclient"
+	"github.com/agynio/gateway/internal/llmgen"
 )
 
+type llmCall struct {
+	method string
+	assert func(any)
+	resp   any
+	token  string
+	err    error
+}
+
 type stubLLMClient struct {
-	t                *testing.T
-	createProviderFn func(context.Context, llmclient.CreateProviderParams) (llmclient.LLMProvider, error)
-	getProviderFn    func(context.Context, string) (llmclient.LLMProvider, error)
-	updateProviderFn func(context.Context, string, llmclient.UpdateProviderParams) (llmclient.LLMProvider, error)
-	deleteProviderFn func(context.Context, string) error
-	listProvidersFn  func(context.Context, int32, string) ([]llmclient.LLMProvider, string, error)
-	createModelFn    func(context.Context, llmclient.CreateModelParams) (llmclient.Model, error)
-	getModelFn       func(context.Context, string) (llmclient.Model, error)
-	updateModelFn    func(context.Context, string, llmclient.UpdateModelParams) (llmclient.Model, error)
-	deleteModelFn    func(context.Context, string) error
-	listModelsFn     func(context.Context, int32, string, string) ([]llmclient.Model, string, error)
+	t     *testing.T
+	calls []llmCall
+	idx   int
+}
+
+type listProvidersArgs struct {
+	pageSize  int32
+	pageToken string
+}
+
+type listModelsArgs struct {
+	pageSize   int32
+	pageToken  string
+	providerID string
+}
+
+type updateProviderArgs struct {
+	id     string
+	params llmclient.UpdateProviderParams
+}
+
+type updateModelArgs struct {
+	id     string
+	params llmclient.UpdateModelParams
+}
+
+func (s *stubLLMClient) Expect(call llmCall) {
+	s.calls = append(s.calls, call)
+}
+
+func (s *stubLLMClient) AssertDone() {
+	if s.idx != len(s.calls) {
+		s.t.Fatalf("expected %d calls, got %d", len(s.calls), s.idx)
+	}
+}
+
+func (s *stubLLMClient) nextCall(method string, req any) llmCall {
+	if s.idx >= len(s.calls) {
+		s.t.Fatalf("unexpected call %s", method)
+	}
+	call := s.calls[s.idx]
+	s.idx++
+	if call.method != method {
+		s.t.Fatalf("unexpected method: got %s want %s", method, call.method)
+	}
+	if call.assert != nil {
+		call.assert(req)
+	}
+	return call
 }
 
 func (s *stubLLMClient) CreateProvider(ctx context.Context, params llmclient.CreateProviderParams) (llmclient.LLMProvider, error) {
-	if s.createProviderFn == nil {
-		s.t.Fatalf("unexpected CreateProvider call")
+	call := s.nextCall("CreateProvider", params)
+	if call.resp == nil {
+		return llmclient.LLMProvider{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.LLMProvider)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.createProviderFn(ctx, params)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) GetProvider(ctx context.Context, id string) (llmclient.LLMProvider, error) {
-	if s.getProviderFn == nil {
-		s.t.Fatalf("unexpected GetProvider call")
+	call := s.nextCall("GetProvider", id)
+	if call.resp == nil {
+		return llmclient.LLMProvider{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.LLMProvider)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.getProviderFn(ctx, id)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) UpdateProvider(ctx context.Context, id string, params llmclient.UpdateProviderParams) (llmclient.LLMProvider, error) {
-	if s.updateProviderFn == nil {
-		s.t.Fatalf("unexpected UpdateProvider call")
+	call := s.nextCall("UpdateProvider", updateProviderArgs{id: id, params: params})
+	if call.resp == nil {
+		return llmclient.LLMProvider{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.LLMProvider)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.updateProviderFn(ctx, id, params)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) DeleteProvider(ctx context.Context, id string) error {
-	if s.deleteProviderFn == nil {
-		s.t.Fatalf("unexpected DeleteProvider call")
-	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
-	}
-	return s.deleteProviderFn(ctx, id)
+	call := s.nextCall("DeleteProvider", id)
+	return call.err
 }
 
 func (s *stubLLMClient) ListProviders(ctx context.Context, pageSize int32, pageToken string) ([]llmclient.LLMProvider, string, error) {
-	if s.listProvidersFn == nil {
-		s.t.Fatalf("unexpected ListProviders call")
+	call := s.nextCall("ListProviders", listProvidersArgs{pageSize: pageSize, pageToken: pageToken})
+	if call.resp == nil {
+		return nil, call.token, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.([]llmclient.LLMProvider)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.listProvidersFn(ctx, pageSize, pageToken)
+	return resp, call.token, call.err
 }
 
 func (s *stubLLMClient) CreateModel(ctx context.Context, params llmclient.CreateModelParams) (llmclient.Model, error) {
-	if s.createModelFn == nil {
-		s.t.Fatalf("unexpected CreateModel call")
+	call := s.nextCall("CreateModel", params)
+	if call.resp == nil {
+		return llmclient.Model{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.Model)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.createModelFn(ctx, params)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) GetModel(ctx context.Context, id string) (llmclient.Model, error) {
-	if s.getModelFn == nil {
-		s.t.Fatalf("unexpected GetModel call")
+	call := s.nextCall("GetModel", id)
+	if call.resp == nil {
+		return llmclient.Model{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.Model)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.getModelFn(ctx, id)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) UpdateModel(ctx context.Context, id string, params llmclient.UpdateModelParams) (llmclient.Model, error) {
-	if s.updateModelFn == nil {
-		s.t.Fatalf("unexpected UpdateModel call")
+	call := s.nextCall("UpdateModel", updateModelArgs{id: id, params: params})
+	if call.resp == nil {
+		return llmclient.Model{}, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.(llmclient.Model)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.updateModelFn(ctx, id, params)
+	return resp, call.err
 }
 
 func (s *stubLLMClient) DeleteModel(ctx context.Context, id string) error {
-	if s.deleteModelFn == nil {
-		s.t.Fatalf("unexpected DeleteModel call")
-	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
-	}
-	return s.deleteModelFn(ctx, id)
+	call := s.nextCall("DeleteModel", id)
+	return call.err
 }
 
 func (s *stubLLMClient) ListModels(ctx context.Context, pageSize int32, pageToken, llmProviderID string) ([]llmclient.Model, string, error) {
-	if s.listModelsFn == nil {
-		s.t.Fatalf("unexpected ListModels call")
+	call := s.nextCall("ListModels", listModelsArgs{pageSize: pageSize, pageToken: pageToken, providerID: llmProviderID})
+	if call.resp == nil {
+		return nil, call.token, call.err
 	}
-	if ctx == nil {
-		s.t.Fatalf("expected context")
+	resp, ok := call.resp.([]llmclient.Model)
+	if !ok {
+		s.t.Fatalf("unexpected response type: %T", call.resp)
 	}
-	return s.listModelsFn(ctx, pageSize, pageToken, llmProviderID)
+	return resp, call.token, call.err
 }
 
-func TestLLMHandlerCreateProviderSuccess(t *testing.T) {
+func TestLLMGetProvidersPagination(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	providerID := uuid.MustParse("11111111-1111-1111-1111-111111111111")
 	createdAt := time.Date(2024, 2, 3, 4, 5, 6, 0, time.UTC)
-	expected := llmclient.LLMProvider{
-		ID:         "prov-1",
-		Endpoint:   "https://llm.example.com",
-		AuthMethod: llmclient.AuthMethodBearer,
-		CreatedAt:  createdAt,
-	}
+	updatedAt := time.Date(2024, 2, 4, 4, 5, 6, 0, time.UTC)
 
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		createProviderFn: func(ctx context.Context, params llmclient.CreateProviderParams) (llmclient.LLMProvider, error) {
-			called = true
-			if params.Endpoint != expected.Endpoint {
-				t.Fatalf("unexpected endpoint: %s", params.Endpoint)
+	stub.Expect(llmCall{
+		method: "ListProviders",
+		assert: func(req any) {
+			input := req.(listProvidersArgs)
+			if input.pageSize != 3 {
+				t.Fatalf("unexpected page size: %d", input.pageSize)
 			}
-			if params.AuthMethod != expected.AuthMethod {
-				t.Fatalf("unexpected auth method: %s", params.AuthMethod)
+			if input.pageToken != "3" {
+				t.Fatalf("unexpected page token: %s", input.pageToken)
 			}
-			if params.Token != "secret" {
-				t.Fatalf("unexpected token")
-			}
-			return expected, nil
 		},
+		resp: []llmclient.LLMProvider{
+			{
+				ID:         providerID.String(),
+				Endpoint:   "https://llm.example.com",
+				AuthMethod: llmclient.AuthMethodBearer,
+				CreatedAt:  createdAt,
+				UpdatedAt:  &updatedAt,
+			},
+		},
+	})
+
+	page := 2
+	perPage := 3
+	h := NewLLMHandler(stub)
+	resp, err := h.GetProviders(context.Background(), llmgen.GetProvidersRequestObject{Params: llmgen.GetProvidersParams{
+		Page:    &page,
+		PerPage: &perPage,
+	}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	payload := createProviderRequest{
-		Endpoint:   expected.Endpoint,
-		AuthMethod: "bearer",
+	list, ok := resp.(llmgen.GetProviders200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if list.Page != page || list.PerPage != perPage {
+		t.Fatalf("unexpected pagination: page %d perPage %d", list.Page, list.PerPage)
+	}
+	if list.Total != -1 {
+		t.Fatalf("unexpected total: %d", list.Total)
+	}
+	if len(list.Items) != 1 {
+		t.Fatalf("expected 1 provider, got %d", len(list.Items))
+	}
+	if list.Items[0].Id.String() != providerID.String() {
+		t.Fatalf("unexpected provider id: %s", list.Items[0].Id.String())
+	}
+	if list.Items[0].AuthMethod != llmgen.Bearer {
+		t.Fatalf("unexpected auth method: %s", list.Items[0].AuthMethod)
+	}
+	if list.Items[0].UpdatedAt == nil || !list.Items[0].UpdatedAt.Equal(updatedAt) {
+		t.Fatalf("unexpected updatedAt: %v", list.Items[0].UpdatedAt)
+	}
+
+	stub.AssertDone()
+}
+
+func TestLLMPostProviders(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	providerID := uuid.MustParse("22222222-2222-2222-2222-222222222222")
+	createdAt := time.Date(2024, 2, 3, 4, 5, 6, 0, time.UTC)
+
+	stub.Expect(llmCall{
+		method: "CreateProvider",
+		assert: func(req any) {
+			input := req.(llmclient.CreateProviderParams)
+			if input.Endpoint != "https://llm.example.com" {
+				t.Fatalf("unexpected endpoint: %s", input.Endpoint)
+			}
+			if input.AuthMethod != llmclient.AuthMethodBearer {
+				t.Fatalf("unexpected auth method: %s", input.AuthMethod)
+			}
+			if input.Token != "secret" {
+				t.Fatalf("unexpected token: %s", input.Token)
+			}
+		},
+		resp: llmclient.LLMProvider{
+			ID:         providerID.String(),
+			Endpoint:   "https://llm.example.com",
+			AuthMethod: llmclient.AuthMethodBearer,
+			CreatedAt:  createdAt,
+		},
+	})
+
+	request := llmgen.PostProvidersRequestObject{Body: &llmgen.LLMProviderCreateRequest{
+		Endpoint:   "https://llm.example.com",
+		AuthMethod: llmgen.Bearer,
 		Token:      "secret",
-	}
-	req := newJSONRequest(t, http.MethodPost, "/llm/v1/providers", payload)
-	resp := httptest.NewRecorder()
+	}}
 
-	NewLLMHandler(client).CreateProvider(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusCreated {
-		t.Fatalf("expected status %d got %d", http.StatusCreated, result.StatusCode)
-	}
-	if got := result.Header.Get("Content-Type"); got != "application/json" {
-		t.Fatalf("expected content type application/json got %q", got)
-	}
-	if !called {
-		t.Fatalf("expected CreateProvider to be called")
+	h := NewLLMHandler(stub)
+	resp, err := h.PostProviders(context.Background(), request)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var body llmclient.LLMProvider
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
+	created, ok := resp.(llmgen.PostProviders201JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
 	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
+	if created.Id.String() != providerID.String() {
+		t.Fatalf("unexpected provider id: %s", created.Id.String())
 	}
+	if created.Endpoint != "https://llm.example.com" {
+		t.Fatalf("unexpected endpoint: %s", created.Endpoint)
+	}
+
+	stub.AssertDone()
 }
 
-func TestLLMHandlerCreateProviderValidationErrors(t *testing.T) {
-	tests := []struct {
-		name    string
-		payload any
-		detail  string
-	}{
-		{
-			name:    "missing endpoint",
-			payload: createProviderRequest{AuthMethod: "bearer", Token: "secret"},
-			detail:  "endpoint is required",
+func TestLLMGetProviderByID(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	providerID := uuid.MustParse("33333333-3333-3333-3333-333333333333")
+	createdAt := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	stub.Expect(llmCall{
+		method: "GetProvider",
+		assert: func(req any) {
+			if req.(string) != providerID.String() {
+				t.Fatalf("unexpected provider id: %s", req.(string))
+			}
 		},
-		{
-			name:    "missing auth method",
-			payload: createProviderRequest{Endpoint: "https://llm.example.com", Token: "secret"},
-			detail:  "authMethod is required",
+		resp: llmclient.LLMProvider{
+			ID:         providerID.String(),
+			Endpoint:   "https://llm.example.com",
+			AuthMethod: llmclient.AuthMethodBearer,
+			CreatedAt:  createdAt,
 		},
-		{
-			name:    "missing token",
-			payload: createProviderRequest{Endpoint: "https://llm.example.com", AuthMethod: "bearer"},
-			detail:  "token is required for bearer auth",
-		},
-		{
-			name:    "invalid auth method",
-			payload: createProviderRequest{Endpoint: "https://llm.example.com", AuthMethod: "basic", Token: "secret"},
-			detail:  "authMethod must be \"bearer\"",
-		},
+	})
+
+	h := NewLLMHandler(stub)
+	resp, err := h.GetProvidersId(context.Background(), llmgen.GetProvidersIdRequestObject{Id: openapi_types.UUID(providerID)})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client := &stubLLMClient{t: t}
-			req := newJSONRequest(t, http.MethodPost, "/llm/v1/providers", tt.payload)
-			resp := httptest.NewRecorder()
-
-			NewLLMHandler(client).CreateProvider(resp, req)
-
-			assertProblemResponse(t, resp, http.StatusBadRequest, tt.detail)
-		})
+	provider, ok := resp.(llmgen.GetProvidersId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
 	}
+	if provider.Id.String() != providerID.String() {
+		t.Fatalf("unexpected provider id: %s", provider.Id.String())
+	}
+
+	stub.AssertDone()
 }
 
-func TestLLMHandlerCreateModelSuccess(t *testing.T) {
+func TestLLMPatchProvider(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	providerID := uuid.MustParse("44444444-4444-4444-4444-444444444444")
+	createdAt := time.Date(2024, 1, 2, 0, 0, 0, 0, time.UTC)
+	endpoint := "https://llm.example.com"
+	authMethod := llmgen.Bearer
+	token := "secret"
+
+	stub.Expect(llmCall{
+		method: "UpdateProvider",
+		assert: func(req any) {
+			input := req.(updateProviderArgs)
+			if input.id != providerID.String() {
+				t.Fatalf("unexpected provider id: %s", input.id)
+			}
+			if input.params.Endpoint == nil || *input.params.Endpoint != endpoint {
+				t.Fatalf("unexpected endpoint: %v", input.params.Endpoint)
+			}
+			if input.params.AuthMethod == nil || *input.params.AuthMethod != llmclient.AuthMethodBearer {
+				t.Fatalf("unexpected auth method: %v", input.params.AuthMethod)
+			}
+			if input.params.Token == nil || *input.params.Token != token {
+				t.Fatalf("unexpected token: %v", input.params.Token)
+			}
+		},
+		resp: llmclient.LLMProvider{
+			ID:         providerID.String(),
+			Endpoint:   endpoint,
+			AuthMethod: llmclient.AuthMethodBearer,
+			CreatedAt:  createdAt,
+		},
+	})
+
+	request := llmgen.PatchProvidersIdRequestObject{
+		Id: openapi_types.UUID(providerID),
+		Body: &llmgen.LLMProviderUpdateRequest{
+			Endpoint:   &endpoint,
+			AuthMethod: &authMethod,
+			Token:      &token,
+		},
+	}
+
+	h := NewLLMHandler(stub)
+	resp, err := h.PatchProvidersId(context.Background(), request)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated, ok := resp.(llmgen.PatchProvidersId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if updated.Id.String() != providerID.String() {
+		t.Fatalf("unexpected provider id: %s", updated.Id.String())
+	}
+
+	stub.AssertDone()
+}
+
+func TestLLMDeleteProvider(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	providerID := uuid.MustParse("55555555-5555-5555-5555-555555555555")
+
+	stub.Expect(llmCall{
+		method: "DeleteProvider",
+		assert: func(req any) {
+			if req.(string) != providerID.String() {
+				t.Fatalf("unexpected provider id: %s", req.(string))
+			}
+		},
+	})
+
+	h := NewLLMHandler(stub)
+	resp, err := h.DeleteProvidersId(context.Background(), llmgen.DeleteProvidersIdRequestObject{Id: openapi_types.UUID(providerID)})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := resp.(llmgen.DeleteProvidersId204Response); !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+
+	stub.AssertDone()
+}
+
+func TestLLMGetModelsPagination(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	modelID := uuid.MustParse("66666666-6666-6666-6666-666666666666")
+	providerID := uuid.MustParse("77777777-7777-7777-7777-777777777777")
 	createdAt := time.Date(2024, 3, 4, 5, 6, 7, 0, time.UTC)
-	expected := llmclient.Model{
-		ID:            "model-1",
-		Name:          "gpt-4",
-		LLMProviderID: "prov-1",
-		RemoteName:    "gpt-4",
-		CreatedAt:     createdAt,
-	}
 
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		createModelFn: func(ctx context.Context, params llmclient.CreateModelParams) (llmclient.Model, error) {
-			called = true
-			if params.Name != expected.Name {
-				t.Fatalf("unexpected name: %s", params.Name)
+	stub.Expect(llmCall{
+		method: "ListModels",
+		assert: func(req any) {
+			input := req.(listModelsArgs)
+			if input.pageSize != 2 {
+				t.Fatalf("unexpected page size: %d", input.pageSize)
 			}
-			if params.LLMProviderID != expected.LLMProviderID {
-				t.Fatalf("unexpected provider id: %s", params.LLMProviderID)
+			if input.pageToken != "4" {
+				t.Fatalf("unexpected page token: %s", input.pageToken)
 			}
-			if params.RemoteName != expected.RemoteName {
-				t.Fatalf("unexpected remote name: %s", params.RemoteName)
+			if input.providerID != providerID.String() {
+				t.Fatalf("unexpected provider id: %s", input.providerID)
 			}
-			return expected, nil
 		},
-	}
-
-	payload := createModelRequest{
-		Name:          expected.Name,
-		LLMProviderID: expected.LLMProviderID,
-		RemoteName:    expected.RemoteName,
-	}
-	req := newJSONRequest(t, http.MethodPost, "/llm/v1/models", payload)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).CreateModel(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusCreated {
-		t.Fatalf("expected status %d got %d", http.StatusCreated, result.StatusCode)
-	}
-	if got := result.Header.Get("Content-Type"); got != "application/json" {
-		t.Fatalf("expected content type application/json got %q", got)
-	}
-	if !called {
-		t.Fatalf("expected CreateModel to be called")
-	}
-
-	var body llmclient.Model
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
-	}
-}
-
-func TestLLMHandlerCreateModelValidationErrors(t *testing.T) {
-	tests := []struct {
-		name    string
-		payload any
-		detail  string
-	}{
-		{
-			name:    "missing name",
-			payload: createModelRequest{LLMProviderID: "prov-1", RemoteName: "gpt-4"},
-			detail:  "name is required",
+		resp: []llmclient.Model{
+			{
+				ID:            modelID.String(),
+				Name:          "gpt-4",
+				LLMProviderID: providerID.String(),
+				RemoteName:    "gpt-4",
+				CreatedAt:     createdAt,
+			},
 		},
-		{
-			name:    "missing provider",
-			payload: createModelRequest{Name: "gpt-4", RemoteName: "gpt-4"},
-			detail:  "llmProviderId is required",
-		},
-		{
-			name:    "missing remote name",
-			payload: createModelRequest{Name: "gpt-4", LLMProviderID: "prov-1"},
-			detail:  "remoteName is required",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client := &stubLLMClient{t: t}
-			req := newJSONRequest(t, http.MethodPost, "/llm/v1/models", tt.payload)
-			resp := httptest.NewRecorder()
-
-			NewLLMHandler(client).CreateModel(resp, req)
-
-			assertProblemResponse(t, resp, http.StatusBadRequest, tt.detail)
-		})
-	}
-}
-
-func TestLLMHandlerUpdateProviderPartial(t *testing.T) {
-	expected := llmclient.LLMProvider{
-		ID:         "prov-1",
-		Endpoint:   "https://updated.example.com",
-		AuthMethod: llmclient.AuthMethodBearer,
-		CreatedAt:  time.Date(2024, 4, 5, 6, 7, 8, 0, time.UTC),
-	}
-
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		updateProviderFn: func(ctx context.Context, id string, params llmclient.UpdateProviderParams) (llmclient.LLMProvider, error) {
-			called = true
-			if id != "prov-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			if params.Endpoint == nil || *params.Endpoint != expected.Endpoint {
-				t.Fatalf("unexpected endpoint")
-			}
-			if params.AuthMethod != nil || params.Token != nil {
-				t.Fatalf("expected only endpoint update")
-			}
-			return expected, nil
-		},
-	}
-
-	payload := updateProviderRequest{Endpoint: ptr(expected.Endpoint)}
-	req := newJSONRequest(t, http.MethodPatch, "/llm/v1/providers/prov-1", payload)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).UpdateProvider(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-	if !called {
-		t.Fatalf("expected UpdateProvider to be called")
-	}
-
-	var body llmclient.LLMProvider
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
-	}
-}
-
-func TestLLMHandlerUpdateProviderEmptyBody(t *testing.T) {
-	client := &stubLLMClient{t: t}
-	req := httptest.NewRequest(http.MethodPatch, "/llm/v1/providers/prov-1", nil)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).UpdateProvider(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusBadRequest, "request body is required")
-}
-
-func TestLLMHandlerUpdateModelPartial(t *testing.T) {
-	expected := llmclient.Model{
-		ID:            "model-1",
-		Name:          "gpt-4",
-		LLMProviderID: "prov-1",
-		RemoteName:    "gpt-4-turbo",
-		CreatedAt:     time.Date(2024, 5, 6, 7, 8, 9, 0, time.UTC),
-	}
-
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		updateModelFn: func(ctx context.Context, id string, params llmclient.UpdateModelParams) (llmclient.Model, error) {
-			called = true
-			if id != "model-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			if params.RemoteName == nil || *params.RemoteName != expected.RemoteName {
-				t.Fatalf("unexpected remote name")
-			}
-			if params.Name != nil || params.LLMProviderID != nil {
-				t.Fatalf("expected only remote name update")
-			}
-			return expected, nil
-		},
-	}
-
-	payload := updateModelRequest{RemoteName: ptr(expected.RemoteName)}
-	req := newJSONRequest(t, http.MethodPatch, "/llm/v1/models/model-1", payload)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).UpdateModel(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-	if !called {
-		t.Fatalf("expected UpdateModel to be called")
-	}
-
-	var body llmclient.Model
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
-	}
-}
-
-func TestLLMHandlerUpdateModelEmptyBody(t *testing.T) {
-	client := &stubLLMClient{t: t}
-	req := httptest.NewRequest(http.MethodPatch, "/llm/v1/models/model-1", nil)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).UpdateModel(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusBadRequest, "request body is required")
-}
-
-func TestLLMHandlerGetProviderSuccess(t *testing.T) {
-	expected := llmclient.LLMProvider{
-		ID:         "prov-1",
-		Endpoint:   "https://llm.example.com",
-		AuthMethod: llmclient.AuthMethodBearer,
-		CreatedAt:  time.Date(2024, 6, 7, 8, 9, 10, 0, time.UTC),
-	}
-
-	client := &stubLLMClient{
-		t: t,
-		getProviderFn: func(ctx context.Context, id string) (llmclient.LLMProvider, error) {
-			if id != "prov-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			return expected, nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers/prov-1", nil)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).GetProvider(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-
-	var body llmclient.LLMProvider
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
-	}
-}
-
-func TestLLMHandlerGetProviderNotFound(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		getProviderFn: func(ctx context.Context, id string) (llmclient.LLMProvider, error) {
-			return llmclient.LLMProvider{}, status.Error(codes.NotFound, "missing")
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers/prov-1", nil)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).GetProvider(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusNotFound, "missing")
-}
-
-func TestLLMHandlerGetModelSuccess(t *testing.T) {
-	expected := llmclient.Model{
-		ID:            "model-1",
-		Name:          "gpt-4",
-		LLMProviderID: "prov-1",
-		RemoteName:    "gpt-4",
-		CreatedAt:     time.Date(2024, 7, 8, 9, 10, 11, 0, time.UTC),
-	}
-
-	client := &stubLLMClient{
-		t: t,
-		getModelFn: func(ctx context.Context, id string) (llmclient.Model, error) {
-			if id != "model-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			return expected, nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/models/model-1", nil)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).GetModel(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-
-	var body llmclient.Model
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body, expected) {
-		t.Fatalf("unexpected response: %#v", body)
-	}
-}
-
-func TestLLMHandlerGetModelNotFound(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		getModelFn: func(ctx context.Context, id string) (llmclient.Model, error) {
-			return llmclient.Model{}, status.Error(codes.NotFound, "missing")
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/models/model-1", nil)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).GetModel(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusNotFound, "missing")
-}
-
-func TestLLMHandlerDeleteProviderSuccess(t *testing.T) {
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		deleteProviderFn: func(ctx context.Context, id string) error {
-			called = true
-			if id != "prov-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			return nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodDelete, "/llm/v1/providers/prov-1", nil)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).DeleteProvider(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusNoContent {
-		t.Fatalf("expected status %d got %d", http.StatusNoContent, result.StatusCode)
-	}
-	if !called {
-		t.Fatalf("expected DeleteProvider to be called")
-	}
-}
-
-func TestLLMHandlerDeleteProviderNotFound(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		deleteProviderFn: func(ctx context.Context, id string) error {
-			return status.Error(codes.NotFound, "missing")
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodDelete, "/llm/v1/providers/prov-1", nil)
-	req = withURLParam(req, "providerId", "prov-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).DeleteProvider(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusNotFound, "missing")
-}
-
-func TestLLMHandlerDeleteModelSuccess(t *testing.T) {
-	called := false
-	client := &stubLLMClient{
-		t: t,
-		deleteModelFn: func(ctx context.Context, id string) error {
-			called = true
-			if id != "model-1" {
-				t.Fatalf("unexpected id: %s", id)
-			}
-			return nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodDelete, "/llm/v1/models/model-1", nil)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).DeleteModel(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusNoContent {
-		t.Fatalf("expected status %d got %d", http.StatusNoContent, result.StatusCode)
-	}
-	if !called {
-		t.Fatalf("expected DeleteModel to be called")
-	}
-}
-
-func TestLLMHandlerDeleteModelNotFound(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		deleteModelFn: func(ctx context.Context, id string) error {
-			return status.Error(codes.NotFound, "missing")
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodDelete, "/llm/v1/models/model-1", nil)
-	req = withURLParam(req, "modelId", "model-1")
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).DeleteModel(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusNotFound, "missing")
-}
-
-func TestLLMHandlerListProvidersDefaults(t *testing.T) {
-	items := []llmclient.LLMProvider{{
-		ID:         "prov-1",
-		Endpoint:   "https://llm.example.com",
-		AuthMethod: llmclient.AuthMethodBearer,
-		CreatedAt:  time.Date(2024, 8, 9, 10, 11, 12, 0, time.UTC),
-	}}
-
-	client := &stubLLMClient{
-		t: t,
-		listProvidersFn: func(ctx context.Context, pageSize int32, pageToken string) ([]llmclient.LLMProvider, string, error) {
-			if pageSize != defaultPageSize {
-				t.Fatalf("unexpected page size: %d", pageSize)
-			}
-			if pageToken != "" {
-				t.Fatalf("unexpected page token: %s", pageToken)
-			}
-			return items, "next", nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListProviders(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-
-	var body providerListResponse
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body.Items, items) {
-		t.Fatalf("unexpected items: %#v", body.Items)
-	}
-	if body.NextPageToken != "next" {
-		t.Fatalf("unexpected nextPageToken: %s", body.NextPageToken)
-	}
-}
-
-func TestLLMHandlerListProvidersCustomPage(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		listProvidersFn: func(ctx context.Context, pageSize int32, pageToken string) ([]llmclient.LLMProvider, string, error) {
-			if pageSize != 50 {
-				t.Fatalf("unexpected page size: %d", pageSize)
-			}
-			if pageToken != "cursor" {
-				t.Fatalf("unexpected page token: %s", pageToken)
-			}
-			return []llmclient.LLMProvider{}, "", nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers?pageSize=50&pageToken=cursor", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListProviders(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-}
-
-func TestLLMHandlerListProvidersInvalidParams(t *testing.T) {
-	client := &stubLLMClient{t: t}
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers?pageSize=0", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListProviders(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusBadRequest, "pageSize must be a positive integer")
-}
-
-func TestLLMHandlerListModelsDefaults(t *testing.T) {
-	items := []llmclient.Model{{
-		ID:            "model-1",
-		Name:          "gpt-4",
-		LLMProviderID: "prov-1",
-		RemoteName:    "gpt-4",
-		CreatedAt:     time.Date(2024, 9, 10, 11, 12, 13, 0, time.UTC),
-	}}
-
-	client := &stubLLMClient{
-		t: t,
-		listModelsFn: func(ctx context.Context, pageSize int32, pageToken, llmProviderID string) ([]llmclient.Model, string, error) {
-			if pageSize != defaultPageSize {
-				t.Fatalf("unexpected page size: %d", pageSize)
-			}
-			if pageToken != "" {
-				t.Fatalf("unexpected page token: %s", pageToken)
-			}
-			if llmProviderID != "prov-1" {
-				t.Fatalf("unexpected provider id: %s", llmProviderID)
-			}
-			return items, "more", nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/models?llmProviderId=prov-1", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListModels(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-
-	var body modelListResponse
-	if err := json.NewDecoder(result.Body).Decode(&body); err != nil {
-		t.Fatalf("decode response: %v", err)
-	}
-	if !reflect.DeepEqual(body.Items, items) {
-		t.Fatalf("unexpected items: %#v", body.Items)
-	}
-	if body.NextPageToken != "more" {
-		t.Fatalf("unexpected nextPageToken: %s", body.NextPageToken)
-	}
-}
-
-func TestLLMHandlerListModelsCustomPage(t *testing.T) {
-	client := &stubLLMClient{
-		t: t,
-		listModelsFn: func(ctx context.Context, pageSize int32, pageToken, llmProviderID string) ([]llmclient.Model, string, error) {
-			if pageSize != 10 {
-				t.Fatalf("unexpected page size: %d", pageSize)
-			}
-			if pageToken != "cursor" {
-				t.Fatalf("unexpected page token: %s", pageToken)
-			}
-			if llmProviderID != "" {
-				t.Fatalf("unexpected provider id: %s", llmProviderID)
-			}
-			return []llmclient.Model{}, "", nil
-		},
-	}
-
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/models?pageSize=10&pageToken=cursor", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListModels(resp, req)
-
-	result := resp.Result()
-	if result.StatusCode != http.StatusOK {
-		t.Fatalf("expected status %d got %d", http.StatusOK, result.StatusCode)
-	}
-}
-
-func TestLLMHandlerListModelsInvalidParams(t *testing.T) {
-	client := &stubLLMClient{t: t}
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/models?pageSize=bad", nil)
-	resp := httptest.NewRecorder()
-
-	NewLLMHandler(client).ListModels(resp, req)
-
-	assertProblemResponse(t, resp, http.StatusBadRequest, "pageSize must be a positive integer")
-}
-
-func TestWriteLLMGRPCErrorMappings(t *testing.T) {
-	tests := []struct {
-		code       codes.Code
-		statusCode int
-	}{
-		{code: codes.NotFound, statusCode: http.StatusNotFound},
-		{code: codes.InvalidArgument, statusCode: http.StatusBadRequest},
-		{code: codes.AlreadyExists, statusCode: http.StatusConflict},
-		{code: codes.FailedPrecondition, statusCode: http.StatusConflict},
-		{code: codes.Unavailable, statusCode: http.StatusServiceUnavailable},
-		{code: codes.PermissionDenied, statusCode: http.StatusForbidden},
-		{code: codes.Unauthenticated, statusCode: http.StatusUnauthorized},
-		{code: codes.Internal, statusCode: http.StatusBadGateway},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.code.String(), func(t *testing.T) {
-			resp := httptest.NewRecorder()
-			writeLLMGRPCError(resp, status.Error(tt.code, "detail"))
-			assertProblemResponse(t, resp, tt.statusCode, "detail")
-		})
-	}
-}
-
-func TestParsePaginationDefaults(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers", nil)
-	pageSize, pageToken, err := parsePagination(req)
+	})
+
+	page := 3
+	perPage := 2
+	providerParam := openapi_types.UUID(providerID)
+	h := NewLLMHandler(stub)
+	resp, err := h.GetModels(context.Background(), llmgen.GetModelsRequestObject{Params: llmgen.GetModelsParams{
+		ProviderId: &providerParam,
+		Page:       &page,
+		PerPage:    &perPage,
+	}})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if pageSize != defaultPageSize {
-		t.Fatalf("unexpected page size: %d", pageSize)
+
+	list, ok := resp.(llmgen.GetModels200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
 	}
-	if pageToken != "" {
-		t.Fatalf("unexpected page token: %s", pageToken)
+	if list.Total != -1 {
+		t.Fatalf("unexpected total: %d", list.Total)
 	}
+	if len(list.Items) != 1 {
+		t.Fatalf("expected 1 model, got %d", len(list.Items))
+	}
+	if list.Items[0].Id.String() != modelID.String() {
+		t.Fatalf("unexpected model id: %s", list.Items[0].Id.String())
+	}
+
+	stub.AssertDone()
 }
 
-func TestParsePaginationPageSizeOverMax(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers?pageSize=500", nil)
-	pageSize, _, err := parsePagination(req)
+func TestLLMPostModels(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	modelID := uuid.MustParse("88888888-8888-8888-8888-888888888888")
+	providerID := uuid.MustParse("99999999-9999-9999-9999-999999999999")
+	createdAt := time.Date(2024, 4, 5, 6, 7, 8, 0, time.UTC)
+
+	stub.Expect(llmCall{
+		method: "CreateModel",
+		assert: func(req any) {
+			input := req.(llmclient.CreateModelParams)
+			if input.Name != "gpt-4" {
+				t.Fatalf("unexpected name: %s", input.Name)
+			}
+			if input.LLMProviderID != providerID.String() {
+				t.Fatalf("unexpected provider id: %s", input.LLMProviderID)
+			}
+			if input.RemoteName != "gpt-4" {
+				t.Fatalf("unexpected remote name: %s", input.RemoteName)
+			}
+		},
+		resp: llmclient.Model{
+			ID:            modelID.String(),
+			Name:          "gpt-4",
+			LLMProviderID: providerID.String(),
+			RemoteName:    "gpt-4",
+			CreatedAt:     createdAt,
+		},
+	})
+
+	request := llmgen.PostModelsRequestObject{Body: &llmgen.ModelCreateRequest{
+		Name:          "gpt-4",
+		LlmProviderId: openapi_types.UUID(providerID),
+		RemoteName:    "gpt-4",
+	}}
+
+	h := NewLLMHandler(stub)
+	resp, err := h.PostModels(context.Background(), request)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if pageSize != maxPageSize {
-		t.Fatalf("expected page size %d got %d", maxPageSize, pageSize)
+
+	created, ok := resp.(llmgen.PostModels201JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
 	}
+	if created.Id.String() != modelID.String() {
+		t.Fatalf("unexpected model id: %s", created.Id.String())
+	}
+
+	stub.AssertDone()
 }
 
-func TestParsePaginationPageSizeZero(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers?pageSize=0", nil)
-	if _, _, err := parsePagination(req); err == nil {
-		t.Fatalf("expected error")
-	}
-}
+func TestLLMGetModelByID(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	modelID := uuid.MustParse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
+	providerID := uuid.MustParse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
+	createdAt := time.Date(2024, 1, 5, 0, 0, 0, 0, time.UTC)
 
-func TestParsePaginationPageSizeNegative(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/llm/v1/providers?pageSize=-5", nil)
-	if _, _, err := parsePagination(req); err == nil {
-		t.Fatalf("expected error")
-	}
-}
+	stub.Expect(llmCall{
+		method: "GetModel",
+		assert: func(req any) {
+			if req.(string) != modelID.String() {
+				t.Fatalf("unexpected model id: %s", req.(string))
+			}
+		},
+		resp: llmclient.Model{
+			ID:            modelID.String(),
+			Name:          "gpt-4",
+			LLMProviderID: providerID.String(),
+			RemoteName:    "gpt-4",
+			CreatedAt:     createdAt,
+		},
+	})
 
-func newJSONRequest(t *testing.T, method, path string, payload any) *http.Request {
-	t.Helper()
-
-	data, err := json.Marshal(payload)
+	h := NewLLMHandler(stub)
+	resp, err := h.GetModelsId(context.Background(), llmgen.GetModelsIdRequestObject{Id: openapi_types.UUID(modelID)})
 	if err != nil {
-		t.Fatalf("marshal payload: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	req := httptest.NewRequest(method, path, bytes.NewReader(data))
-	req.Header.Set("Content-Type", "application/json")
-	return req
+	model, ok := resp.(llmgen.GetModelsId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if model.Id.String() != modelID.String() {
+		t.Fatalf("unexpected model id: %s", model.Id.String())
+	}
+
+	stub.AssertDone()
 }
 
-func withURLParam(req *http.Request, key, value string) *http.Request {
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add(key, value)
-	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+func TestLLMPatchModel(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	modelID := uuid.MustParse("cccccccc-cccc-cccc-cccc-cccccccccccc")
+	providerID := uuid.MustParse("dddddddd-dddd-dddd-dddd-dddddddddddd")
+	createdAt := time.Date(2024, 6, 1, 0, 0, 0, 0, time.UTC)
+	name := "gpt-4"
+	remoteName := "gpt-4"
+	providerParam := openapi_types.UUID(providerID)
+
+	stub.Expect(llmCall{
+		method: "UpdateModel",
+		assert: func(req any) {
+			input := req.(updateModelArgs)
+			if input.id != modelID.String() {
+				t.Fatalf("unexpected model id: %s", input.id)
+			}
+			if input.params.Name == nil || *input.params.Name != name {
+				t.Fatalf("unexpected name: %v", input.params.Name)
+			}
+			if input.params.RemoteName == nil || *input.params.RemoteName != remoteName {
+				t.Fatalf("unexpected remote name: %v", input.params.RemoteName)
+			}
+			if input.params.LLMProviderID == nil || *input.params.LLMProviderID != providerID.String() {
+				t.Fatalf("unexpected provider id: %v", input.params.LLMProviderID)
+			}
+		},
+		resp: llmclient.Model{
+			ID:            modelID.String(),
+			Name:          name,
+			LLMProviderID: providerID.String(),
+			RemoteName:    remoteName,
+			CreatedAt:     createdAt,
+		},
+	})
+
+	request := llmgen.PatchModelsIdRequestObject{
+		Id: openapi_types.UUID(modelID),
+		Body: &llmgen.ModelUpdateRequest{
+			Name:          &name,
+			RemoteName:    &remoteName,
+			LlmProviderId: &providerParam,
+		},
+	}
+
+	h := NewLLMHandler(stub)
+	resp, err := h.PatchModelsId(context.Background(), request)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	updated, ok := resp.(llmgen.PatchModelsId200JSONResponse)
+	if !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+	if updated.Id.String() != modelID.String() {
+		t.Fatalf("unexpected model id: %s", updated.Id.String())
+	}
+
+	stub.AssertDone()
+}
+
+func TestLLMDeleteModel(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	modelID := uuid.MustParse("eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
+
+	stub.Expect(llmCall{
+		method: "DeleteModel",
+		assert: func(req any) {
+			if req.(string) != modelID.String() {
+				t.Fatalf("unexpected model id: %s", req.(string))
+			}
+		},
+	})
+
+	h := NewLLMHandler(stub)
+	resp, err := h.DeleteModelsId(context.Background(), llmgen.DeleteModelsIdRequestObject{Id: openapi_types.UUID(modelID)})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, ok := resp.(llmgen.DeleteModelsId204Response); !ok {
+		t.Fatalf("unexpected response type: %T", resp)
+	}
+
+	stub.AssertDone()
+}
+
+func TestLLMGrpcErrorMapping(t *testing.T) {
+	stub := &stubLLMClient{t: t}
+	stub.Expect(llmCall{
+		method: "ListProviders",
+		err:    status.Error(codes.NotFound, "missing"),
+	})
+
+	h := NewLLMHandler(stub)
+	_, err := h.GetProviders(context.Background(), llmgen.GetProvidersRequestObject{})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	var problemErr *ProblemError
+	if !errors.As(err, &problemErr) {
+		t.Fatalf("expected ProblemError, got %T", err)
+	}
+	if problemErr.Problem.Status != 404 {
+		t.Fatalf("unexpected status: %d", problemErr.Problem.Status)
+	}
+
+	stub.AssertDone()
 }
