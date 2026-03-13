@@ -76,7 +76,7 @@ pipelines:
         healthy=false
         attempts=0
         while [ "$attempts" -lt 60 ]; do
-          if exec_container --label-selector=app.kubernetes.io/name=gateway -n ${GATEWAY_NAMESPACE} -- sh -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1'; then
+          if exec_container --label-selector=app.kubernetes.io/name=gateway -n ${GATEWAY_NAMESPACE} -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1'; then
             healthy=true
             break
           fi
