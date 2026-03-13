@@ -4,66 +4,91 @@ vars:
   GATEWAY_NAMESPACE: platform
 
 pipelines:
-  dev: |-
-    if kubectl get application gateway -n argocd >/dev/null 2>&1; then
-      echo "Disabling ArgoCD auto-sync for gateway..."
-      kubectl patch application gateway -n argocd \
-        --type merge \
-        -p '{"spec":{"syncPolicy":{"automated":null}}}'
-      echo "ArgoCD auto-sync disabled."
-    else
-      echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
-    fi
-    echo "Patching gateway deployment for DevSpace..."
-    kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
-    spec:
-      template:
-        spec:
-          securityContext:
-            runAsUser: 1000
-            fsGroup: 1000
-          initContainers: []
-          volumes:
-            - name: data
-              emptyDir: {}
-          containers:
-            - name: gateway
-              image: ghcr.io/agynio/devcontainer-go:1
-              workingDir: /opt/app/data
-              command:
-                - sh
-                - -c
-                - |
-                  set -eu
-                  elapsed=0
-                  while [ ! -f /opt/app/data/go.mod ]; do
-                    sleep 1; elapsed=$((elapsed + 1))
-                    [ "$elapsed" -ge 120 ] && { echo "ERROR: sync timeout" >&2; exit 1; }
-                  done
-                  exec /opt/app/data/scripts/devspace-startup.sh
-              volumeMounts:
-                - name: data
-                  mountPath: /opt/app/data
-              resources:
-                requests:
-                  cpu: 500m
-                  memory: 1Gi
-                limits:
-                  cpu: "2"
-                  memory: 4Gi
-              securityContext:
-                runAsNonRoot: true
-                runAsUser: 1000
-                runAsGroup: 1000
-                readOnlyRootFilesystem: false
-                allowPrivilegeEscalation: false
-                capabilities:
-                  drop: ["ALL"]
-                seccompProfile:
-                  type: RuntimeDefault
-    EOF
-    )"
-    start_dev --disable-pod-replace gateway
+  dev:
+    flags:
+      - name: watch
+        short: w
+        description: "Keep running and stream container logs (watch mode)"
+    run: |-
+      if kubectl get application gateway -n argocd >/dev/null 2>&1; then
+        echo "Disabling ArgoCD auto-sync for gateway..."
+        kubectl patch application gateway -n argocd \
+          --type merge \
+          -p '{"spec":{"syncPolicy":{"automated":null}}}'
+        echo "ArgoCD auto-sync disabled."
+      else
+        echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
+      fi
+      echo "Patching gateway deployment for DevSpace..."
+      kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
+      spec:
+        template:
+          spec:
+            securityContext:
+              runAsUser: 1000
+              fsGroup: 1000
+            initContainers: []
+            volumes:
+              - name: data
+                emptyDir: {}
+            containers:
+              - name: gateway
+                image: ghcr.io/agynio/devcontainer-go:1
+                workingDir: /opt/app/data
+                command:
+                  - sh
+                  - -c
+                  - |
+                    set -eu
+                    elapsed=0
+                    while [ ! -f /opt/app/data/go.mod ]; do
+                      sleep 1; elapsed=$((elapsed + 1))
+                      [ "$elapsed" -ge 120 ] && { echo "ERROR: sync timeout" >&2; exit 1; }
+                    done
+                    exec /opt/app/data/scripts/devspace-startup.sh
+                volumeMounts:
+                  - name: data
+                    mountPath: /opt/app/data
+                resources:
+                  requests:
+                    cpu: 500m
+                    memory: 1Gi
+                  limits:
+                    cpu: "2"
+                    memory: 4Gi
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 1000
+                  runAsGroup: 1000
+                  readOnlyRootFilesystem: false
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop: ["ALL"]
+                  seccompProfile:
+                    type: RuntimeDefault
+      EOF
+      )"
+      if get_flag "watch"; then
+        start_dev --disable-pod-replace gateway
+      else
+        start_dev --disable-pod-replace gateway --set logs.enabled=false
+        echo "Waiting for gateway to be healthy on :8080..."
+        healthy=false
+        attempts=0
+        while [ "$attempts" -lt 60 ]; do
+          if exec_container --label-selector=app.kubernetes.io/name=gateway -n ${GATEWAY_NAMESPACE} -- sh -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1'; then
+            healthy=true
+            break
+          fi
+          attempts=$((attempts + 1))
+          sleep 2
+        done
+        if [ "$healthy" = true ]; then
+          echo "Gateway is healthy on :8080."
+        else
+          echo "WARNING: Gateway did not become healthy on :8080 within 120s."
+        fi
+      fi
 
 hooks:
   - name: restore-argocd-auto-sync
