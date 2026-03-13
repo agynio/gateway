@@ -105,51 +105,58 @@ func main() {
 		r.Post("/files", filesHandler.Upload)
 	})
 
-	llmSpec, err := loadLLMSpec()
-	if err != nil {
-		log.Fatalf("failed to load llm OpenAPI spec: %v", err)
-	}
-
-	llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
-	if err != nil {
-		log.Fatalf("failed to initialise llm request validation: %v", err)
-	}
-
-	llmRouter := chi.NewRouter()
-	llmRouter.Use(llmRequestValidator)
-
-	llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create llm gRPC client: %v", err)
-	}
-	defer func() {
-		if err := llmClient.Close(); err != nil {
-			log.Printf("failed to close llm gRPC client: %v", err)
-		}
-	}()
-
-	llmHandler := handlers.NewLLMHandler(llmClient)
-	llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-	})
-
-	var llmResponseValidator func(http.Handler) http.Handler
-	if isResponseValidationEnabled() {
-		llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
+	if config.LLMGRPCTarget != "" {
+		llmSpec, err := loadLLMSpec()
 		if err != nil {
-			log.Fatalf("failed to initialise llm response validation: %v", err)
+			log.Fatalf("failed to load llm OpenAPI spec: %v", err)
 		}
+
+		llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
+		if err != nil {
+			log.Fatalf("failed to initialise llm request validation: %v", err)
+		}
+
+		llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
+		if err != nil {
+			log.Fatalf("failed to create llm gRPC client: %v", err)
+		}
+		defer func() {
+			if err := llmClient.Close(); err != nil {
+				log.Printf("failed to close llm gRPC client: %v", err)
+			}
+		}()
+
+		llmHandler := handlers.NewLLMHandler(llmClient)
+		llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
+			RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
+			ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
+		})
+
+		llmRouter := chi.NewRouter()
+		llmRouter.Use(llmRequestValidator)
+
+		var llmResponseValidator func(http.Handler) http.Handler
+		if isResponseValidationEnabled() {
+			llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
+			if err != nil {
+				log.Fatalf("failed to initialise llm response validation: %v", err)
+			}
+		}
+
+		llmRouter.Group(func(r chi.Router) {
+			if llmResponseValidator != nil {
+				r.Use(llmResponseValidator)
+			}
+			llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
+		})
+
+		// Mount streaming handler as raw http.Handler — SSE streaming is
+		// incompatible with oapi-codegen strict server return-value model.
+		llmResponsesHandler := handlers.NewLLMResponsesHandler(llmClient)
+		llmRouter.Post("/responses", llmResponsesHandler.ServeHTTP)
+
+		root.Mount(handlers.LLMBasePath(), llmRouter)
 	}
-
-	llmRouter.Group(func(r chi.Router) {
-		if llmResponseValidator != nil {
-			r.Use(llmResponseValidator)
-		}
-		llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
-	})
-
-	root.Mount(handlers.LLMBasePath(), llmRouter)
 
 	secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
 	if err != nil {

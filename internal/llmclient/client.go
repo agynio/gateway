@@ -63,6 +63,45 @@ type UpdateModelParams struct {
 	RemoteName    *string `json:"remoteName"`
 }
 
+// CreateResponseResult holds the raw response body from a unary CreateResponse call.
+type CreateResponseResult struct {
+	Body []byte
+}
+
+// StreamEvent represents a single SSE event from the streaming response.
+type StreamEvent struct {
+	EventType string
+	Data      []byte
+}
+
+// ResponseStream allows iterating over streaming response events.
+type ResponseStream interface {
+	// Recv returns the next event. Returns io.EOF when the stream is done.
+	Recv() (StreamEvent, error)
+	// Close closes the underlying gRPC stream.
+	Close()
+}
+
+// grpcResponseStream wraps the gRPC client stream.
+type grpcResponseStream struct {
+	stream llmv1.LLMService_CreateResponseStreamClient
+}
+
+func (s *grpcResponseStream) Recv() (StreamEvent, error) {
+	msg, err := s.stream.Recv()
+	if err != nil {
+		return StreamEvent{}, err
+	}
+	return StreamEvent{
+		EventType: msg.GetEventType(),
+		Data:      msg.GetData(),
+	}, nil
+}
+
+func (s *grpcResponseStream) Close() {
+	_ = s.stream.CloseSend()
+}
+
 func NewClient(target string) (*Client, error) {
 	if strings.TrimSpace(target) == "" {
 		return nil, fmt.Errorf("target is required")
@@ -267,6 +306,28 @@ func (c *Client) ListModels(ctx context.Context, pageSize int32, pageToken, llmP
 	}
 
 	return models, resp.GetNextPageToken(), nil
+}
+
+func (c *Client) CreateResponse(ctx context.Context, modelID string, body []byte) (CreateResponseResult, error) {
+	resp, err := c.client.CreateResponse(ctx, &llmv1.CreateResponseRequest{
+		ModelId: modelID,
+		Body:    body,
+	})
+	if err != nil {
+		return CreateResponseResult{}, err
+	}
+	return CreateResponseResult{Body: resp.GetBody()}, nil
+}
+
+func (c *Client) CreateResponseStream(ctx context.Context, modelID string, body []byte) (ResponseStream, error) {
+	stream, err := c.client.CreateResponseStream(ctx, &llmv1.CreateResponseStreamRequest{
+		ModelId: modelID,
+		Body:    body,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &grpcResponseStream{stream: stream}, nil
 }
 
 func providerFromProto(provider *llmv1.LLMProvider) (LLMProvider, error) {
