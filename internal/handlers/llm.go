@@ -237,8 +237,12 @@ func (h *LLMHandler) PatchProvidersId(ctx context.Context, request llmgen.PatchP
 	return llmgen.PatchProvidersId200JSONResponse(converted), nil
 }
 
+// PostResponses is a no-op stub required by llmgen.StrictServerInterface.
+// The actual /responses endpoint is handled by LLMResponsesHandler (raw HTTP)
+// because SSE streaming is incompatible with the strict server return-value model.
+// If this method is reached, it means the raw handler route was not properly mounted.
 func (h *LLMHandler) PostResponses(ctx context.Context, request llmgen.PostResponsesRequestObject) (llmgen.PostResponsesResponseObject, error) {
-	problem := NewProblem(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented), "responses endpoint must be proxied")
+	problem := NewProblem(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented), "responses endpoint routing error")
 	return nil, NewProblemError(problem, nil)
 }
 
