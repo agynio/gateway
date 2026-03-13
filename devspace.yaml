@@ -3,12 +3,8 @@ version: v2beta1
 vars:
   GATEWAY_NAMESPACE: platform
 
-pipelines:
-  dev:
-    flags:
-      - name: watch
-        short: w
-        description: "Keep running and stream container logs (watch mode)"
+functions:
+  disable_argocd_sync:
     run: |-
       if kubectl get application gateway -n argocd >/dev/null 2>&1; then
         echo "Disabling ArgoCD auto-sync for gateway..."
@@ -19,6 +15,8 @@ pipelines:
       else
         echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
       fi
+  patch_deployment:
+    run: |-
       echo "Patching gateway deployment for DevSpace..."
       kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
       spec:
@@ -68,27 +66,42 @@ pipelines:
                     type: RuntimeDefault
       EOF
       )"
-      if get_flag "watch"; then
-        start_dev --disable-pod-replace gateway
-      else
-        start_dev --disable-pod-replace gateway --set logs.enabled=false
-        echo "Waiting for gateway to be healthy on :8080..."
-        healthy=false
-        attempts=0
-        while [ "$attempts" -lt 60 ]; do
-          if exec_container --label-selector=app.kubernetes.io/name=gateway -n ${GATEWAY_NAMESPACE} -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1'; then
-            healthy=true
-            break
-          fi
-          attempts=$((attempts + 1))
-          sleep 2
-        done
-        if [ "$healthy" = true ]; then
-          echo "Gateway is healthy on :8080."
-        else
-          echo "WARNING: Gateway did not become healthy on :8080 within 120s."
+  wait_healthy:
+    run: |-
+      echo "Waiting for gateway to be healthy on :8080..."
+      healthy=false
+      attempts=0
+      while [ "$attempts" -lt 60 ]; do
+        if exec_container --label-selector=app.kubernetes.io/name=gateway -n ${GATEWAY_NAMESPACE} -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1'; then
+          healthy=true
+          break
         fi
+        attempts=$((attempts + 1))
+        sleep 2
+      done
+      if [ "$healthy" = true ]; then
+        echo "Gateway is healthy on :8080."
+      else
+        echo "WARNING: Gateway did not become healthy on :8080 within 120s."
       fi
+
+pipelines:
+  dev:
+    flags:
+      - name: no-logs
+        short: n
+        description: "Disable container log streaming"
+    run: |-
+      run_functions disable_argocd_sync patch_deployment
+      if [ "$(get_flag "no-logs")" == "true" ]; then
+        start_dev --disable-pod-replace gateway --set containers.gateway.logs.enabled=false
+      else
+        start_dev --disable-pod-replace gateway
+      fi
+
+  setup:
+    run: |-
+      run_functions disable_argocd_sync patch_deployment wait_healthy
 
 hooks:
   - name: restore-argocd-auto-sync
