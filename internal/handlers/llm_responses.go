@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -89,7 +90,7 @@ func (h *LLMResponsesHandler) handleStream(w http.ResponseWriter, r *http.Reques
 	for {
 		event, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				return
 			}
 			// Stream already started — can't change status code.
