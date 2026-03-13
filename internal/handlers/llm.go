@@ -2,10 +2,8 @@ package handlers
 
 import (
 	"context"
+	"net/http"
 	"strconv"
-
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	"github.com/agynio/gateway/internal/llmclient"
 	"github.com/agynio/gateway/internal/llmgen"
@@ -240,7 +238,8 @@ func (h *LLMHandler) PatchProvidersId(ctx context.Context, request llmgen.PatchP
 }
 
 func (h *LLMHandler) PostResponses(ctx context.Context, request llmgen.PostResponsesRequestObject) (llmgen.PostResponsesResponseObject, error) {
-	return nil, grpcErrorToProblem(status.Error(codes.Unimplemented, "responses endpoint must be proxied"))
+	problem := NewProblem(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented), "responses endpoint must be proxied")
+	return nil, NewProblemError(problem, nil)
 }
 
 func llmPageToken(page, perPage int) string {
