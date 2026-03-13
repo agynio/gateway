@@ -44,11 +44,6 @@ func main() {
 		log.Fatalf("failed to load platform configuration: %v", err)
 	}
 
-	client, err := platform.NewClient(config)
-	if err != nil {
-		log.Fatalf("failed to create platform client: %v", err)
-	}
-
 	teamsClient, err := teamsclient.NewClient(config.TeamsGRPCTarget)
 	if err != nil {
 		log.Fatalf("failed to create teams gRPC client: %v", err)
@@ -96,112 +91,89 @@ func main() {
 
 	root.Mount(handlers.TeamBasePath(), teamRouter)
 
-	if config.FilesGRPCTarget != "" {
-		filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
-		if err != nil {
-			log.Fatalf("failed to create files gRPC client: %v", err)
+	filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create files gRPC client: %v", err)
+	}
+	defer func() {
+		if err := filesClient.Close(); err != nil {
+			log.Printf("failed to close files gRPC client: %v", err)
 		}
-		defer func() {
-			if err := filesClient.Close(); err != nil {
-				log.Printf("failed to close files gRPC client: %v", err)
-			}
-		}()
-		filesHandler := handlers.NewFilesHandler(filesClient)
-		root.Route("/files/v1", func(r chi.Router) {
-			r.Post("/files", filesHandler.Upload)
-		})
+	}()
+	filesHandler := handlers.NewFilesHandler(filesClient)
+	root.Route("/files/v1", func(r chi.Router) {
+		r.Post("/files", filesHandler.Upload)
+	})
+
+	llmSpec, err := loadLLMSpec()
+	if err != nil {
+		log.Fatalf("failed to load llm OpenAPI spec: %v", err)
 	}
 
-	llmGRPCEnabled := config.LLMGRPCTarget != ""
-	llmHTTPEnabled := config.LLMHTTPBaseURL != nil
-
-	if llmGRPCEnabled || llmHTTPEnabled {
-		llmSpec, err := loadLLMSpec()
-		if err != nil {
-			log.Fatalf("failed to load llm OpenAPI spec: %v", err)
-		}
-
-		llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
-		if err != nil {
-			log.Fatalf("failed to initialise llm request validation: %v", err)
-		}
-
-		llmRouter := chi.NewRouter()
-		llmRouter.Use(llmRequestValidator)
-
-		if llmGRPCEnabled {
-			llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
-			if err != nil {
-				log.Fatalf("failed to create llm gRPC client: %v", err)
-			}
-			defer func() {
-				if err := llmClient.Close(); err != nil {
-					log.Printf("failed to close llm gRPC client: %v", err)
-				}
-			}()
-
-			llmHandler := handlers.NewLLMHandler(llmClient)
-			llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
-				RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-				ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-			})
-
-			var llmResponseValidator func(http.Handler) http.Handler
-			if isResponseValidationEnabled() {
-				llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
-				if err != nil {
-					log.Fatalf("failed to initialise llm response validation: %v", err)
-				}
-			}
-
-			llmRouter.Group(func(r chi.Router) {
-				if llmResponseValidator != nil {
-					r.Use(llmResponseValidator)
-				}
-				llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
-			})
-		}
-
-		if llmHTTPEnabled {
-			llmProxy := handlers.NewLLMResponseProxy(config.LLMHTTPBaseURL)
-			llmRouter.Post("/responses", llmProxy.ServeHTTP)
-		}
-
-		root.Mount(handlers.LLMBasePath(), llmRouter)
+	llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
+	if err != nil {
+		log.Fatalf("failed to initialise llm request validation: %v", err)
 	}
 
-	if config.SecretsGRPCTarget != "" {
-		secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
-		if err != nil {
-			log.Fatalf("failed to create secrets gRPC client: %v", err)
-		}
-		defer func() {
-			if err := secretsClient.Close(); err != nil {
-				log.Printf("failed to close secrets gRPC client: %v", err)
-			}
-		}()
+	llmRouter := chi.NewRouter()
+	llmRouter.Use(llmRequestValidator)
 
-		secretsHandler := handlers.NewSecretsHandler(secretsClient)
-		root.Route("/secrets/v1", func(r chi.Router) {
-			r.Post("/secret-providers", secretsHandler.CreateProvider)
-			r.Get("/secret-providers", secretsHandler.ListProviders)
-			r.Get("/secret-providers/{providerId}", secretsHandler.GetProvider)
-			r.Patch("/secret-providers/{providerId}", secretsHandler.UpdateProvider)
-			r.Delete("/secret-providers/{providerId}", secretsHandler.DeleteProvider)
-			r.Post("/secrets", secretsHandler.CreateSecret)
-			r.Get("/secrets", secretsHandler.ListSecrets)
-			r.Get("/secrets/{secretId}", secretsHandler.GetSecret)
-			r.Patch("/secrets/{secretId}", secretsHandler.UpdateSecret)
-			r.Delete("/secrets/{secretId}", secretsHandler.DeleteSecret)
-			r.Post("/secrets/{secretId}/resolve", secretsHandler.ResolveSecret)
-		})
+	llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create llm gRPC client: %v", err)
+	}
+	defer func() {
+		if err := llmClient.Close(); err != nil {
+			log.Printf("failed to close llm gRPC client: %v", err)
+		}
+	}()
+
+	llmHandler := handlers.NewLLMHandler(llmClient)
+	llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
+		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
+	})
+
+	var llmResponseValidator func(http.Handler) http.Handler
+	if isResponseValidationEnabled() {
+		llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
+		if err != nil {
+			log.Fatalf("failed to initialise llm response validation: %v", err)
+		}
 	}
 
-	proxyHandler := handlers.NewUpstreamProxy(client)
-	root.Handle("/health", proxyHandler)
-	root.Route("/api", func(r chi.Router) {
-		r.Handle("/", proxyHandler)
-		r.Handle("/*", proxyHandler)
+	llmRouter.Group(func(r chi.Router) {
+		if llmResponseValidator != nil {
+			r.Use(llmResponseValidator)
+		}
+		llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
+	})
+
+	root.Mount(handlers.LLMBasePath(), llmRouter)
+
+	secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create secrets gRPC client: %v", err)
+	}
+	defer func() {
+		if err := secretsClient.Close(); err != nil {
+			log.Printf("failed to close secrets gRPC client: %v", err)
+		}
+	}()
+
+	secretsHandler := handlers.NewSecretsHandler(secretsClient)
+	root.Route("/secrets/v1", func(r chi.Router) {
+		r.Post("/secret-providers", secretsHandler.CreateProvider)
+		r.Get("/secret-providers", secretsHandler.ListProviders)
+		r.Get("/secret-providers/{providerId}", secretsHandler.GetProvider)
+		r.Patch("/secret-providers/{providerId}", secretsHandler.UpdateProvider)
+		r.Delete("/secret-providers/{providerId}", secretsHandler.DeleteProvider)
+		r.Post("/secrets", secretsHandler.CreateSecret)
+		r.Get("/secrets", secretsHandler.ListSecrets)
+		r.Get("/secrets/{secretId}", secretsHandler.GetSecret)
+		r.Patch("/secrets/{secretId}", secretsHandler.UpdateSecret)
+		r.Delete("/secrets/{secretId}", secretsHandler.DeleteSecret)
+		r.Post("/secrets/{secretId}/resolve", secretsHandler.ResolveSecret)
 	})
 
 	addr := defaultAddr

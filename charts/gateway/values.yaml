@@ -151,18 +151,8 @@ metrics:
         scrapeTimeout: ""
 
 gateway:
-  # Required: target platform server base URL
-  platformBaseUrl: "https://api.agyn.dev:8080"
-  teamsGrpcTarget: ""
-  filesGrpcTarget: ""
-  llmGrpcTarget: ""
-  llmHttpBaseUrl: ""
-  secretsGrpcTarget: ""
-  timeoutMs: 10000
-  retries: 2
-  requestHeadersJson: ""
-  authToken:
-    value: ""
-    existingSecret: ""
-    existingSecretKey: platform-auth-token
+  teamsGrpcTarget: "teams:50051"
+  filesGrpcTarget: "files:50051"
+  llmGrpcTarget: "llm:50051"
+  secretsGrpcTarget: "secrets:50051"
   openapiValidateResponse: false
