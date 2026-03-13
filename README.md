@@ -15,12 +15,14 @@ The Team API OpenAPI 3.0 definition is bundled as [`internal/apischema/teamv1/te
 ## Quickstart
 
 ```bash
-PLATFORM_BASE_URL="https://api.agyn.dev:8080" \
-PLATFORM_AUTH_TOKEN="<token>" \
+TEAMS_GRPC_TARGET="localhost:50051" \
+FILES_GRPC_TARGET="localhost:50052" \
+LLM_GRPC_TARGET="localhost:50053" \
+SECRETS_GRPC_TARGET="localhost:50054" \
 go run ./cmd/gateway
 ```
 
-The gateway forwards `/health` and the `/api/*` surface directly to the configured platform server. The existing Team Management API remains available under `/team/v1` for backwards compatibility.
+In Kubernetes, the gRPC targets default to the `teams`, `files`, `llm`, and `secrets` services on port 50051. Override them locally as needed. The Team Management API remains available under `/team/v1` for backwards compatibility.
 
 Enable optional response validation middleware by exporting `OPENAPI_VALIDATE_RESPONSE=true` before starting the server.
 
@@ -31,12 +33,14 @@ Pre-built multi-architecture images are published to GitHub Container Registry a
 - Pushes to `main` publish the `main` and `sha-<shortSHA>` tags.
 - Git tags following `vX.Y.Z` publish the `X.Y.Z`, `X.Y`, `X`, and `latest` tags.
 
-Run the gateway container locally by supplying the required platform settings:
+Run the gateway container locally by supplying the required gRPC targets:
 
 ```bash
 docker run --rm -p 8080:8080 \
-  -e PLATFORM_BASE_URL="https://api.agyn.dev:8080" \
-  -e PLATFORM_AUTH_TOKEN="<token>" \
+  -e TEAMS_GRPC_TARGET="localhost:50051" \
+  -e FILES_GRPC_TARGET="localhost:50052" \
+  -e LLM_GRPC_TARGET="localhost:50053" \
+  -e SECRETS_GRPC_TARGET="localhost:50054" \
   ghcr.io/agynio/gateway:main
 ```
 
@@ -44,18 +48,17 @@ docker run --rm -p 8080:8080 \
 
 An OCI-packaged Helm chart is available at `oci://ghcr.io/agynio/charts/gateway`. The chart delegates to the `service-base` library and exposes typed values for all gateway configuration knobs.
 
-Install the chart by providing the target platform URL (required) and optionally wiring a secret for the auth token:
+Install the chart by wiring any non-default gRPC targets and response validation flags as needed:
 
 ```bash
 helm install gateway oci://ghcr.io/agynio/charts/gateway \
   --version 0.1.0 \
   --namespace gateway --create-namespace \
-  --set gateway.platformBaseUrl="https://api.agyn.dev:8080" \
-  --set gateway.authToken.existingSecret=gateway-auth \
-  --set gateway.authToken.existingSecretKey=token
+  --set gateway.teamsGrpcTarget="teams:50051" \
+  --set gateway.filesGrpcTarget="files:50051"
 ```
 
-Additional timeouts, retry counts, request headers, and response validation flags can be adjusted via the `gateway.*` values or by overriding `env`/`extraEnvVars` directly.
+Additional gRPC targets and response validation flags can be adjusted via the `gateway.*` values or by overriding `env`/`extraEnvVars` directly.
 
 ## Development
 

@@ -1,126 +1,38 @@
 package platform
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/url"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 )
 
 const (
-	defaultTimeout = 10 * time.Second
-	defaultRetries = 2
+	defaultTeamsGRPCTarget   = "teams:50051"
+	defaultFilesGRPCTarget   = "files:50051"
+	defaultLLMGRPCTarget     = "llm:50051"
+	defaultSecretsGRPCTarget = "secrets:50051"
 )
 
-// Config holds the runtime configuration for communicating with the platform service.
+// Config holds the runtime configuration for communicating with upstream services.
 type Config struct {
-	BaseURL           *url.URL
 	TeamsGRPCTarget   string
 	FilesGRPCTarget   string
 	LLMGRPCTarget     string
 	SecretsGRPCTarget string
-	LLMHTTPBaseURL    *url.URL
-	Timeout           time.Duration
-	Retries           int
-	RetriesConfigured bool
-	AuthToken         string
-	Headers           http.Header
 }
 
 // LoadConfigFromEnv constructs a Config instance from environment variables.
 func LoadConfigFromEnv() (*Config, error) {
-	rawBaseURL := strings.TrimSpace(os.Getenv("PLATFORM_BASE_URL"))
-	if rawBaseURL == "" {
-		return nil, fmt.Errorf("PLATFORM_BASE_URL is required")
-	}
-
-	parsedURL, err := url.Parse(rawBaseURL)
-	if err != nil {
-		return nil, fmt.Errorf("parse PLATFORM_BASE_URL: %w", err)
-	}
-
-	if parsedURL.Scheme == "" || parsedURL.Host == "" {
-		return nil, fmt.Errorf("PLATFORM_BASE_URL must include scheme and host")
-	}
-
-	teamsGRPCTarget := strings.TrimSpace(os.Getenv("TEAMS_GRPC_TARGET"))
-	if teamsGRPCTarget == "" {
-		return nil, fmt.Errorf("TEAMS_GRPC_TARGET is required")
-	}
-
-	filesGRPCTarget := strings.TrimSpace(os.Getenv("FILES_GRPC_TARGET"))
-	llmGRPCTarget := strings.TrimSpace(os.Getenv("LLM_GRPC_TARGET"))
-	secretsGRPCTarget := strings.TrimSpace(os.Getenv("SECRETS_GRPC_TARGET"))
-
-	var llmHTTPBaseURL *url.URL
-	if rawLLMHTTPBaseURL := strings.TrimSpace(os.Getenv("LLM_HTTP_BASE_URL")); rawLLMHTTPBaseURL != "" {
-		parsed, err := url.Parse(rawLLMHTTPBaseURL)
-		if err != nil {
-			return nil, fmt.Errorf("parse LLM_HTTP_BASE_URL: %w", err)
-		}
-		if parsed.Scheme == "" || parsed.Host == "" {
-			return nil, fmt.Errorf("LLM_HTTP_BASE_URL must include scheme and host")
-		}
-		llmHTTPBaseURL = parsed
-	}
-
-	timeout := defaultTimeout
-	if rawTimeout := strings.TrimSpace(os.Getenv("PLATFORM_TIMEOUT_MS")); rawTimeout != "" {
-		ms, err := strconv.Atoi(rawTimeout)
-		if err != nil {
-			return nil, fmt.Errorf("parse PLATFORM_TIMEOUT_MS: %w", err)
-		}
-		if ms > 0 {
-			timeout = time.Duration(ms) * time.Millisecond
-		}
-	}
-
-	retries := defaultRetries
-	retriesConfigured := false
-	if rawRetries := strings.TrimSpace(os.Getenv("PLATFORM_RETRIES")); rawRetries != "" {
-		value, err := strconv.Atoi(rawRetries)
-		if err != nil {
-			return nil, fmt.Errorf("parse PLATFORM_RETRIES: %w", err)
-		}
-		if value < 0 {
-			return nil, fmt.Errorf("PLATFORM_RETRIES must be >= 0")
-		}
-		retries = value
-		retriesConfigured = true
-	}
-
-	headers := make(http.Header)
-	if rawHeaders := strings.TrimSpace(os.Getenv("PLATFORM_REQUEST_HEADERS_JSON")); rawHeaders != "" {
-		var input map[string]string
-		if err := json.Unmarshal([]byte(rawHeaders), &input); err != nil {
-			return nil, fmt.Errorf("parse PLATFORM_REQUEST_HEADERS_JSON: %w", err)
-		}
-		for key, value := range input {
-			trimmedKey := strings.TrimSpace(key)
-			if trimmedKey == "" {
-				continue
-			}
-			headers.Set(trimmedKey, value)
-		}
-	}
-
-	authToken := strings.TrimSpace(os.Getenv("PLATFORM_AUTH_TOKEN"))
-
 	return &Config{
-		BaseURL:           parsedURL,
-		TeamsGRPCTarget:   teamsGRPCTarget,
-		FilesGRPCTarget:   filesGRPCTarget,
-		LLMGRPCTarget:     llmGRPCTarget,
-		SecretsGRPCTarget: secretsGRPCTarget,
-		LLMHTTPBaseURL:    llmHTTPBaseURL,
-		Timeout:           timeout,
-		Retries:           retries,
-		RetriesConfigured: retriesConfigured,
-		AuthToken:         authToken,
-		Headers:           headers,
+		TeamsGRPCTarget:   envOrDefault("TEAMS_GRPC_TARGET", defaultTeamsGRPCTarget),
+		FilesGRPCTarget:   envOrDefault("FILES_GRPC_TARGET", defaultFilesGRPCTarget),
+		LLMGRPCTarget:     envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
+		SecretsGRPCTarget: envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
 	}, nil
+}
+
+func envOrDefault(name, fallback string) string {
+	if value := strings.TrimSpace(os.Getenv(name)); value != "" {
+		return value
+	}
+	return fallback
 }
