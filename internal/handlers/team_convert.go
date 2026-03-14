@@ -105,27 +105,15 @@ func agentConfigFromProto(config *teamsv1.AgentConfig) (gen.AgentConfig, error) 
 	if config.SystemPrompt != "" {
 		result.SystemPrompt = stringPtr(config.SystemPrompt)
 	}
-	if config.DebounceMs != 0 {
-		result.DebounceMs = intPtr(config.DebounceMs)
-	}
-	if config.SendFinalResponseToThread {
-		result.SendFinalResponseToThread = boolPtr(config.SendFinalResponseToThread)
-	}
-	if config.SummarizationKeepTokens != 0 {
-		result.SummarizationKeepTokens = intPtr(config.SummarizationKeepTokens)
-	}
-	if config.SummarizationMaxTokens != 0 {
-		result.SummarizationMaxTokens = intPtr(config.SummarizationMaxTokens)
-	}
-	if config.RestrictOutput {
-		result.RestrictOutput = boolPtr(config.RestrictOutput)
-	}
+	result.DebounceMs = intPtr(config.DebounceMs)
+	result.SendFinalResponseToThread = boolPtr(config.SendFinalResponseToThread)
+	result.SummarizationKeepTokens = intPtr(config.SummarizationKeepTokens)
+	result.SummarizationMaxTokens = intPtr(config.SummarizationMaxTokens)
+	result.RestrictOutput = boolPtr(config.RestrictOutput)
 	if config.RestrictionMessage != "" {
 		result.RestrictionMessage = stringPtr(config.RestrictionMessage)
 	}
-	if config.RestrictionMaxInjections != 0 {
-		result.RestrictionMaxInjections = intPtr(config.RestrictionMaxInjections)
-	}
+	result.RestrictionMaxInjections = intPtr(config.RestrictionMaxInjections)
 	if config.Name != "" {
 		result.Name = stringPtr(config.Name)
 	}
@@ -252,18 +240,10 @@ func mcpServerConfigFromProto(config *teamsv1.McpServerConfig) (gen.McpServerCon
 	if config.Workdir != "" {
 		result.Workdir = stringPtr(config.Workdir)
 	}
-	if config.RequestTimeoutMs != 0 {
-		result.RequestTimeoutMs = intPtr(config.RequestTimeoutMs)
-	}
-	if config.StartupTimeoutMs != 0 {
-		result.StartupTimeoutMs = intPtr(config.StartupTimeoutMs)
-	}
-	if config.HeartbeatIntervalMs != 0 {
-		result.HeartbeatIntervalMs = intPtr(config.HeartbeatIntervalMs)
-	}
-	if config.StaleTimeoutMs != 0 {
-		result.StaleTimeoutMs = intPtr(config.StaleTimeoutMs)
-	}
+	result.RequestTimeoutMs = intPtr(config.RequestTimeoutMs)
+	result.StartupTimeoutMs = intPtr(config.StartupTimeoutMs)
+	result.HeartbeatIntervalMs = intPtr(config.HeartbeatIntervalMs)
+	result.StaleTimeoutMs = intPtr(config.StaleTimeoutMs)
 
 	if env := config.GetEnv(); len(env) > 0 {
 		items := make([]gen.McpEnvItem, 0, len(env))
@@ -283,15 +263,9 @@ func mcpServerConfigFromProto(config *teamsv1.McpServerConfig) (gen.McpServerCon
 			BackoffMs   *int `json:"backoffMs,omitempty"`
 			MaxAttempts *int `json:"maxAttempts,omitempty"`
 		}{}
-		if restart.BackoffMs != 0 {
-			restartConfig.BackoffMs = intPtr(restart.BackoffMs)
-		}
-		if restart.MaxAttempts != 0 {
-			restartConfig.MaxAttempts = intPtr(restart.MaxAttempts)
-		}
-		if restartConfig.BackoffMs != nil || restartConfig.MaxAttempts != nil {
-			result.Restart = restartConfig
-		}
+		restartConfig.BackoffMs = intPtr(restart.BackoffMs)
+		restartConfig.MaxAttempts = intPtr(restart.MaxAttempts)
+		result.Restart = restartConfig
 	}
 
 	if filter := config.GetToolFilter(); filter != nil {
@@ -450,12 +424,8 @@ func workspaceConfigFromProto(config *teamsv1.WorkspaceConfig) (gen.WorkspaceCon
 	if config.InitialScript != "" {
 		result.InitialScript = stringPtr(config.InitialScript)
 	}
-	if config.EnableDind {
-		result.EnableDinD = boolPtr(config.EnableDind)
-	}
-	if config.TtlSeconds != 0 {
-		result.TtlSeconds = intPtr(config.TtlSeconds)
-	}
+	result.EnableDinD = boolPtr(config.EnableDind)
+	result.TtlSeconds = intPtr(config.TtlSeconds)
 	if env := config.GetEnv(); len(env) > 0 {
 		items := make([]gen.WorkspaceEnvItem, 0, len(env))
 		for _, item := range env {
@@ -476,9 +446,7 @@ func workspaceConfigFromProto(config *teamsv1.WorkspaceConfig) (gen.WorkspaceCon
 		if volume.MountPath != "" {
 			vol.MountPath = stringPtr(volume.MountPath)
 		}
-		if volume.Enabled {
-			vol.Enabled = boolPtr(volume.Enabled)
-		}
+		vol.Enabled = boolPtr(volume.Enabled)
 		if vol.MountPath != nil || vol.Enabled != nil {
 			result.Volumes = &vol
 		}
@@ -1043,17 +1011,11 @@ func stringPtr(value string) *string {
 }
 
 func intPtr(value int32) *int {
-	if value == 0 {
-		return nil
-	}
 	v := int(value)
 	return &v
 }
 
 func boolPtr(value bool) *bool {
-	if !value {
-		return nil
-	}
 	v := value
 	return &v
 }
