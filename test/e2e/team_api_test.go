@@ -91,7 +91,7 @@ func TestTeamAPI_ListMcpServers(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func TestTeamAPI_InvalidPayloadReturns422(t *testing.T) {
+func TestTeamAPI_InvalidPayloadReturnsClientError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
