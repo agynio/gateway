@@ -11,3 +11,6 @@ tmp
 .idea
 .env
 **/*.swp
+internal/apischema/
+internal/gen/server.gen.go
+internal/llmgen/server.gen.go

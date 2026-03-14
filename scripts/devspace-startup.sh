@@ -6,6 +6,9 @@ echo "=== DevSpace startup ==="
 echo "Generating protobuf types..."
 buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1
 
+echo "Generating OpenAPI code..."
+bash scripts/generate-openapi.sh
+
 echo "Downloading Go modules..."
 go mod download
 
