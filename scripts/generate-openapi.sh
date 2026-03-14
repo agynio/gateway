@@ -53,6 +53,7 @@ func LoadSpec() (*openapi3.T, error) {
 GOEOF
 
 # -- Step 4: Run oapi-codegen -----------------------------------------
+mkdir -p "${ROOT_DIR}/internal/gen"
 mkdir -p "${ROOT_DIR}/internal/llmgen"
 
 oapi-codegen \
