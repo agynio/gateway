@@ -71,6 +71,7 @@ pipelines:
       if [ "$(get_flag "watch")" == "true" ]; then
         start_dev --disable-pod-replace gateway
       else
+        start_dev --disable-pod-replace gateway
         echo "Waiting for gateway to be healthy on :8080..."
         healthy=false
         for i in $(seq 1 60); do
@@ -85,7 +86,8 @@ pipelines:
           echo "ERROR: Gateway did not become healthy within 120s" >&2
           exit 1
         fi
-        bash scripts/argocd-restore.sh
+        echo "Dev environment ready. Stopping dev session."
+        stop_dev gateway
       fi
 
 hooks:
