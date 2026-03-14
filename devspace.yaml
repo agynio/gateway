@@ -33,7 +33,7 @@ pipelines:
                 emptyDir: {}
             containers:
               - name: gateway
-                image: ghcr.io/agynio/devcontainer-go:1
+                image: ghcr.io/agynio/devcontainer-go:1.1.0
                 workingDir: /opt/app/data
                 command:
                   - sh
