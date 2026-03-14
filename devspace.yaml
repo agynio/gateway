@@ -86,9 +86,8 @@ pipelines:
           echo "ERROR: Gateway did not become healthy within 120s" >&2
           exit 1
         fi
-        bash scripts/argocd-restore.sh
-        echo "Dev environment ready. Exiting."
-        kill -TERM $$
+        echo "Dev environment ready. Stopping dev session."
+        stop_dev gateway
       fi
 
 hooks:
