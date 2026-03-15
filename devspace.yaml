@@ -33,7 +33,7 @@ pipelines:
                 emptyDir: {}
             containers:
               - name: gateway
-                image: ghcr.io/agynio/devcontainer-go:1
+                image: ghcr.io/agynio/devcontainer-go:1.1.0
                 workingDir: /opt/app/data
                 command:
                   - sh
@@ -117,6 +117,9 @@ dev:
               - .openapi/
               - dist/
               - .devspace/
+              - /internal/apischema/
+              - /internal/gen/server.gen.go
+              - /internal/llmgen/
               - gateway.log
               - gateway.pid
             uploadExcludePaths:
@@ -124,11 +127,17 @@ dev:
               - /gen/
               - .openapi/
               - dist/
+              - /internal/apischema/
+              - /internal/gen/server.gen.go
+              - /internal/llmgen/
             downloadExcludePaths:
               - .git/
               - /gen/
               - .openapi/
               - dist/
+              - /internal/apischema/
+              - /internal/gen/server.gen.go
+              - /internal/llmgen/
         logs:
           enabled: true
           lastLines: 200

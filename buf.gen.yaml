@@ -1,5 +1,4 @@
 version: v2
-# proto-update: teams-v1-variables-2026-03-13
 plugins:
   - remote: buf.build/protocolbuffers/go
     out: gen

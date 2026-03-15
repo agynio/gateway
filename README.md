@@ -4,13 +4,13 @@ Schema-first HTTP gateway built on Go 1.22 with OpenAPI-driven request and respo
 
 ## Specification
 
-The Team API OpenAPI 3.0 definition is bundled as [`internal/apischema/teamv1/team-v1.yaml`](internal/apischema/teamv1/team-v1.yaml) and pulled from `ghcr.io/agynio/openapi/team:1`. Use `scripts/pull-spec.sh` to fetch the latest spec into `.openapi/team-v1.yaml`, then run `scripts/sync-embedded-spec.sh` to update the embedded copy. Generated server stubs and models are located under [`internal/gen`](internal/gen).
+The Team and LLM OpenAPI 3.0 definitions are pulled from `ghcr.io/agynio/openapi/{team,llm}:1` into `.openapi/` and generated at build time. Use `scripts/generate-openapi.sh` to pull the latest specs, embed them under `internal/apischema/`, and regenerate the `oapi-codegen` server stubs under `internal/gen` and `internal/llmgen`.
 
 ## Prerequisites
 
 - Go 1.22+
-- [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen) binary on your `$PATH`
-- [`spectral`](https://github.com/stoplightio/spectral), [`oasdiff`](https://github.com/Tufin/oasdiff), [`schemathesis`](https://github.com/schemathesis/schemathesis), and [`redocly`](https://github.com/Redocly/redoc) for local validation (installed automatically in CI)
+- [`oapi-codegen`](https://github.com/oapi-codegen/oapi-codegen) and [`oras`](https://github.com/oras-project/oras) on your `$PATH` for local OpenAPI generation
+- [`schemathesis`](https://github.com/schemathesis/schemathesis) and [`redocly`](https://github.com/Redocly/redoc) for validation/docs (installed automatically in CI)
 
 ## Quickstart
 
@@ -62,22 +62,35 @@ Additional gRPC targets and response validation flags can be adjusted via the `g
 
 ## Development
 
-Regenerate the typed models and Chi server whenever the OpenAPI document changes:
+Regenerate the embedded specs and Chi servers whenever the OpenAPI documents change:
 
 ```bash
-bash scripts/pull-spec.sh
-oapi-codegen --config oapi-codegen.server.yaml .openapi/team-v1.yaml
-gofmt -w internal/gen/server.gen.go
-bash scripts/sync-embedded-spec.sh
+bash scripts/generate-openapi.sh
+```
+
+Regenerate gRPC stubs as needed:
+
+```bash
+buf generate buf.build/agynio/api \
+  --path agynio/api/files/v1 \
+  --path agynio/api/llm/v1 \
+  --path agynio/api/secrets/v1 \
+  --path agynio/api/teams/v1
 ```
 
 Run the full local test suite (mirrors CI):
 
 ```bash
-spectral lint .openapi/team-v1.yaml
-oasdiff breaking --fail-on ERR .openapi/team-v1.yaml .openapi/team-v1.yaml
-go test ./...
+buf generate buf.build/agynio/api \
+  --path agynio/api/files/v1 \
+  --path agynio/api/llm/v1 \
+  --path agynio/api/secrets/v1 \
+  --path agynio/api/teams/v1
+bash scripts/generate-openapi.sh
 go vet ./...
+go test ./...
+redocly build-docs .openapi/team-v1.yaml --output dist/redoc.html
+redocly build-docs .openapi/llm-v1.yaml --output dist/llm-redoc.html
 schemathesis run --url=http://localhost:8080 .openapi/team-v1.yaml
 ```
 
@@ -88,28 +101,26 @@ oapi-codegen strict servers (no hand-written CRUD handlers). The standard flow
 mirrors the Team API:
 
 1. Pull the OpenAPI artifact into `.openapi/` via `scripts/pull-spec.sh`, then
-   sync it into `internal/apischema/<domain>v1/` with
-   `scripts/sync-embedded-spec.sh`.
-2. Add an `oapi-codegen.<domain>.yaml` config and generate strict server stubs
-   into `internal/<domain>gen/`, followed by `gofmt`.
-3. Implement `internal/handlers/<domain>.go` to satisfy the generated
+   extend `scripts/generate-openapi.sh` to embed it under
+   `internal/apischema/<domain>v1/` and generate strict server stubs into
+   `internal/<domain>gen/`, followed by `gofmt`.
+2. Implement `internal/handlers/<domain>.go` to satisfy the generated
    `StrictServerInterface`, with conversions in
    `internal/handlers/<domain>_convert.go` and direct handler tests in
    `internal/handlers/<domain>_test.go`.
-4. Wire the router in `cmd/gateway/main.go` with request validation middleware
+3. Wire the router in `cmd/gateway/main.go` with request validation middleware
    and optional response validation for CRUD endpoints. Streaming/proxy routes
    (like SSE `/responses`) must still be defined in the spec for request
    validation but mounted as raw handlers outside the strict server group.
-5. Update CI to lint, diff, re-generate, and build Redoc docs for the new spec.
+4. Update CI to generate OpenAPI code and build Redoc docs for the new spec.
 
 ## Continuous Integration
 
 The CI workflow performs:
 
-1. Spectral linting of the OpenAPI description.
-2. `oasdiff` breaking-change guard against the main branch specification.
-3. Re-generation checks for `oapi-codegen` output and Go format drift.
-4. `go vet` and `go test` over the module.
-5. Redocly build with the rendered documentation uploaded as an artifact.
+1. `buf generate` for gRPC stubs.
+2. OpenAPI generation (`scripts/generate-openapi.sh`).
+3. `go vet` and `go test` over the module.
+4. Redocly build with the rendered documentation uploaded as an artifact.
 
 Artifacts and reports are available on each run via the GitHub Actions UI.
