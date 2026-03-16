@@ -65,6 +65,18 @@ jobs:
           cache-to: type=gha,scope=gateway,mode=max
           build-args: GO_VERSION=1.22
 
+      - name: Verify multi-arch manifest
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          INSPECT="$(docker buildx imagetools inspect "$IMAGE_NAME:$TAG" --raw)"
+          for ARCH in amd64 arm64; do
+            if ! echo "$INSPECT" | grep -q "\"architecture\":\"$ARCH\"\|\"architecture\": \"$ARCH\""; then
+              echo "::error::linux/$ARCH missing from manifest $IMAGE_NAME:$TAG"
+              exit 1
+            fi
+          done
+          echo "Manifest $IMAGE_NAME:$TAG includes linux/amd64 and linux/arm64"
+
   helm:
     name: Package and push Helm chart
     runs-on: ubuntu-latest
