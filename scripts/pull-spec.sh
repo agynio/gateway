@@ -22,5 +22,14 @@ pull_spec() {
   echo "Spec downloaded: ${output_file} ($(wc -c < "${output_file}") bytes)"
 }
 
-pull_spec "${TEAM_OPENAPI_IMAGE:-agynio/openapi/team:1}" "team-v1.yaml"
+TEAM_OPENAPI_PATH="${TEAM_OPENAPI_PATH:-}"
+if [[ -n "${TEAM_OPENAPI_PATH}" ]]; then
+  if [[ ! -f "${TEAM_OPENAPI_PATH}" ]]; then
+    echo "ERROR: expected ${TEAM_OPENAPI_PATH} not found" >&2; exit 1
+  fi
+  cp "${TEAM_OPENAPI_PATH}" "${OUTPUT_DIR}/team-v1.yaml"
+  echo "Spec copied: ${OUTPUT_DIR}/team-v1.yaml ($(wc -c < "${OUTPUT_DIR}/team-v1.yaml") bytes)"
+else
+  pull_spec "${TEAM_OPENAPI_IMAGE:-agynio/openapi/team:1}" "team-v1.yaml"
+fi
 pull_spec "${LLM_OPENAPI_IMAGE:-agynio/openapi/llm:1}" "llm-v1.yaml"

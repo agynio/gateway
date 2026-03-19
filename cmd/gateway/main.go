@@ -6,8 +6,10 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -15,6 +17,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/openziti/sdk-golang/ziti"
 	"github.com/rs/cors"
 
 	llmv1schema "github.com/agynio/gateway/internal/apischema/llmv1"
@@ -27,10 +30,13 @@ import (
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/secretsclient"
 	"github.com/agynio/gateway/internal/teamsclient"
+	"github.com/agynio/gateway/internal/ziticonn"
+	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
 
 const (
-	defaultAddr = ":8080"
+	defaultAddr            = ":8080"
+	defaultZitiServiceName = "gateway"
 )
 
 func main() {
@@ -42,6 +48,19 @@ func main() {
 	config, err := platform.LoadConfigFromEnv()
 	if err != nil {
 		log.Fatalf("failed to load platform configuration: %v", err)
+	}
+
+	var zitiMgmtClient *zitimgmtclient.Client
+	if config.ZitiIdentityFile != "" {
+		zitiMgmtClient, err = zitimgmtclient.NewClient(config.ZitiManagementGRPCTarget)
+		if err != nil {
+			log.Fatalf("failed to create ziti management gRPC client: %v", err)
+		}
+		defer func() {
+			if err := zitiMgmtClient.Close(); err != nil {
+				log.Printf("failed to close ziti management gRPC client: %v", err)
+			}
+		}()
 	}
 
 	teamsClient, err := teamsclient.NewClient(config.TeamsGRPCTarget)
@@ -66,6 +85,12 @@ func main() {
 		AllowedHeaders: []string{"*"},
 	})
 	root.Use(corsMiddleware.Handler)
+
+	if zitiMgmtClient != nil {
+		root.Use(handlers.NewAuthMiddleware(zitiMgmtClient))
+	}
+
+	root.Get("/me", handlers.MeHandler)
 
 	teamRouter := chi.NewRouter()
 
@@ -188,8 +213,42 @@ func main() {
 		addr = v
 	}
 
+	connContext := func(ctx context.Context, conn net.Conn) context.Context {
+		sourceIdentity, ok := ziticonn.SourceIdentityFromConn(conn)
+		if !ok {
+			return ctx
+		}
+		return ziticonn.WithSourceIdentity(ctx, sourceIdentity)
+	}
+
+	server := &http.Server{
+		Addr:        addr,
+		Handler:     root,
+		ConnContext: connContext,
+	}
+
+	if config.ZitiIdentityFile != "" {
+		zitiContext, err := ziti.NewContextFromFile(config.ZitiIdentityFile)
+		if err != nil {
+			log.Fatalf("failed to create ziti context: %v", err)
+		}
+		defer zitiContext.Close()
+
+		serviceName := zitiServiceName()
+		listener, err := zitiContext.ListenWithOptions(serviceName, ziti.DefaultListenOptions())
+		if err != nil {
+			log.Fatalf("failed to listen on ziti service %s: %v", serviceName, err)
+		}
+
+		log.Printf("gateway listening on ziti service %s", serviceName)
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("server stopped: %v", err)
+		}
+		return
+	}
+
 	log.Printf("gateway listening on %s", addr)
-	if err := http.ListenAndServe(addr, root); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server stopped: %v", err)
 	}
 }
@@ -214,4 +273,11 @@ func loadLLMSpec() (*openapi3.T, error) {
 
 func isResponseValidationEnabled() bool {
 	return strings.EqualFold(os.Getenv("OPENAPI_VALIDATE_RESPONSE"), "true")
+}
+
+func zitiServiceName() string {
+	if value := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); value != "" {
+		return value
+	}
+	return defaultZitiServiceName
 }

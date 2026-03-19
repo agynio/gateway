@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package agynio.api.ziti_management.v1;
+
+option go_package = "github.com/agynio/api/gen/agynio/api/ziti_management/v1;zitimgmtv1";
+
+service ZitiManagementService {
+  rpc ResolveIdentity(ResolveIdentityRequest) returns (ResolveIdentityResponse);
+}
+
+message ResolveIdentityRequest {
+  string identity_id = 1;
+}
+
+message ResolvedIdentity {
+  string identity_id = 1;
+  string identity_type = 2;
+  string tenant_id = 3;
+  string auth_method = 4;
+}
+
+message ResolveIdentityResponse {
+  ResolvedIdentity identity = 1;
+}
