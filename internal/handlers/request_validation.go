@@ -120,7 +120,7 @@ func handleRequestValidationError(err error) (int, error) {
 		if idx := strings.IndexRune(message, '\n'); idx >= 0 {
 			message = message[:idx]
 		}
-		return http.StatusBadRequest, fmt.Errorf(message)
+		return http.StatusBadRequest, errors.New(message)
 	}
 
 	var secErr *openapi3filter.SecurityRequirementsError

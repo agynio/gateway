@@ -1,0 +1,87 @@
+package zitimgmtclient
+
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/agynio/gateway/internal/identity"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
+)
+
+type Client struct {
+	conn   *grpc.ClientConn
+	client zitimgmtv1.ZitiManagementServiceClient
+}
+
+func NewClient(target string) (*Client, error) {
+	if strings.TrimSpace(target) == "" {
+		return nil, fmt.Errorf("target is required")
+	}
+
+	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, err
+	}
+
+	return &Client{
+		conn:   conn,
+		client: zitimgmtv1.NewZitiManagementServiceClient(conn),
+	}, nil
+}
+
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
+
+func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error) {
+	trimmed := strings.TrimSpace(sourceIdentity)
+	if trimmed == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("source identity is required")
+	}
+
+	response, err := c.client.ResolveIdentity(ctx, &zitimgmtv1.ResolveIdentityRequest{ZitiIdentityId: trimmed})
+	if err != nil {
+		return identity.ResolvedIdentity{}, err
+	}
+
+	identityID := strings.TrimSpace(response.GetIdentityId())
+	if identityID == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("identity id missing")
+	}
+
+	tenantID := strings.TrimSpace(response.GetTenantId())
+	if tenantID == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("tenant id missing")
+	}
+
+	identityType, err := parseIdentityType(response.GetIdentityType())
+	if err != nil {
+		return identity.ResolvedIdentity{}, err
+	}
+
+	return identity.ResolvedIdentity{
+		IdentityID:   identityID,
+		IdentityType: identityType,
+		TenantID:     tenantID,
+		AuthMethod:   identity.AuthMethodZiti,
+	}, nil
+}
+
+func parseIdentityType(identityType zitimgmtv1.IdentityType) (identity.IdentityType, error) {
+	switch identityType {
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_AGENT:
+		return identity.IdentityTypeAgent, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_RUNNER:
+		return identity.IdentityTypeRunner, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_CHANNEL:
+		return identity.IdentityTypeChannel, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
+		return "", fmt.Errorf("identity type unspecified")
+	default:
+		return "", fmt.Errorf("identity type unsupported: %s", identityType.String())
+	}
+}

@@ -108,7 +108,7 @@ func RequestValidationMultiError(me openapi3.MultiError) (int, error) {
 		detail = "validation failed"
 	}
 
-	return http.StatusUnprocessableEntity, fmt.Errorf(detail)
+	return http.StatusUnprocessableEntity, errors.New(detail)
 }
 
 func ptr[T any](v T) *T {
