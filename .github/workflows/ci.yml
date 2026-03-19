@@ -50,8 +50,7 @@ jobs:
 
       - name: Generate gRPC stubs
         run: |
-          buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1
-          buf generate --path proto/agynio/api/ziti_management/v1
+          buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1 --path agynio/api/ziti_management/v1
 
       - name: Generate OpenAPI code
         env:

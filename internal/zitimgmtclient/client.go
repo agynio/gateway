@@ -43,25 +43,45 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 		return identity.ResolvedIdentity{}, fmt.Errorf("source identity is required")
 	}
 
-	response, err := c.client.ResolveIdentity(ctx, &zitimgmtv1.ResolveIdentityRequest{IdentityId: trimmed})
+	response, err := c.client.ResolveIdentity(ctx, &zitimgmtv1.ResolveIdentityRequest{ZitiIdentityId: trimmed})
 	if err != nil {
 		return identity.ResolvedIdentity{}, err
 	}
 
-	resolved := response.GetIdentity()
-	if resolved == nil {
-		return identity.ResolvedIdentity{}, fmt.Errorf("resolved identity missing")
+	identityID := strings.TrimSpace(response.GetIdentityId())
+	if identityID == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("identity id missing")
 	}
 
-	identityType, err := identity.ParseIdentityType(resolved.GetIdentityType())
+	tenantID := strings.TrimSpace(response.GetTenantId())
+	if tenantID == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("tenant id missing")
+	}
+
+	identityType, err := parseIdentityType(response.GetIdentityType())
 	if err != nil {
 		return identity.ResolvedIdentity{}, err
 	}
 
 	return identity.ResolvedIdentity{
-		IdentityID:   resolved.GetIdentityId(),
+		IdentityID:   identityID,
 		IdentityType: identityType,
-		TenantID:     resolved.GetTenantId(),
+		TenantID:     tenantID,
 		AuthMethod:   identity.AuthMethodZiti,
 	}, nil
+}
+
+func parseIdentityType(identityType zitimgmtv1.IdentityType) (identity.IdentityType, error) {
+	switch identityType {
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_AGENT:
+		return identity.IdentityTypeAgent, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_RUNNER:
+		return identity.IdentityTypeRunner, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_CHANNEL:
+		return identity.IdentityTypeChannel, nil
+	case zitimgmtv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
+		return "", fmt.Errorf("identity type unspecified")
+	default:
+		return "", fmt.Errorf("identity type unsupported: %s", identityType.String())
+	}
 }
