@@ -1,12 +1,48 @@
 package identity
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"strings"
+)
+
+type IdentityType string
+
+const (
+	IdentityTypeUser    IdentityType = "user"
+	IdentityTypeAgent   IdentityType = "agent"
+	IdentityTypeChannel IdentityType = "channel"
+	IdentityTypeRunner  IdentityType = "runner"
+)
+
+type AuthMethod string
+
+const (
+	AuthMethodZiti AuthMethod = "ziti"
+	AuthMethodOIDC AuthMethod = "oidc"
+)
 
 type ResolvedIdentity struct {
 	IdentityID   string
-	IdentityType string
+	IdentityType IdentityType
 	TenantID     string
-	AuthMethod   string
+	AuthMethod   AuthMethod
+}
+
+func ParseIdentityType(value string) (IdentityType, error) {
+	trimmed := strings.TrimSpace(value)
+	switch trimmed {
+	case string(IdentityTypeUser):
+		return IdentityTypeUser, nil
+	case string(IdentityTypeAgent):
+		return IdentityTypeAgent, nil
+	case string(IdentityTypeChannel):
+		return IdentityTypeChannel, nil
+	case string(IdentityTypeRunner):
+		return IdentityTypeRunner, nil
+	default:
+		return "", fmt.Errorf("unsupported identity type: %q", value)
+	}
 }
 
 type contextKey struct{}

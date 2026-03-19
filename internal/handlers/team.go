@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	teamsv1 "github.com/agynio/gateway/gen/agynio/api/teams/v1"
 	"github.com/agynio/gateway/internal/gen"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -33,30 +31,16 @@ func NewTeam(client teamsv1.TeamsServiceClient) *Team {
 }
 
 func (t *Team) GetAgents(ctx context.Context, request gen.GetAgentsRequestObject) (gen.GetAgentsResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-	query := ""
-	if request.Params.Q != nil {
-		query = strings.TrimSpace(*request.Params.Q)
-	}
-
-	agents, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.Agent, string, error) {
-		resp, err := t.client.ListAgents(ctx, &teamsv1.ListAgentsRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-			Query:     query,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetAgents(), resp.GetNextPageToken(), nil
+	resp, err := t.client.ListAgents(ctx, &teamsv1.ListAgentsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
 	})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	pageItems := paginateSlice(agents, page, perPage)
-	items := make([]gen.Agent, 0, len(pageItems))
-	for _, agent := range pageItems {
+	items := make([]gen.Agent, 0, len(resp.GetAgents()))
+	for _, agent := range resp.GetAgents() {
 		converted, err := agentFromProto(agent)
 		if err != nil {
 			return nil, responseProblem(err)
@@ -65,10 +49,8 @@ func (t *Team) GetAgents(ctx context.Context, request gen.GetAgentsRequestObject
 	}
 
 	payload := gen.PaginatedAgents{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(agents),
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
 	}
 
 	return gen.GetAgents200JSONResponse(payload), nil
@@ -79,16 +61,7 @@ func (t *Team) PostAgents(ctx context.Context, request gen.PostAgentsRequestObje
 		panic("validated request body is unexpectedly nil")
 	}
 
-	config, err := agentConfigToProto(request.Body.Config)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateAgent(ctx, &teamsv1.CreateAgentRequest{
-		Title:       stringValue(request.Body.Title),
-		Description: stringValue(request.Body.Description),
-		Config:      config,
-	})
+	resp, err := t.client.CreateAgent(ctx, agentCreateToProto(*request.Body))
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
@@ -138,21 +111,7 @@ func (t *Team) PatchAgentsId(ctx context.Context, request gen.PatchAgentsIdReque
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var config *teamsv1.AgentConfig
-	if request.Body.Config != nil {
-		converted, err := agentConfigToProto(*request.Body.Config)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		config = converted
-	}
-
-	resp, err := t.client.UpdateAgent(ctx, &teamsv1.UpdateAgentRequest{
-		Id:          request.Id.String(),
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		Config:      config,
-	})
+	resp, err := t.client.UpdateAgent(ctx, agentUpdateToProto(request.Id, *request.Body))
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
@@ -170,807 +129,714 @@ func (t *Team) PatchAgentsId(ctx context.Context, request gen.PatchAgentsIdReque
 	return gen.PatchAgentsId200JSONResponse(converted), nil
 }
 
-func (t *Team) GetAttachments(ctx context.Context, request gen.GetAttachmentsRequestObject) (gen.GetAttachmentsResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-
-	baseRequest := &teamsv1.ListAttachmentsRequest{PageSize: int32(perPage)}
-
-	if request.Params.SourceType != nil {
-		value, err := entityTypeToProto(*request.Params.SourceType)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		baseRequest.SourceType = value
-	}
-	if request.Params.SourceId != nil {
-		baseRequest.SourceId = request.Params.SourceId.String()
-	}
-	if request.Params.TargetType != nil {
-		value, err := entityTypeToProto(*request.Params.TargetType)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		baseRequest.TargetType = value
-	}
-	if request.Params.TargetId != nil {
-		baseRequest.TargetId = request.Params.TargetId.String()
-	}
-	if request.Params.Kind != nil {
-		value, err := attachmentKindToProto(*request.Params.Kind)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		baseRequest.Kind = value
-	}
-
-	attachments, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.Attachment, string, error) {
-		req := &teamsv1.ListAttachmentsRequest{
-			PageSize:   pageSize,
-			PageToken:  token,
-			SourceType: baseRequest.SourceType,
-			SourceId:   baseRequest.SourceId,
-			TargetType: baseRequest.TargetType,
-			TargetId:   baseRequest.TargetId,
-			Kind:       baseRequest.Kind,
-		}
-		resp, err := t.client.ListAttachments(ctx, req)
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetAttachments(), resp.GetNextPageToken(), nil
+func (t *Team) GetEnvs(ctx context.Context, request gen.GetEnvsRequestObject) (gen.GetEnvsResponseObject, error) {
+	resp, err := t.client.ListEnvs(ctx, &teamsv1.ListEnvsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		AgentId:   uuidStringValue(request.Params.AgentId),
+		McpId:     uuidStringValue(request.Params.McpId),
+		HookId:    uuidStringValue(request.Params.HookId),
 	})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	pageItems := paginateSlice(attachments, page, perPage)
-	items := make([]gen.Attachment, 0, len(pageItems))
-	for _, attachment := range pageItems {
-		converted, err := attachmentFromProto(attachment)
+	items := make([]gen.Env, 0, len(resp.GetEnvs()))
+	for _, env := range resp.GetEnvs() {
+		converted, err := envFromProto(env)
 		if err != nil {
 			return nil, responseProblem(err)
 		}
 		items = append(items, converted)
 	}
 
-	payload := gen.PaginatedAttachments{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(attachments),
+	payload := gen.PaginatedEnvs{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
 	}
 
-	return gen.GetAttachments200JSONResponse(payload), nil
+	return gen.GetEnvs200JSONResponse(payload), nil
 }
 
-func (t *Team) PostAttachments(ctx context.Context, request gen.PostAttachmentsRequestObject) (gen.PostAttachmentsResponseObject, error) {
+func (t *Team) PostEnvs(ctx context.Context, request gen.PostEnvsRequestObject) (gen.PostEnvsResponseObject, error) {
 	if request.Body == nil {
 		panic("validated request body is unexpectedly nil")
 	}
 
-	kind, err := attachmentKindToProto(request.Body.Kind)
+	createRequest, err := envCreateToProto(*request.Body)
 	if err != nil {
 		return nil, requestProblem(err)
 	}
 
-	resp, err := t.client.CreateAttachment(ctx, &teamsv1.CreateAttachmentRequest{
-		Kind:     kind,
-		SourceId: request.Body.SourceId.String(),
-		TargetId: request.Body.TargetId.String(),
+	resp, err := t.client.CreateEnv(ctx, createRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	env := resp.GetEnv()
+	if env == nil {
+		return nil, responseProblem(fmt.Errorf("create env response missing env"))
+	}
+
+	converted, err := envFromProto(env)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostEnvs201JSONResponse(converted), nil
+}
+
+func (t *Team) DeleteEnvsId(ctx context.Context, request gen.DeleteEnvsIdRequestObject) (gen.DeleteEnvsIdResponseObject, error) {
+	_, err := t.client.DeleteEnv(ctx, &teamsv1.DeleteEnvRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteEnvsId204Response{}, nil
+}
+
+func (t *Team) GetEnvsId(ctx context.Context, request gen.GetEnvsIdRequestObject) (gen.GetEnvsIdResponseObject, error) {
+	resp, err := t.client.GetEnv(ctx, &teamsv1.GetEnvRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	env := resp.GetEnv()
+	if env == nil {
+		return nil, responseProblem(fmt.Errorf("get env response missing env"))
+	}
+
+	converted, err := envFromProto(env)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetEnvsId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchEnvsId(ctx context.Context, request gen.PatchEnvsIdRequestObject) (gen.PatchEnvsIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	updateRequest, err := envUpdateToProto(request.Id, *request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	resp, err := t.client.UpdateEnv(ctx, updateRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	env := resp.GetEnv()
+	if env == nil {
+		return nil, responseProblem(fmt.Errorf("update env response missing env"))
+	}
+
+	converted, err := envFromProto(env)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchEnvsId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetHooks(ctx context.Context, request gen.GetHooksRequestObject) (gen.GetHooksResponseObject, error) {
+	resp, err := t.client.ListHooks(ctx, &teamsv1.ListHooksRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		AgentId:   uuidStringValue(request.Params.AgentId),
 	})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	attachment := resp.GetAttachment()
+	items := make([]gen.Hook, 0, len(resp.GetHooks()))
+	for _, hook := range resp.GetHooks() {
+		converted, err := hookFromProto(hook)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedHooks{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
+	}
+
+	return gen.GetHooks200JSONResponse(payload), nil
+}
+
+func (t *Team) PostHooks(ctx context.Context, request gen.PostHooksRequestObject) (gen.PostHooksResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.CreateHook(ctx, hookCreateToProto(*request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	hook := resp.GetHook()
+	if hook == nil {
+		return nil, responseProblem(fmt.Errorf("create hook response missing hook"))
+	}
+
+	converted, err := hookFromProto(hook)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostHooks201JSONResponse(converted), nil
+}
+
+func (t *Team) DeleteHooksId(ctx context.Context, request gen.DeleteHooksIdRequestObject) (gen.DeleteHooksIdResponseObject, error) {
+	_, err := t.client.DeleteHook(ctx, &teamsv1.DeleteHookRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteHooksId204Response{}, nil
+}
+
+func (t *Team) GetHooksId(ctx context.Context, request gen.GetHooksIdRequestObject) (gen.GetHooksIdResponseObject, error) {
+	resp, err := t.client.GetHook(ctx, &teamsv1.GetHookRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	hook := resp.GetHook()
+	if hook == nil {
+		return nil, responseProblem(fmt.Errorf("get hook response missing hook"))
+	}
+
+	converted, err := hookFromProto(hook)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetHooksId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchHooksId(ctx context.Context, request gen.PatchHooksIdRequestObject) (gen.PatchHooksIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.UpdateHook(ctx, hookUpdateToProto(request.Id, *request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	hook := resp.GetHook()
+	if hook == nil {
+		return nil, responseProblem(fmt.Errorf("update hook response missing hook"))
+	}
+
+	converted, err := hookFromProto(hook)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchHooksId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetInitScripts(ctx context.Context, request gen.GetInitScriptsRequestObject) (gen.GetInitScriptsResponseObject, error) {
+	resp, err := t.client.ListInitScripts(ctx, &teamsv1.ListInitScriptsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		AgentId:   uuidStringValue(request.Params.AgentId),
+		McpId:     uuidStringValue(request.Params.McpId),
+		HookId:    uuidStringValue(request.Params.HookId),
+	})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	items := make([]gen.InitScript, 0, len(resp.GetInitScripts()))
+	for _, script := range resp.GetInitScripts() {
+		converted, err := initScriptFromProto(script)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedInitScripts{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
+	}
+
+	return gen.GetInitScripts200JSONResponse(payload), nil
+}
+
+func (t *Team) PostInitScripts(ctx context.Context, request gen.PostInitScriptsRequestObject) (gen.PostInitScriptsResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	createRequest, err := initScriptCreateToProto(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	resp, err := t.client.CreateInitScript(ctx, createRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	script := resp.GetInitScript()
+	if script == nil {
+		return nil, responseProblem(fmt.Errorf("create init script response missing init script"))
+	}
+
+	converted, err := initScriptFromProto(script)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostInitScripts201JSONResponse(converted), nil
+}
+
+func (t *Team) DeleteInitScriptsId(ctx context.Context, request gen.DeleteInitScriptsIdRequestObject) (gen.DeleteInitScriptsIdResponseObject, error) {
+	_, err := t.client.DeleteInitScript(ctx, &teamsv1.DeleteInitScriptRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteInitScriptsId204Response{}, nil
+}
+
+func (t *Team) GetInitScriptsId(ctx context.Context, request gen.GetInitScriptsIdRequestObject) (gen.GetInitScriptsIdResponseObject, error) {
+	resp, err := t.client.GetInitScript(ctx, &teamsv1.GetInitScriptRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	script := resp.GetInitScript()
+	if script == nil {
+		return nil, responseProblem(fmt.Errorf("get init script response missing init script"))
+	}
+
+	converted, err := initScriptFromProto(script)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetInitScriptsId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchInitScriptsId(ctx context.Context, request gen.PatchInitScriptsIdRequestObject) (gen.PatchInitScriptsIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.UpdateInitScript(ctx, initScriptUpdateToProto(request.Id, *request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	script := resp.GetInitScript()
+	if script == nil {
+		return nil, responseProblem(fmt.Errorf("update init script response missing init script"))
+	}
+
+	converted, err := initScriptFromProto(script)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchInitScriptsId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetMcps(ctx context.Context, request gen.GetMcpsRequestObject) (gen.GetMcpsResponseObject, error) {
+	resp, err := t.client.ListMcps(ctx, &teamsv1.ListMcpsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		AgentId:   uuidStringValue(request.Params.AgentId),
+	})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	items := make([]gen.Mcp, 0, len(resp.GetMcps()))
+	for _, mcp := range resp.GetMcps() {
+		converted, err := mcpFromProto(mcp)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedMcps{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
+	}
+
+	return gen.GetMcps200JSONResponse(payload), nil
+}
+
+func (t *Team) PostMcps(ctx context.Context, request gen.PostMcpsRequestObject) (gen.PostMcpsResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.CreateMcp(ctx, mcpCreateToProto(*request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	mcp := resp.GetMcp()
+	if mcp == nil {
+		return nil, responseProblem(fmt.Errorf("create mcp response missing mcp"))
+	}
+
+	converted, err := mcpFromProto(mcp)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostMcps201JSONResponse(converted), nil
+}
+
+func (t *Team) DeleteMcpsId(ctx context.Context, request gen.DeleteMcpsIdRequestObject) (gen.DeleteMcpsIdResponseObject, error) {
+	_, err := t.client.DeleteMcp(ctx, &teamsv1.DeleteMcpRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteMcpsId204Response{}, nil
+}
+
+func (t *Team) GetMcpsId(ctx context.Context, request gen.GetMcpsIdRequestObject) (gen.GetMcpsIdResponseObject, error) {
+	resp, err := t.client.GetMcp(ctx, &teamsv1.GetMcpRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	mcp := resp.GetMcp()
+	if mcp == nil {
+		return nil, responseProblem(fmt.Errorf("get mcp response missing mcp"))
+	}
+
+	converted, err := mcpFromProto(mcp)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetMcpsId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchMcpsId(ctx context.Context, request gen.PatchMcpsIdRequestObject) (gen.PatchMcpsIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.UpdateMcp(ctx, mcpUpdateToProto(request.Id, *request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	mcp := resp.GetMcp()
+	if mcp == nil {
+		return nil, responseProblem(fmt.Errorf("update mcp response missing mcp"))
+	}
+
+	converted, err := mcpFromProto(mcp)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchMcpsId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetSkills(ctx context.Context, request gen.GetSkillsRequestObject) (gen.GetSkillsResponseObject, error) {
+	resp, err := t.client.ListSkills(ctx, &teamsv1.ListSkillsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		AgentId:   uuidStringValue(request.Params.AgentId),
+	})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	items := make([]gen.Skill, 0, len(resp.GetSkills()))
+	for _, skill := range resp.GetSkills() {
+		converted, err := skillFromProto(skill)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedSkills{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
+	}
+
+	return gen.GetSkills200JSONResponse(payload), nil
+}
+
+func (t *Team) PostSkills(ctx context.Context, request gen.PostSkillsRequestObject) (gen.PostSkillsResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.CreateSkill(ctx, skillCreateToProto(*request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	skill := resp.GetSkill()
+	if skill == nil {
+		return nil, responseProblem(fmt.Errorf("create skill response missing skill"))
+	}
+
+	converted, err := skillFromProto(skill)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PostSkills201JSONResponse(converted), nil
+}
+
+func (t *Team) DeleteSkillsId(ctx context.Context, request gen.DeleteSkillsIdRequestObject) (gen.DeleteSkillsIdResponseObject, error) {
+	_, err := t.client.DeleteSkill(ctx, &teamsv1.DeleteSkillRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+	return gen.DeleteSkillsId204Response{}, nil
+}
+
+func (t *Team) GetSkillsId(ctx context.Context, request gen.GetSkillsIdRequestObject) (gen.GetSkillsIdResponseObject, error) {
+	resp, err := t.client.GetSkill(ctx, &teamsv1.GetSkillRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	skill := resp.GetSkill()
+	if skill == nil {
+		return nil, responseProblem(fmt.Errorf("get skill response missing skill"))
+	}
+
+	converted, err := skillFromProto(skill)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetSkillsId200JSONResponse(converted), nil
+}
+
+func (t *Team) PatchSkillsId(ctx context.Context, request gen.PatchSkillsIdRequestObject) (gen.PatchSkillsIdResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	resp, err := t.client.UpdateSkill(ctx, skillUpdateToProto(request.Id, *request.Body))
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	skill := resp.GetSkill()
+	if skill == nil {
+		return nil, responseProblem(fmt.Errorf("update skill response missing skill"))
+	}
+
+	converted, err := skillFromProto(skill)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.PatchSkillsId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetVolumeAttachments(ctx context.Context, request gen.GetVolumeAttachmentsRequestObject) (gen.GetVolumeAttachmentsResponseObject, error) {
+	resp, err := t.client.ListVolumeAttachments(ctx, &teamsv1.ListVolumeAttachmentsRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
+		VolumeId:  uuidStringValue(request.Params.VolumeId),
+		AgentId:   uuidStringValue(request.Params.AgentId),
+		McpId:     uuidStringValue(request.Params.McpId),
+		HookId:    uuidStringValue(request.Params.HookId),
+	})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	items := make([]gen.VolumeAttachment, 0, len(resp.GetVolumeAttachments()))
+	for _, attachment := range resp.GetVolumeAttachments() {
+		converted, err := volumeAttachmentFromProto(attachment)
+		if err != nil {
+			return nil, responseProblem(err)
+		}
+		items = append(items, converted)
+	}
+
+	payload := gen.PaginatedVolumeAttachments{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
+	}
+
+	return gen.GetVolumeAttachments200JSONResponse(payload), nil
+}
+
+func (t *Team) PostVolumeAttachments(ctx context.Context, request gen.PostVolumeAttachmentsRequestObject) (gen.PostVolumeAttachmentsResponseObject, error) {
+	if request.Body == nil {
+		panic("validated request body is unexpectedly nil")
+	}
+
+	createRequest, err := volumeAttachmentCreateToProto(*request.Body)
+	if err != nil {
+		return nil, requestProblem(err)
+	}
+
+	resp, err := t.client.CreateVolumeAttachment(ctx, createRequest)
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
+
+	attachment := resp.GetVolumeAttachment()
 	if attachment == nil {
-		return nil, responseProblem(fmt.Errorf("create attachment response missing attachment"))
+		return nil, responseProblem(fmt.Errorf("create volume attachment response missing attachment"))
 	}
 
-	converted, err := attachmentFromProto(attachment)
+	converted, err := volumeAttachmentFromProto(attachment)
 	if err != nil {
 		return nil, responseProblem(err)
 	}
 
-	return gen.PostAttachments201JSONResponse(converted), nil
+	return gen.PostVolumeAttachments201JSONResponse(converted), nil
 }
 
-func (t *Team) DeleteAttachmentsId(ctx context.Context, request gen.DeleteAttachmentsIdRequestObject) (gen.DeleteAttachmentsIdResponseObject, error) {
-	_, err := t.client.DeleteAttachment(ctx, &teamsv1.DeleteAttachmentRequest{Id: request.Id.String()})
+func (t *Team) DeleteVolumeAttachmentsId(ctx context.Context, request gen.DeleteVolumeAttachmentsIdRequestObject) (gen.DeleteVolumeAttachmentsIdResponseObject, error) {
+	_, err := t.client.DeleteVolumeAttachment(ctx, &teamsv1.DeleteVolumeAttachmentRequest{Id: request.Id.String()})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
-	return gen.DeleteAttachmentsId204Response{}, nil
+	return gen.DeleteVolumeAttachmentsId204Response{}, nil
 }
 
-func (t *Team) GetMcpServers(ctx context.Context, request gen.GetMcpServersRequestObject) (gen.GetMcpServersResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
+func (t *Team) GetVolumeAttachmentsId(ctx context.Context, request gen.GetVolumeAttachmentsIdRequestObject) (gen.GetVolumeAttachmentsIdResponseObject, error) {
+	resp, err := t.client.GetVolumeAttachment(ctx, &teamsv1.GetVolumeAttachmentRequest{Id: request.Id.String()})
+	if err != nil {
+		return nil, grpcErrorToProblem(err)
+	}
 
-	servers, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.McpServer, string, error) {
-		resp, err := t.client.ListMcpServers(ctx, &teamsv1.ListMcpServersRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetMcpServers(), resp.GetNextPageToken(), nil
+	attachment := resp.GetVolumeAttachment()
+	if attachment == nil {
+		return nil, responseProblem(fmt.Errorf("get volume attachment response missing attachment"))
+	}
+
+	converted, err := volumeAttachmentFromProto(attachment)
+	if err != nil {
+		return nil, responseProblem(err)
+	}
+
+	return gen.GetVolumeAttachmentsId200JSONResponse(converted), nil
+}
+
+func (t *Team) GetVolumes(ctx context.Context, request gen.GetVolumesRequestObject) (gen.GetVolumesResponseObject, error) {
+	resp, err := t.client.ListVolumes(ctx, &teamsv1.ListVolumesRequest{
+		PageSize:  pageSizeFromParam(request.Params.PageSize),
+		PageToken: stringValue(request.Params.PageToken),
 	})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	pageItems := paginateSlice(servers, page, perPage)
-	items := make([]gen.McpServer, 0, len(pageItems))
-	for _, server := range pageItems {
-		converted, err := mcpServerFromProto(server)
+	items := make([]gen.Volume, 0, len(resp.GetVolumes()))
+	for _, volume := range resp.GetVolumes() {
+		converted, err := volumeFromProto(volume)
 		if err != nil {
 			return nil, responseProblem(err)
 		}
 		items = append(items, converted)
 	}
 
-	payload := gen.PaginatedMcpServers{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(servers),
+	payload := gen.PaginatedVolumes{
+		Items:         items,
+		NextPageToken: stringPtr(resp.GetNextPageToken()),
 	}
 
-	return gen.GetMcpServers200JSONResponse(payload), nil
+	return gen.GetVolumes200JSONResponse(payload), nil
 }
 
-func (t *Team) PostMcpServers(ctx context.Context, request gen.PostMcpServersRequestObject) (gen.PostMcpServersResponseObject, error) {
+func (t *Team) PostVolumes(ctx context.Context, request gen.PostVolumesRequestObject) (gen.PostVolumesResponseObject, error) {
 	if request.Body == nil {
 		panic("validated request body is unexpectedly nil")
 	}
 
-	config, err := mcpServerConfigToProto(request.Body.Config)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateMcpServer(ctx, &teamsv1.CreateMcpServerRequest{
-		Title:       stringValue(request.Body.Title),
-		Description: stringValue(request.Body.Description),
-		Config:      config,
-	})
+	resp, err := t.client.CreateVolume(ctx, volumeCreateToProto(*request.Body))
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	server := resp.GetMcpServer()
-	if server == nil {
-		return nil, responseProblem(fmt.Errorf("create mcp server response missing server"))
+	volume := resp.GetVolume()
+	if volume == nil {
+		return nil, responseProblem(fmt.Errorf("create volume response missing volume"))
 	}
 
-	converted, err := mcpServerFromProto(server)
+	converted, err := volumeFromProto(volume)
 	if err != nil {
 		return nil, responseProblem(err)
 	}
 
-	return gen.PostMcpServers201JSONResponse(converted), nil
+	return gen.PostVolumes201JSONResponse(converted), nil
 }
 
-func (t *Team) DeleteMcpServersId(ctx context.Context, request gen.DeleteMcpServersIdRequestObject) (gen.DeleteMcpServersIdResponseObject, error) {
-	_, err := t.client.DeleteMcpServer(ctx, &teamsv1.DeleteMcpServerRequest{Id: request.Id.String()})
+func (t *Team) DeleteVolumesId(ctx context.Context, request gen.DeleteVolumesIdRequestObject) (gen.DeleteVolumesIdResponseObject, error) {
+	_, err := t.client.DeleteVolume(ctx, &teamsv1.DeleteVolumeRequest{Id: request.Id.String()})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
-	return gen.DeleteMcpServersId204Response{}, nil
+	return gen.DeleteVolumesId204Response{}, nil
 }
 
-func (t *Team) GetMcpServersId(ctx context.Context, request gen.GetMcpServersIdRequestObject) (gen.GetMcpServersIdResponseObject, error) {
-	resp, err := t.client.GetMcpServer(ctx, &teamsv1.GetMcpServerRequest{Id: request.Id.String()})
+func (t *Team) GetVolumesId(ctx context.Context, request gen.GetVolumesIdRequestObject) (gen.GetVolumesIdResponseObject, error) {
+	resp, err := t.client.GetVolume(ctx, &teamsv1.GetVolumeRequest{Id: request.Id.String()})
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	server := resp.GetMcpServer()
-	if server == nil {
-		return nil, responseProblem(fmt.Errorf("get mcp server response missing server"))
+	volume := resp.GetVolume()
+	if volume == nil {
+		return nil, responseProblem(fmt.Errorf("get volume response missing volume"))
 	}
 
-	converted, err := mcpServerFromProto(server)
+	converted, err := volumeFromProto(volume)
 	if err != nil {
 		return nil, responseProblem(err)
 	}
 
-	return gen.GetMcpServersId200JSONResponse(converted), nil
+	return gen.GetVolumesId200JSONResponse(converted), nil
 }
 
-func (t *Team) PatchMcpServersId(ctx context.Context, request gen.PatchMcpServersIdRequestObject) (gen.PatchMcpServersIdResponseObject, error) {
+func (t *Team) PatchVolumesId(ctx context.Context, request gen.PatchVolumesIdRequestObject) (gen.PatchVolumesIdResponseObject, error) {
 	if request.Body == nil {
 		panic("validated request body is unexpectedly nil")
 	}
 
-	var config *teamsv1.McpServerConfig
-	if request.Body.Config != nil {
-		converted, err := mcpServerConfigToProto(*request.Body.Config)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		config = converted
-	}
-
-	resp, err := t.client.UpdateMcpServer(ctx, &teamsv1.UpdateMcpServerRequest{
-		Id:          request.Id.String(),
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		Config:      config,
-	})
+	resp, err := t.client.UpdateVolume(ctx, volumeUpdateToProto(request.Id, *request.Body))
 	if err != nil {
 		return nil, grpcErrorToProblem(err)
 	}
 
-	server := resp.GetMcpServer()
-	if server == nil {
-		return nil, responseProblem(fmt.Errorf("update mcp server response missing server"))
+	volume := resp.GetVolume()
+	if volume == nil {
+		return nil, responseProblem(fmt.Errorf("update volume response missing volume"))
 	}
 
-	converted, err := mcpServerFromProto(server)
+	converted, err := volumeFromProto(volume)
 	if err != nil {
 		return nil, responseProblem(err)
 	}
 
-	return gen.PatchMcpServersId200JSONResponse(converted), nil
+	return gen.PatchVolumesId200JSONResponse(converted), nil
 }
 
-func (t *Team) GetMemoryBuckets(ctx context.Context, request gen.GetMemoryBucketsRequestObject) (gen.GetMemoryBucketsResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-
-	buckets, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.MemoryBucket, string, error) {
-		resp, err := t.client.ListMemoryBuckets(ctx, &teamsv1.ListMemoryBucketsRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetMemoryBuckets(), resp.GetNextPageToken(), nil
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	pageItems := paginateSlice(buckets, page, perPage)
-	items := make([]gen.MemoryBucket, 0, len(pageItems))
-	for _, bucket := range pageItems {
-		converted, err := memoryBucketFromProto(bucket)
-		if err != nil {
-			return nil, responseProblem(err)
-		}
-		items = append(items, converted)
-	}
-
-	payload := gen.PaginatedMemoryBuckets{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(buckets),
-	}
-
-	return gen.GetMemoryBuckets200JSONResponse(payload), nil
-}
-
-func (t *Team) PostMemoryBuckets(ctx context.Context, request gen.PostMemoryBucketsRequestObject) (gen.PostMemoryBucketsResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	config, err := memoryBucketConfigToProto(request.Body.Config)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateMemoryBucket(ctx, &teamsv1.CreateMemoryBucketRequest{
-		Title:       stringValue(request.Body.Title),
-		Description: stringValue(request.Body.Description),
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	bucket := resp.GetMemoryBucket()
-	if bucket == nil {
-		return nil, responseProblem(fmt.Errorf("create memory bucket response missing bucket"))
-	}
-
-	converted, err := memoryBucketFromProto(bucket)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PostMemoryBuckets201JSONResponse(converted), nil
-}
-
-func (t *Team) DeleteMemoryBucketsId(ctx context.Context, request gen.DeleteMemoryBucketsIdRequestObject) (gen.DeleteMemoryBucketsIdResponseObject, error) {
-	_, err := t.client.DeleteMemoryBucket(ctx, &teamsv1.DeleteMemoryBucketRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-	return gen.DeleteMemoryBucketsId204Response{}, nil
-}
-
-func (t *Team) GetMemoryBucketsId(ctx context.Context, request gen.GetMemoryBucketsIdRequestObject) (gen.GetMemoryBucketsIdResponseObject, error) {
-	resp, err := t.client.GetMemoryBucket(ctx, &teamsv1.GetMemoryBucketRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	bucket := resp.GetMemoryBucket()
-	if bucket == nil {
-		return nil, responseProblem(fmt.Errorf("get memory bucket response missing bucket"))
-	}
-
-	converted, err := memoryBucketFromProto(bucket)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.GetMemoryBucketsId200JSONResponse(converted), nil
-}
-
-func (t *Team) PatchMemoryBucketsId(ctx context.Context, request gen.PatchMemoryBucketsIdRequestObject) (gen.PatchMemoryBucketsIdResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	var config *teamsv1.MemoryBucketConfig
-	if request.Body.Config != nil {
-		converted, err := memoryBucketConfigToProto(*request.Body.Config)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		config = converted
-	}
-
-	resp, err := t.client.UpdateMemoryBucket(ctx, &teamsv1.UpdateMemoryBucketRequest{
-		Id:          request.Id.String(),
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	bucket := resp.GetMemoryBucket()
-	if bucket == nil {
-		return nil, responseProblem(fmt.Errorf("update memory bucket response missing bucket"))
-	}
-
-	converted, err := memoryBucketFromProto(bucket)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PatchMemoryBucketsId200JSONResponse(converted), nil
-}
-
-func (t *Team) GetVariables(ctx context.Context, request gen.GetVariablesRequestObject) (gen.GetVariablesResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-
-	query := ""
-	if request.Params.Q != nil {
-		query = strings.TrimSpace(*request.Params.Q)
-	}
-
-	variables, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.Variable, string, error) {
-		resp, err := t.client.ListVariables(ctx, &teamsv1.ListVariablesRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-			Query:     query,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetVariables(), resp.GetNextPageToken(), nil
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	pageItems := paginateSlice(variables, page, perPage)
-	items := make([]gen.Variable, 0, len(pageItems))
-	for _, variable := range pageItems {
-		converted, err := variableFromProto(variable)
-		if err != nil {
-			return nil, responseProblem(err)
-		}
-		items = append(items, converted)
-	}
-
-	payload := gen.PaginatedVariables{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(variables),
-	}
-
-	return gen.GetVariables200JSONResponse(payload), nil
-}
-
-func (t *Team) PostVariables(ctx context.Context, request gen.PostVariablesRequestObject) (gen.PostVariablesResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	createRequest, err := variableCreateToProto(*request.Body)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateVariable(ctx, createRequest)
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	variable := resp.GetVariable()
-	if variable == nil {
-		return nil, responseProblem(fmt.Errorf("create variable response missing variable"))
-	}
-
-	converted, err := variableFromProto(variable)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PostVariables201JSONResponse(converted), nil
-}
-
-func (t *Team) GetVariablesResolveKey(ctx context.Context, request gen.GetVariablesResolveKeyRequestObject) (gen.GetVariablesResolveKeyResponseObject, error) {
-	resp, err := t.client.ResolveVariable(ctx, &teamsv1.ResolveVariableRequest{Key: request.Key})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	payload := gen.GetVariablesResolveKey200JSONResponse{Found: resp.GetFound()}
-	if resp.GetFound() {
-		value := resp.GetValue()
-		payload.Value = &value
-	}
-
-	return payload, nil
-}
-
-func (t *Team) DeleteVariablesId(ctx context.Context, request gen.DeleteVariablesIdRequestObject) (gen.DeleteVariablesIdResponseObject, error) {
-	_, err := t.client.DeleteVariable(ctx, &teamsv1.DeleteVariableRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-	return gen.DeleteVariablesId204Response{}, nil
-}
-
-func (t *Team) GetVariablesId(ctx context.Context, request gen.GetVariablesIdRequestObject) (gen.GetVariablesIdResponseObject, error) {
-	resp, err := t.client.GetVariable(ctx, &teamsv1.GetVariableRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	variable := resp.GetVariable()
-	if variable == nil {
-		return nil, responseProblem(fmt.Errorf("get variable response missing variable"))
-	}
-
-	converted, err := variableFromProto(variable)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.GetVariablesId200JSONResponse(converted), nil
-}
-
-func (t *Team) PatchVariablesId(ctx context.Context, request gen.PatchVariablesIdRequestObject) (gen.PatchVariablesIdResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	updateRequest, err := variableUpdateToProto(*request.Body)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-	updateRequest.Id = request.Id.String()
-
-	resp, err := t.client.UpdateVariable(ctx, updateRequest)
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	variable := resp.GetVariable()
-	if variable == nil {
-		return nil, responseProblem(fmt.Errorf("update variable response missing variable"))
-	}
-
-	converted, err := variableFromProto(variable)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PatchVariablesId200JSONResponse(converted), nil
-}
-
-func (t *Team) GetTools(ctx context.Context, request gen.GetToolsRequestObject) (gen.GetToolsResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-
-	toolType := teamsv1.ToolType_TOOL_TYPE_UNSPECIFIED
-	if request.Params.Type != nil {
-		value, err := toolTypeToProto(*request.Params.Type)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		toolType = value
-	}
-
-	tools, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.Tool, string, error) {
-		resp, err := t.client.ListTools(ctx, &teamsv1.ListToolsRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-			Type:      toolType,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetTools(), resp.GetNextPageToken(), nil
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	pageItems := paginateSlice(tools, page, perPage)
-	items := make([]gen.Tool, 0, len(pageItems))
-	for _, tool := range pageItems {
-		converted, err := toolFromProto(tool)
-		if err != nil {
-			return nil, responseProblem(err)
-		}
-		items = append(items, converted)
-	}
-
-	payload := gen.PaginatedTools{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(tools),
-	}
-
-	return gen.GetTools200JSONResponse(payload), nil
-}
-
-func (t *Team) PostTools(ctx context.Context, request gen.PostToolsRequestObject) (gen.PostToolsResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	toolType, err := toolTypeToProto(request.Body.Type)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	config, err := mapToStruct(request.Body.Config)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateTool(ctx, &teamsv1.CreateToolRequest{
-		Type:        toolType,
-		Name:        stringValue(request.Body.Name),
-		Description: stringValue(request.Body.Description),
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	tool := resp.GetTool()
-	if tool == nil {
-		return nil, responseProblem(fmt.Errorf("create tool response missing tool"))
-	}
-
-	converted, err := toolFromProto(tool)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PostTools201JSONResponse(converted), nil
-}
-
-func (t *Team) DeleteToolsId(ctx context.Context, request gen.DeleteToolsIdRequestObject) (gen.DeleteToolsIdResponseObject, error) {
-	_, err := t.client.DeleteTool(ctx, &teamsv1.DeleteToolRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-	return gen.DeleteToolsId204Response{}, nil
-}
-
-func (t *Team) GetToolsId(ctx context.Context, request gen.GetToolsIdRequestObject) (gen.GetToolsIdResponseObject, error) {
-	resp, err := t.client.GetTool(ctx, &teamsv1.GetToolRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	tool := resp.GetTool()
-	if tool == nil {
-		return nil, responseProblem(fmt.Errorf("get tool response missing tool"))
-	}
-
-	converted, err := toolFromProto(tool)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.GetToolsId200JSONResponse(converted), nil
-}
-
-func (t *Team) PatchToolsId(ctx context.Context, request gen.PatchToolsIdRequestObject) (gen.PatchToolsIdResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	var config *structpb.Struct
-	if request.Body.Config != nil {
-		converted, err := mapToStruct(request.Body.Config)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		config = converted
-	}
-
-	resp, err := t.client.UpdateTool(ctx, &teamsv1.UpdateToolRequest{
-		Id:          request.Id.String(),
-		Name:        request.Body.Name,
-		Description: request.Body.Description,
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	tool := resp.GetTool()
-	if tool == nil {
-		return nil, responseProblem(fmt.Errorf("update tool response missing tool"))
-	}
-
-	converted, err := toolFromProto(tool)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PatchToolsId200JSONResponse(converted), nil
-}
-
-func (t *Team) GetWorkspaceConfigurations(ctx context.Context, request gen.GetWorkspaceConfigurationsRequestObject) (gen.GetWorkspaceConfigurationsResponseObject, error) {
-	page, perPage := normalizePagination(request.Params.Page, request.Params.PerPage)
-
-	configs, err := listAll(ctx, int32(perPage), func(ctx context.Context, token string, pageSize int32) ([]*teamsv1.WorkspaceConfiguration, string, error) {
-		resp, err := t.client.ListWorkspaceConfigurations(ctx, &teamsv1.ListWorkspaceConfigurationsRequest{
-			PageSize:  pageSize,
-			PageToken: token,
-		})
-		if err != nil {
-			return nil, "", err
-		}
-		return resp.GetWorkspaceConfigurations(), resp.GetNextPageToken(), nil
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	pageItems := paginateSlice(configs, page, perPage)
-	items := make([]gen.WorkspaceConfiguration, 0, len(pageItems))
-	for _, cfg := range pageItems {
-		converted, err := workspaceConfigurationFromProto(cfg)
-		if err != nil {
-			return nil, responseProblem(err)
-		}
-		items = append(items, converted)
-	}
-
-	payload := gen.PaginatedWorkspaceConfigurations{
-		Items:   items,
-		Page:    page,
-		PerPage: perPage,
-		Total:   len(configs),
-	}
-
-	return gen.GetWorkspaceConfigurations200JSONResponse(payload), nil
-}
-
-func (t *Team) PostWorkspaceConfigurations(ctx context.Context, request gen.PostWorkspaceConfigurationsRequestObject) (gen.PostWorkspaceConfigurationsResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	config, err := workspaceConfigToProto(request.Body.Config)
-	if err != nil {
-		return nil, requestProblem(err)
-	}
-
-	resp, err := t.client.CreateWorkspaceConfiguration(ctx, &teamsv1.CreateWorkspaceConfigurationRequest{
-		Title:       stringValue(request.Body.Title),
-		Description: stringValue(request.Body.Description),
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	configuration := resp.GetWorkspaceConfiguration()
-	if configuration == nil {
-		return nil, responseProblem(fmt.Errorf("create workspace configuration response missing configuration"))
-	}
-
-	converted, err := workspaceConfigurationFromProto(configuration)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PostWorkspaceConfigurations201JSONResponse(converted), nil
-}
-
-func (t *Team) DeleteWorkspaceConfigurationsId(ctx context.Context, request gen.DeleteWorkspaceConfigurationsIdRequestObject) (gen.DeleteWorkspaceConfigurationsIdResponseObject, error) {
-	_, err := t.client.DeleteWorkspaceConfiguration(ctx, &teamsv1.DeleteWorkspaceConfigurationRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-	return gen.DeleteWorkspaceConfigurationsId204Response{}, nil
-}
-
-func (t *Team) GetWorkspaceConfigurationsId(ctx context.Context, request gen.GetWorkspaceConfigurationsIdRequestObject) (gen.GetWorkspaceConfigurationsIdResponseObject, error) {
-	resp, err := t.client.GetWorkspaceConfiguration(ctx, &teamsv1.GetWorkspaceConfigurationRequest{Id: request.Id.String()})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	configuration := resp.GetWorkspaceConfiguration()
-	if configuration == nil {
-		return nil, responseProblem(fmt.Errorf("get workspace configuration response missing configuration"))
-	}
-
-	converted, err := workspaceConfigurationFromProto(configuration)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.GetWorkspaceConfigurationsId200JSONResponse(converted), nil
-}
-
-func (t *Team) PatchWorkspaceConfigurationsId(ctx context.Context, request gen.PatchWorkspaceConfigurationsIdRequestObject) (gen.PatchWorkspaceConfigurationsIdResponseObject, error) {
-	if request.Body == nil {
-		panic("validated request body is unexpectedly nil")
-	}
-
-	var config *teamsv1.WorkspaceConfig
-	if request.Body.Config != nil {
-		converted, err := workspaceConfigToProto(*request.Body.Config)
-		if err != nil {
-			return nil, requestProblem(err)
-		}
-		config = converted
-	}
-
-	resp, err := t.client.UpdateWorkspaceConfiguration(ctx, &teamsv1.UpdateWorkspaceConfigurationRequest{
-		Id:          request.Id.String(),
-		Title:       request.Body.Title,
-		Description: request.Body.Description,
-		Config:      config,
-	})
-	if err != nil {
-		return nil, grpcErrorToProblem(err)
-	}
-
-	configuration := resp.GetWorkspaceConfiguration()
-	if configuration == nil {
-		return nil, responseProblem(fmt.Errorf("update workspace configuration response missing configuration"))
-	}
-
-	converted, err := workspaceConfigurationFromProto(configuration)
-	if err != nil {
-		return nil, responseProblem(err)
-	}
-
-	return gen.PatchWorkspaceConfigurationsId200JSONResponse(converted), nil
+func pageSizeFromParam(pageSize *int) int32 {
+	if pageSize == nil || *pageSize < 1 {
+		return int32(defaultPerPage)
+	}
+	return int32(*pageSize)
 }
 
 func normalizePagination(pagePtr, perPagePtr *int) (int, int) {
@@ -1016,7 +882,7 @@ func listAll[T any](ctx context.Context, pageSize int32, fetch func(context.Cont
 		}
 		items = append(items, batch...)
 		if nextToken == "" {
-			if items == nil {
+			if len(items) == 0 {
 				return []T{}, nil
 			}
 			return items, nil

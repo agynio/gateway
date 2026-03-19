@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # -- Step 1: Pull specs ------------------------------------------------
-TEAM_OPENAPI_PATH="${ROOT_DIR}/openapi/team-v1.yaml" bash "${SCRIPT_DIR}/pull-spec.sh"
+bash "${SCRIPT_DIR}/pull-spec.sh"
 
 # -- Step 2: Place specs for //go:embed -------------------------------
 mkdir -p "${ROOT_DIR}/internal/apischema/teamv1"

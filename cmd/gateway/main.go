@@ -241,10 +241,11 @@ func main() {
 		}
 
 		log.Printf("gateway listening on ziti service %s", serviceName)
-		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Fatalf("server stopped: %v", err)
-		}
-		return
+		go func() {
+			if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Fatalf("ziti server stopped: %v", err)
+			}
+		}()
 	}
 
 	log.Printf("gateway listening on %s", addr)

@@ -2,12 +2,10 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"google.golang.org/grpc/codes"
@@ -35,35 +33,25 @@ func TestAuthMiddlewareMissingSourceIdentity(t *testing.T) {
 
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		called = true
+		w.WriteHeader(http.StatusNoContent)
 	}))
 
 	handler.ServeHTTP(response, request)
 
-	if called {
-		t.Fatalf("expected handler not to be called")
+	if !called {
+		t.Fatalf("expected handler to be called")
 	}
-	if response.Code != http.StatusUnauthorized {
-		t.Fatalf("expected status 401, got %d", response.Code)
-	}
-	if response.Header().Get("Content-Type") != problemContentType {
-		t.Fatalf("unexpected content type: %s", response.Header().Get("Content-Type"))
-	}
-
-	var problemResponse gen.Problem
-	if err := json.NewDecoder(response.Body).Decode(&problemResponse); err != nil {
-		t.Fatalf("decode problem: %v", err)
-	}
-	if problemResponse.Status != http.StatusUnauthorized {
-		t.Fatalf("unexpected problem status: %d", problemResponse.Status)
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
 	}
 }
 
 func TestAuthMiddlewareResolvesIdentity(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "id-1",
-		IdentityType: "user",
+		IdentityType: identity.IdentityTypeUser,
 		TenantID:     "tenant-1",
-		AuthMethod:   "ziti",
+		AuthMethod:   identity.AuthMethodZiti,
 	}
 	resolver := &stubIdentityResolver{identity: resolved}
 	middleware := NewAuthMiddleware(resolver)
@@ -92,6 +80,29 @@ func TestAuthMiddlewareResolvesIdentity(t *testing.T) {
 	}
 	if got != resolved {
 		t.Fatalf("unexpected resolved identity: %+v", got)
+	}
+}
+
+func TestAuthMiddlewareOptionsBypass(t *testing.T) {
+	resolver := &stubIdentityResolver{}
+	middleware := NewAuthMiddleware(resolver)
+
+	request := httptest.NewRequest(http.MethodOptions, "/me", nil)
+	response := httptest.NewRecorder()
+	called := false
+
+	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	handler.ServeHTTP(response, request)
+
+	if !called {
+		t.Fatalf("expected handler to be called")
+	}
+	if response.Code != http.StatusNoContent {
+		t.Fatalf("expected status 204, got %d", response.Code)
 	}
 }
 

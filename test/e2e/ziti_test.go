@@ -6,13 +6,74 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
+	sdk "github.com/openziti/sdk-golang"
+	"github.com/openziti/sdk-golang/ziti"
 	"github.com/stretchr/testify/require"
 )
 
-func TestZitiMeEndpoint(t *testing.T) {
+const defaultZitiServiceName = "gateway"
+
+type mePayload struct {
+	IdentityID   string `json:"identity_id"`
+	IdentityType string `json:"identity_type"`
+	TenantID     string `json:"tenant_id"`
+	AuthMethod   string `json:"auth_method"`
+}
+
+func TestZitiMeEndpointAuthenticated(t *testing.T) {
+	identityFile := zitiIdentityFile()
+	if identityFile == "" {
+		t.Skip("ziti identity file not configured")
+	}
+	if _, err := os.Stat(identityFile); err != nil {
+		t.Skipf("ziti identity file unavailable: %v", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	zitiContext, err := ziti.NewContextFromFile(identityFile)
+	if err != nil {
+		t.Skipf("ziti context unavailable: %v", err)
+	}
+	defer zitiContext.Close()
+
+	client := sdk.NewHttpClient(zitiContext, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, zitiGatewayURL()+"/me", nil)
+	require.NoError(t, err)
+
+	response, err := client.Do(request)
+	require.NoError(t, err)
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", response.StatusCode)
+	}
+
+	var payload mePayload
+	if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload.IdentityID == "" {
+		t.Fatalf("expected identity_id field")
+	}
+	if payload.IdentityType == "" {
+		t.Fatalf("expected identity_type field")
+	}
+	if payload.TenantID == "" {
+		t.Fatalf("expected tenant_id field")
+	}
+	if payload.AuthMethod != "ziti" {
+		t.Fatalf("unexpected auth_method: %s", payload.AuthMethod)
+	}
+}
+
+func TestZitiMeEndpointUnauthenticated(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -24,26 +85,26 @@ func TestZitiMeEndpoint(t *testing.T) {
 	require.NoError(t, err)
 	defer response.Body.Close()
 
-	if response.StatusCode != http.StatusOK && response.StatusCode != http.StatusUnauthorized {
-		t.Fatalf("unexpected status %d", response.StatusCode)
+	if response.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status 401, got %d", response.StatusCode)
+	}
+}
+
+func zitiIdentityFile() string {
+	if value := strings.TrimSpace(os.Getenv("ZITI_E2E_IDENTITY_FILE")); value != "" {
+		return value
+	}
+	return strings.TrimSpace(os.Getenv("ZITI_IDENTITY_FILE"))
+}
+
+func zitiGatewayURL() string {
+	if value := strings.TrimSpace(os.Getenv("ZITI_GATEWAY_URL")); value != "" {
+		return value
 	}
 
-	if response.StatusCode == http.StatusOK {
-		var payload map[string]any
-		if err := json.NewDecoder(response.Body).Decode(&payload); err != nil {
-			t.Fatalf("decode response: %v", err)
-		}
-		if _, ok := payload["identity_id"]; !ok {
-			t.Fatalf("expected identity_id field")
-		}
-		if _, ok := payload["identity_type"]; !ok {
-			t.Fatalf("expected identity_type field")
-		}
-		if _, ok := payload["tenant_id"]; !ok {
-			t.Fatalf("expected tenant_id field")
-		}
-		if _, ok := payload["auth_method"]; !ok {
-			t.Fatalf("expected auth_method field")
-		}
+	serviceName := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME"))
+	if serviceName == "" {
+		serviceName = defaultZitiServiceName
 	}
+	return "http://" + serviceName
 }

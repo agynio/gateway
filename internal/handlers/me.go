@@ -25,9 +25,9 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := MeResponse{
 		IdentityID:   resolved.IdentityID,
-		IdentityType: resolved.IdentityType,
+		IdentityType: string(resolved.IdentityType),
 		TenantID:     resolved.TenantID,
-		AuthMethod:   resolved.AuthMethod,
+		AuthMethod:   string(resolved.AuthMethod),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

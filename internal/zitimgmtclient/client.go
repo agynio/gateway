@@ -12,10 +12,6 @@ import (
 	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 )
 
-type Resolver interface {
-	ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error)
-}
-
 type Client struct {
 	conn   *grpc.ClientConn
 	client zitimgmtv1.ZitiManagementServiceClient
@@ -57,10 +53,15 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 		return identity.ResolvedIdentity{}, fmt.Errorf("resolved identity missing")
 	}
 
+	identityType, err := identity.ParseIdentityType(resolved.GetIdentityType())
+	if err != nil {
+		return identity.ResolvedIdentity{}, err
+	}
+
 	return identity.ResolvedIdentity{
 		IdentityID:   resolved.GetIdentityId(),
-		IdentityType: resolved.GetIdentityType(),
+		IdentityType: identityType,
 		TenantID:     resolved.GetTenantId(),
-		AuthMethod:   resolved.GetAuthMethod(),
+		AuthMethod:   identity.AuthMethodZiti,
 	}, nil
 }

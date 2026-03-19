@@ -1,14 +1,18 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/ziticonn"
-	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
 
-func NewAuthMiddleware(resolver zitimgmtclient.Resolver) func(http.Handler) http.Handler {
+type IdentityResolver interface {
+	ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error)
+}
+
+func NewAuthMiddleware(resolver IdentityResolver) func(http.Handler) http.Handler {
 	if resolver == nil {
 		panic("identity resolver is required")
 	}
@@ -22,8 +26,7 @@ func NewAuthMiddleware(resolver zitimgmtclient.Resolver) func(http.Handler) http
 
 			sourceIdentity, ok := ziticonn.SourceIdentityFromContext(r.Context())
 			if !ok {
-				problem := NewProblem(http.StatusUnauthorized, http.StatusText(http.StatusUnauthorized), "identity not available")
-				WriteProblem(w, problem)
+				next.ServeHTTP(w, r)
 				return
 			}
 

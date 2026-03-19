@@ -13,9 +13,9 @@ import (
 func TestMeHandlerReturnsIdentity(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "id-1",
-		IdentityType: "user",
+		IdentityType: identity.IdentityTypeUser,
 		TenantID:     "tenant-1",
-		AuthMethod:   "ziti",
+		AuthMethod:   identity.AuthMethodZiti,
 	}
 
 	request := httptest.NewRequest(http.MethodGet, "/me", nil)
@@ -39,13 +39,13 @@ func TestMeHandlerReturnsIdentity(t *testing.T) {
 	if body.IdentityID != resolved.IdentityID {
 		t.Fatalf("unexpected identity_id: %s", body.IdentityID)
 	}
-	if body.IdentityType != resolved.IdentityType {
+	if body.IdentityType != string(resolved.IdentityType) {
 		t.Fatalf("unexpected identity_type: %s", body.IdentityType)
 	}
 	if body.TenantID != resolved.TenantID {
 		t.Fatalf("unexpected tenant_id: %s", body.TenantID)
 	}
-	if body.AuthMethod != resolved.AuthMethod {
+	if body.AuthMethod != string(resolved.AuthMethod) {
 		t.Fatalf("unexpected auth_method: %s", body.AuthMethod)
 	}
 }

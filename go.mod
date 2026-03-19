@@ -1,13 +1,13 @@
 module github.com/agynio/gateway
 
-go 1.25.0
+go 1.24.10
 
 require (
 	github.com/getkin/kin-openapi v0.127.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/google/uuid v1.6.0
 	github.com/oapi-codegen/runtime v1.1.1
-	github.com/openziti/sdk-golang v1.5.3
+	github.com/openziti/sdk-golang v1.4.2
 	github.com/rs/cors v1.11.1
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/grpc v1.70.0
@@ -47,7 +47,7 @@ require (
 	github.com/go-openapi/swag/typeutils v0.25.5 // indirect
 	github.com/go-openapi/swag/yamlutils v0.25.5 // indirect
 	github.com/go-openapi/validate v0.25.1 // indirect
-	github.com/go-resty/resty/v2 v2.17.2 // indirect
+	github.com/go-resty/resty/v2 v2.17.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
@@ -68,13 +68,13 @@ require (
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/muhlemmer/gu v0.3.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/openziti/channel/v4 v4.3.7 // indirect
-	github.com/openziti/edge-api v0.27.4 // indirect
-	github.com/openziti/foundation/v2 v2.0.88 // indirect
-	github.com/openziti/identity v1.0.126 // indirect
+	github.com/openziti/channel/v4 v4.3.2 // indirect
+	github.com/openziti/edge-api v0.26.52 // indirect
+	github.com/openziti/foundation/v2 v2.0.86 // indirect
+	github.com/openziti/identity v1.0.124 // indirect
 	github.com/openziti/metrics v1.4.3 // indirect
-	github.com/openziti/secretstream v0.1.48 // indirect
-	github.com/openziti/transport/v2 v2.0.214 // indirect
+	github.com/openziti/secretstream v0.1.47 // indirect
+	github.com/openziti/transport/v2 v2.0.208 // indirect
 	github.com/orcaman/concurrent-map/v2 v2.0.1 // indirect
 	github.com/parallaxsecond/parsec-client-go v0.0.0-20221025095442-f0a77d263cf9 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zitadel/logging v0.7.0 // indirect
-	github.com/zitadel/oidc/v3 v3.45.5 // indirect
+	github.com/zitadel/oidc/v3 v3.45.4 // indirect
 	github.com/zitadel/schema v1.3.2 // indirect
 	go.mongodb.org/mongo-driver v1.17.9 // indirect
 	go.mozilla.org/pkcs7 v0.9.0 // indirect
@@ -99,8 +99,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.40.0 // indirect
 	go.opentelemetry.io/otel/trace v1.40.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/crypto v0.47.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect

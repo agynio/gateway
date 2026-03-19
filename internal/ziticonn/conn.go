@@ -22,14 +22,7 @@ func WithSourceIdentity(ctx context.Context, identity string) context.Context {
 
 func SourceIdentityFromContext(ctx context.Context) (string, bool) {
 	identity, ok := ctx.Value(contextKey{}).(string)
-	if !ok {
-		return "", false
-	}
-	identity = strings.TrimSpace(identity)
-	if identity == "" {
-		return "", false
-	}
-	return identity, true
+	return identity, ok
 }
 
 func SourceIdentityFromConn(conn net.Conn) (string, bool) {
