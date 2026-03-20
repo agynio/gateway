@@ -1,23 +1,25 @@
-package teamsclient
+package grpcclient
 
 import (
 	"fmt"
 	"strings"
 
-	teamsv1 "github.com/agynio/gateway/gen/agynio/api/teams/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client wraps the Teams gRPC connection and client.
-type Client struct {
+// Client wraps a gRPC connection with a typed service client.
+type Client[T any] struct {
 	conn   *grpc.ClientConn
-	client teamsv1.TeamsServiceClient
+	client T
 }
 
-func NewClient(target string) (*Client, error) {
+func New[T any](target string, factory func(grpc.ClientConnInterface) T) (*Client[T], error) {
 	if strings.TrimSpace(target) == "" {
 		return nil, fmt.Errorf("target is required")
+	}
+	if factory == nil {
+		return nil, fmt.Errorf("client factory is required")
 	}
 
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -25,16 +27,16 @@ func NewClient(target string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &Client[T]{
 		conn:   conn,
-		client: teamsv1.NewTeamsServiceClient(conn),
+		client: factory(conn),
 	}, nil
 }
 
-func (c *Client) Close() error {
+func (c *Client[T]) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) TeamsServiceClient() teamsv1.TeamsServiceClient {
+func (c *Client[T]) Service() T {
 	return c.client
 }

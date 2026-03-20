@@ -1,8 +1,3 @@
-// All API domains must be wired through oapi-codegen generated strict servers
-// with request validation middleware. Do NOT register raw http.Handler routes
-// for CRUD endpoints. The only exception is streaming/proxy endpoints (e.g.,
-// SSE /responses) which must still be defined in the OpenAPI spec for request
-// validation but mounted as raw handlers outside the strict server group.
 package main
 
 import (
@@ -14,22 +9,26 @@ import (
 	"os"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
-	chimw "github.com/go-chi/chi/v5/middleware"
+	"connectrpc.com/connect"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/rs/cors"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 
-	llmv1schema "github.com/agynio/gateway/internal/apischema/llmv1"
-	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
-	"github.com/agynio/gateway/internal/filesclient"
-	"github.com/agynio/gateway/internal/gen"
-	"github.com/agynio/gateway/internal/handlers"
-	"github.com/agynio/gateway/internal/llmclient"
-	"github.com/agynio/gateway/internal/llmgen"
+	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
+	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
+	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
+	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
+	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
+	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
+	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
+	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
+	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
+	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
+	"github.com/agynio/gateway/internal/gateway"
+	"github.com/agynio/gateway/internal/grpcclient"
 	"github.com/agynio/gateway/internal/platform"
-	"github.com/agynio/gateway/internal/secretsclient"
-	"github.com/agynio/gateway/internal/teamsclient"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
@@ -40,11 +39,6 @@ const (
 )
 
 func main() {
-	teamSpec, err := loadTeamSpec()
-	if err != nil {
-		log.Fatalf("failed to load team OpenAPI spec: %v", err)
-	}
-
 	config, err := platform.LoadConfigFromEnv()
 	if err != nil {
 		log.Fatalf("failed to load platform configuration: %v", err)
@@ -63,149 +57,71 @@ func main() {
 		}()
 	}
 
-	teamsClient, err := teamsclient.NewClient(config.TeamsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create teams gRPC client: %v", err)
-	}
+	cleanup := make([]func(), 0, 9)
 	defer func() {
-		if err := teamsClient.Close(); err != nil {
-			log.Printf("failed to close teams gRPC client: %v", err)
+		for _, closeFn := range cleanup {
+			closeFn()
 		}
 	}()
 
-	root := chi.NewRouter()
-	root.Use(chimw.RequestID)
-	root.Use(chimw.RealIP)
-	root.Use(chimw.Recoverer)
-	root.Use(chimw.Logger)
+	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
+	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
+	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
+	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
+	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
+	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
+	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
+	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
+	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
+
+	gatewayHandler := gateway.New(
+		agentsClient,
+		threadsClient,
+		chatClient,
+		notificationsClient,
+		filesClient,
+		agentStateClient,
+		tokenCountingClient,
+		llmClient,
+		secretsClient,
+	)
+	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
+
+	interceptors := []connect.Interceptor{
+		gateway.NewRecoveryInterceptor(),
+		gateway.NewLoggingInterceptor(),
+	}
+	if zitiMgmtClient != nil {
+		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiMgmtClient)}, interceptors...)
+	}
+	handlerOptions := connect.WithInterceptors(interceptors...)
+
+	mux := http.NewServeMux()
+
+	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
+	if zitiMgmtClient != nil {
+		meHandler = gateway.NewAuthMiddleware(zitiMgmtClient)(meHandler)
+	}
+	mux.Handle("/me", meHandler)
+
+	registerConnect := func(handlerPath string, handler http.Handler) {
+		mux.Handle(handlerPath, handler)
+	}
+
+	registerConnect(gatewayv1connect.NewAgentsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewThreadsGatewayHandler(threadsGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewChatGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewNotificationsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewFilesGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewAgentStateGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewTokenCountingGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete, http.MethodOptions},
 		AllowedHeaders: []string{"*"},
-	})
-	root.Use(corsMiddleware.Handler)
-
-	if zitiMgmtClient != nil {
-		root.Use(handlers.NewAuthMiddleware(zitiMgmtClient))
-	}
-
-	root.Get("/me", handlers.MeHandler)
-
-	teamRouter := chi.NewRouter()
-
-	requestValidator, err := handlers.NewRequestValidationMiddleware(teamSpec)
-	if err != nil {
-		log.Fatalf("failed to initialise request validation: %v", err)
-	}
-	teamRouter.Use(requestValidator)
-
-	if isResponseValidationEnabled() {
-		responseValidator, err := handlers.NewResponseValidationMiddleware(teamSpec)
-		if err != nil {
-			log.Fatalf("failed to initialise response validation: %v", err)
-		}
-		teamRouter.Use(responseValidator)
-	}
-
-	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(teamsClient.TeamsServiceClient()), nil, gen.StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-	})
-	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{BaseRouter: teamRouter})
-
-	root.Mount(handlers.TeamBasePath(), teamRouter)
-
-	filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create files gRPC client: %v", err)
-	}
-	defer func() {
-		if err := filesClient.Close(); err != nil {
-			log.Printf("failed to close files gRPC client: %v", err)
-		}
-	}()
-	filesHandler := handlers.NewFilesHandler(filesClient)
-	root.Route("/files/v1", func(r chi.Router) {
-		r.Post("/files", filesHandler.Upload)
-	})
-
-	if config.LLMGRPCTarget != "" {
-		llmSpec, err := loadLLMSpec()
-		if err != nil {
-			log.Fatalf("failed to load llm OpenAPI spec: %v", err)
-		}
-
-		llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
-		if err != nil {
-			log.Fatalf("failed to initialise llm request validation: %v", err)
-		}
-
-		llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
-		if err != nil {
-			log.Fatalf("failed to create llm gRPC client: %v", err)
-		}
-		defer func() {
-			if err := llmClient.Close(); err != nil {
-				log.Printf("failed to close llm gRPC client: %v", err)
-			}
-		}()
-
-		llmHandler := handlers.NewLLMHandler(llmClient)
-		llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
-			RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-			ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-		})
-
-		llmRouter := chi.NewRouter()
-		llmRouter.Use(llmRequestValidator)
-
-		var llmResponseValidator func(http.Handler) http.Handler
-		if isResponseValidationEnabled() {
-			llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
-			if err != nil {
-				log.Fatalf("failed to initialise llm response validation: %v", err)
-			}
-		}
-
-		llmRouter.Group(func(r chi.Router) {
-			if llmResponseValidator != nil {
-				r.Use(llmResponseValidator)
-			}
-			llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
-		})
-
-		// Mount streaming handler as raw http.Handler — SSE streaming is
-		// incompatible with oapi-codegen strict server return-value model.
-		llmResponsesHandler := handlers.NewLLMResponsesHandler(llmClient)
-		llmRouter.Post("/responses", llmResponsesHandler.ServeHTTP)
-
-		root.Mount(handlers.LLMBasePath(), llmRouter)
-	}
-
-	secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create secrets gRPC client: %v", err)
-	}
-	defer func() {
-		if err := secretsClient.Close(); err != nil {
-			log.Printf("failed to close secrets gRPC client: %v", err)
-		}
-	}()
-
-	secretsHandler := handlers.NewSecretsHandler(secretsClient)
-	root.Route("/secrets/v1", func(r chi.Router) {
-		r.Post("/secret-providers", secretsHandler.CreateProvider)
-		r.Get("/secret-providers", secretsHandler.ListProviders)
-		r.Get("/secret-providers/{providerId}", secretsHandler.GetProvider)
-		r.Patch("/secret-providers/{providerId}", secretsHandler.UpdateProvider)
-		r.Delete("/secret-providers/{providerId}", secretsHandler.DeleteProvider)
-		r.Post("/secrets", secretsHandler.CreateSecret)
-		r.Get("/secrets", secretsHandler.ListSecrets)
-		r.Get("/secrets/{secretId}", secretsHandler.GetSecret)
-		r.Patch("/secrets/{secretId}", secretsHandler.UpdateSecret)
-		r.Delete("/secrets/{secretId}", secretsHandler.DeleteSecret)
-		r.Post("/secrets/{secretId}/resolve", secretsHandler.ResolveSecret)
 	})
 
 	addr := defaultAddr
@@ -221,9 +137,10 @@ func main() {
 		return ziticonn.WithSourceIdentity(ctx, sourceIdentity)
 	}
 
+	h2cHandler := h2c.NewHandler(corsMiddleware.Handler(mux), &http2.Server{})
 	server := &http.Server{
 		Addr:        addr,
-		Handler:     root,
+		Handler:     h2cHandler,
 		ConnContext: connContext,
 	}
 
@@ -254,31 +171,26 @@ func main() {
 	}
 }
 
-func loadTeamSpec() (*openapi3.T, error) {
-	swagger, err := teamv1schema.LoadSpec()
-	if err != nil {
-		return nil, err
-	}
-	swagger.Servers = []*openapi3.Server{{URL: handlers.TeamBasePath()}}
-	return swagger, nil
-}
-
-func loadLLMSpec() (*openapi3.T, error) {
-	swagger, err := llmv1schema.LoadSpec()
-	if err != nil {
-		return nil, err
-	}
-	swagger.Servers = []*openapi3.Server{{URL: handlers.LLMBasePath()}}
-	return swagger, nil
-}
-
-func isResponseValidationEnabled() bool {
-	return strings.EqualFold(os.Getenv("OPENAPI_VALIDATE_RESPONSE"), "true")
-}
-
 func zitiServiceName() string {
-	if value := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); value != "" {
-		return value
+	if v := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); v != "" {
+		return v
 	}
 	return defaultZitiServiceName
+}
+
+func mustClient[T any](target, name string, factory func(grpc.ClientConnInterface) T, cleanup *[]func()) T {
+	client, err := grpcclient.New(target, factory)
+	if err != nil {
+		log.Fatalf("failed to create %s gRPC client: %v", name, err)
+	}
+
+	if cleanup != nil {
+		*cleanup = append(*cleanup, func() {
+			if err := client.Close(); err != nil {
+				log.Printf("failed to close %s gRPC client: %v", name, err)
+			}
+		})
+	}
+
+	return client.Service()
 }

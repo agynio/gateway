@@ -146,30 +146,18 @@ dev:
             excludePaths:
               - .git/
               - /gen/
-              - .openapi/
               - dist/
               - .devspace/
-              - /internal/apischema/
-              - /internal/gen/server.gen.go
-              - /internal/llmgen/
               - gateway.log
               - gateway.pid
             uploadExcludePaths:
               - .git/
               - /gen/
-              - .openapi/
               - dist/
-              - /internal/apischema/
-              - /internal/gen/server.gen.go
-              - /internal/llmgen/
             downloadExcludePaths:
               - .git/
               - /gen/
-              - .openapi/
               - dist/
-              - /internal/apischema/
-              - /internal/gen/server.gen.go
-              - /internal/llmgen/
         logs:
           enabled: true
           lastLines: 200
