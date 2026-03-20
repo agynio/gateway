@@ -152,6 +152,7 @@ metrics:
 
 gateway:
   teamsGrpcTarget: "teams:50051"
+  chatGrpcTarget: "chat:50051"
   filesGrpcTarget: "files:50051"
   llmGrpcTarget: "llm:50051"
   secretsGrpcTarget: "secrets:50051"

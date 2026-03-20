@@ -7,6 +7,7 @@ import (
 
 const (
 	defaultTeamsGRPCTarget          = "teams:50051"
+	defaultChatGRPCTarget           = "chat:50051"
 	defaultFilesGRPCTarget          = "files:50051"
 	defaultLLMGRPCTarget            = "llm:50051"
 	defaultSecretsGRPCTarget        = "secrets:50051"
@@ -16,6 +17,7 @@ const (
 // Config holds the runtime configuration for communicating with upstream services.
 type Config struct {
 	TeamsGRPCTarget          string
+	ChatGRPCTarget           string
 	FilesGRPCTarget          string
 	LLMGRPCTarget            string
 	SecretsGRPCTarget        string
@@ -27,6 +29,7 @@ type Config struct {
 func LoadConfigFromEnv() (*Config, error) {
 	return &Config{
 		TeamsGRPCTarget:          envOrDefault("TEAMS_GRPC_TARGET", defaultTeamsGRPCTarget),
+		ChatGRPCTarget:           envOrDefault("CHAT_GRPC_TARGET", defaultChatGRPCTarget),
 		FilesGRPCTarget:          envOrDefault("FILES_GRPC_TARGET", defaultFilesGRPCTarget),
 		LLMGRPCTarget:            envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),

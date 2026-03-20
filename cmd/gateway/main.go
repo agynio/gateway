@@ -20,8 +20,11 @@ import (
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/rs/cors"
 
+	chatv1schema "github.com/agynio/gateway/internal/apischema/chatv1"
 	llmv1schema "github.com/agynio/gateway/internal/apischema/llmv1"
 	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
+	"github.com/agynio/gateway/internal/chatclient"
+	"github.com/agynio/gateway/internal/chatgen"
 	"github.com/agynio/gateway/internal/filesclient"
 	"github.com/agynio/gateway/internal/gen"
 	"github.com/agynio/gateway/internal/handlers"
@@ -43,6 +46,11 @@ func main() {
 	teamSpec, err := loadTeamSpec()
 	if err != nil {
 		log.Fatalf("failed to load team OpenAPI spec: %v", err)
+	}
+
+	chatSpec, err := loadChatSpec()
+	if err != nil {
+		log.Fatalf("failed to load chat OpenAPI spec: %v", err)
 	}
 
 	config, err := platform.LoadConfigFromEnv()
@@ -70,6 +78,16 @@ func main() {
 	defer func() {
 		if err := teamsClient.Close(); err != nil {
 			log.Printf("failed to close teams gRPC client: %v", err)
+		}
+	}()
+
+	chatClient, err := chatclient.NewClient(config.ChatGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create chat gRPC client: %v", err)
+	}
+	defer func() {
+		if err := chatClient.Close(); err != nil {
+			log.Printf("failed to close chat gRPC client: %v", err)
 		}
 	}()
 
@@ -115,6 +133,30 @@ func main() {
 	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{BaseRouter: teamRouter})
 
 	root.Mount(handlers.TeamBasePath(), teamRouter)
+
+	chatRouter := chi.NewRouter()
+
+	chatRequestValidator, err := handlers.NewRequestValidationMiddleware(chatSpec)
+	if err != nil {
+		log.Fatalf("failed to initialise chat request validation: %v", err)
+	}
+	chatRouter.Use(chatRequestValidator)
+
+	if isResponseValidationEnabled() {
+		responseValidator, err := handlers.NewResponseValidationMiddleware(chatSpec)
+		if err != nil {
+			log.Fatalf("failed to initialise chat response validation: %v", err)
+		}
+		chatRouter.Use(responseValidator)
+	}
+
+	chatStrictHandler := chatgen.NewStrictHandlerWithOptions(handlers.NewChatHandler(chatClient.ChatServiceClient()), nil, chatgen.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
+		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
+	})
+	chatgen.HandlerWithOptions(chatStrictHandler, chatgen.ChiServerOptions{BaseRouter: chatRouter})
+
+	root.Mount(handlers.ChatBasePath(), chatRouter)
 
 	filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
 	if err != nil {
@@ -269,6 +311,15 @@ func loadLLMSpec() (*openapi3.T, error) {
 		return nil, err
 	}
 	swagger.Servers = []*openapi3.Server{{URL: handlers.LLMBasePath()}}
+	return swagger, nil
+}
+
+func loadChatSpec() (*openapi3.T, error) {
+	swagger, err := chatv1schema.LoadSpec()
+	if err != nil {
+		return nil, err
+	}
+	swagger.Servers = []*openapi3.Server{{URL: handlers.ChatBasePath()}}
 	return swagger, nil
 }
 
