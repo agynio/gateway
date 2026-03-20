@@ -5,7 +5,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./tmp/gateway ./cmd/gateway"
   bin = "./tmp/gateway"
   include_ext = ["go", "yaml"]
-  exclude_dir = ["gen", ".git", "tmp", ".devspace", ".openapi", "charts", "dist"]
+  exclude_dir = ["gen", ".git", "tmp", ".devspace", "charts", "dist"]
   delay = 1000
 
 [log]

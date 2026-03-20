@@ -1,18 +1,18 @@
-package teamsclient
+package tokencountingclient
 
 import (
 	"fmt"
 	"strings"
 
-	teamsv1 "github.com/agynio/gateway/gen/agynio/api/teams/v1"
+	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client wraps the Teams gRPC connection and client.
+// Client wraps the TokenCounting gRPC connection and client.
 type Client struct {
 	conn   *grpc.ClientConn
-	client teamsv1.TeamsServiceClient
+	client tokencountingv1.TokenCountingServiceClient
 }
 
 func NewClient(target string) (*Client, error) {
@@ -27,7 +27,7 @@ func NewClient(target string) (*Client, error) {
 
 	return &Client{
 		conn:   conn,
-		client: teamsv1.NewTeamsServiceClient(conn),
+		client: tokencountingv1.NewTokenCountingServiceClient(conn),
 	}, nil
 }
 
@@ -35,6 +35,6 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) TeamsServiceClient() teamsv1.TeamsServiceClient {
+func (c *Client) TokenCountingServiceClient() tokencountingv1.TokenCountingServiceClient {
 	return c.client
 }

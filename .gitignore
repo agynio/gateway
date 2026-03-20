@@ -1,12 +1,8 @@
 .venv/
 .hypothesis/
 dist/
-.openapi/
 gateway.log
 gateway.pid
 
 # Build-time generated code - do not commit
 gen/
-internal/apischema/
-internal/gen/server.gen.go
-internal/llmgen/

@@ -4,47 +4,69 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"connectrpc.com/connect"
+	gatewayv1connect "github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
+	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	"github.com/stretchr/testify/require"
 )
 
-func TestLLMAPI_ListModels(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func TestLLMGateway_CreateResponse(t *testing.T) {
+	modelID, body := llmRequestConfig()
+	if modelID == "" || len(body) == 0 {
+		t.Skip("llm request config not provided")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client := newClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gatewayURL+"/llm/v1/models", nil)
+	client := gatewayv1connect.NewLLMGatewayClient(newClient(), gatewayURL)
+	resp, err := client.CreateResponse(ctx, connect.NewRequest(&llmv1.CreateResponseRequest{ModelId: modelID, Body: body}))
 	require.NoError(t, err)
-
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var body map[string]interface{}
-	err = json.NewDecoder(resp.Body).Decode(&body)
-	require.NoError(t, err)
-	_, ok := body["items"]
-	assert.True(t, ok, "response should contain 'items' key")
+	require.NotNil(t, resp)
 }
 
-func TestLLMAPI_ListProviders(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+func TestLLMGateway_CreateResponseStream(t *testing.T) {
+	modelID, body := llmRequestConfig()
+	if modelID == "" || len(body) == 0 {
+		t.Skip("llm request config not provided")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	client := newClient()
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, gatewayURL+"/llm/v1/providers", nil)
+	client := gatewayv1connect.NewLLMGatewayClient(newClient(), gatewayURL)
+	stream, err := client.CreateResponseStream(ctx, connect.NewRequest(&llmv1.CreateResponseStreamRequest{ModelId: modelID, Body: body}))
 	require.NoError(t, err)
 
-	resp, err := client.Do(req)
-	require.NoError(t, err)
-	defer resp.Body.Close()
+	for stream.Receive() {
+		msg := stream.Msg()
+		if msg != nil {
+			return
+		}
+	}
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	require.NoError(t, stream.Err())
+}
+
+func llmRequestConfig() (string, []byte) {
+	modelID := strings.TrimSpace(os.Getenv("E2E_LLM_MODEL_ID"))
+	if modelID == "" {
+		modelID = strings.TrimSpace(os.Getenv("LLM_MODEL_ID"))
+	}
+
+	requestBody := strings.TrimSpace(os.Getenv("E2E_LLM_REQUEST_BODY"))
+	if requestBody == "" {
+		requestBody = strings.TrimSpace(os.Getenv("LLM_REQUEST_BODY"))
+	}
+
+	if modelID == "" || requestBody == "" {
+		return "", nil
+	}
+
+	return modelID, []byte(requestBody)
 }

@@ -23,57 +23,26 @@ jobs:
         with:
           go-version: '1.24.10'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install toolchain
-        run: |
-          set -euo pipefail
-          npm install --global @redocly/cli
-          go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.4.0
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
-
-      - name: Install ORAS
-        env:
-          ORAS_VERSION: '1.1.0'
-        run: |
-          curl -fsSL -o oras.tar.gz "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz"
-          tar -xzf oras.tar.gz oras
-          sudo mv oras /usr/local/bin/oras
-          rm oras.tar.gz
-          oras version
-
       - name: Set up Buf
         uses: bufbuild/buf-setup-action@v1
 
       - name: Generate gRPC stubs
         run: |
-          buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1 --path agynio/api/ziti_management/v1
-
-      - name: Generate OpenAPI code
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "${GH_TOKEN}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
-          bash scripts/generate-openapi.sh
+          buf generate buf.build/agynio/api \
+            --path agynio/api/agents/v1 \
+            --path agynio/api/threads/v1 \
+            --path agynio/api/chat/v1 \
+            --path agynio/api/notifications/v1 \
+            --path agynio/api/files/v1 \
+            --path agynio/api/agent_state/v1 \
+            --path agynio/api/token_counting/v1 \
+            --path agynio/api/llm/v1 \
+            --path agynio/api/secrets/v1 \
+            --path agynio/api/ziti_management/v1 \
+            --path agynio/api/gateway/v1
 
       - name: Go vet
         run: go vet ./...
 
       - name: Go test
         run: go test ./...
-
-      - name: Build Redoc documentation
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          redocly build-docs .openapi/team-v1.yaml --output dist/redoc.html
-          redocly build-docs .openapi/llm-v1.yaml --output dist/llm-redoc.html
-
-      - name: Upload Redoc artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: redoc-docs
-          path: dist/*.html

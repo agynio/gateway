@@ -151,8 +151,12 @@ metrics:
         scrapeTimeout: ""
 
 gateway:
-  teamsGrpcTarget: "teams:50051"
+  agentsGrpcTarget: "agents:50051"
+  threadsGrpcTarget: "threads:50051"
+  chatGrpcTarget: "chat:50051"
+  notificationsGrpcTarget: "notifications:50051"
   filesGrpcTarget: "files:50051"
+  agentStateGrpcTarget: "agent-state:50051"
+  tokenCountingGrpcTarget: "token-counting:50051"
   llmGrpcTarget: "llm:50051"
   secretsGrpcTarget: "secrets:50051"
-  openapiValidateResponse: false

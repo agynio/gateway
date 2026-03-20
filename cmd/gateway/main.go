@@ -1,8 +1,3 @@
-// All API domains must be wired through oapi-codegen generated strict servers
-// with request validation middleware. Do NOT register raw http.Handler routes
-// for CRUD endpoints. The only exception is streaming/proxy endpoints (e.g.,
-// SSE /responses) which must still be defined in the OpenAPI spec for request
-// validation but mounted as raw handlers outside the strict server group.
 package main
 
 import (
@@ -14,22 +9,24 @@ import (
 	"os"
 	"strings"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/go-chi/chi/v5"
-	chimw "github.com/go-chi/chi/v5/middleware"
+	"connectrpc.com/connect"
 	"github.com/openziti/sdk-golang/ziti"
 	"github.com/rs/cors"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
-	llmv1schema "github.com/agynio/gateway/internal/apischema/llmv1"
-	teamv1schema "github.com/agynio/gateway/internal/apischema/teamv1"
+	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
+	"github.com/agynio/gateway/internal/agentsclient"
+	"github.com/agynio/gateway/internal/agentstateclient"
+	"github.com/agynio/gateway/internal/chatclient"
 	"github.com/agynio/gateway/internal/filesclient"
-	"github.com/agynio/gateway/internal/gen"
-	"github.com/agynio/gateway/internal/handlers"
+	"github.com/agynio/gateway/internal/gateway"
 	"github.com/agynio/gateway/internal/llmclient"
-	"github.com/agynio/gateway/internal/llmgen"
+	"github.com/agynio/gateway/internal/notificationsclient"
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/secretsclient"
-	"github.com/agynio/gateway/internal/teamsclient"
+	"github.com/agynio/gateway/internal/threadsclient"
+	"github.com/agynio/gateway/internal/tokencountingclient"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
@@ -40,11 +37,6 @@ const (
 )
 
 func main() {
-	teamSpec, err := loadTeamSpec()
-	if err != nil {
-		log.Fatalf("failed to load team OpenAPI spec: %v", err)
-	}
-
 	config, err := platform.LoadConfigFromEnv()
 	if err != nil {
 		log.Fatalf("failed to load platform configuration: %v", err)
@@ -63,58 +55,45 @@ func main() {
 		}()
 	}
 
-	teamsClient, err := teamsclient.NewClient(config.TeamsGRPCTarget)
+	agentsClient, err := agentsclient.NewClient(config.AgentsGRPCTarget)
 	if err != nil {
-		log.Fatalf("failed to create teams gRPC client: %v", err)
+		log.Fatalf("failed to create agents gRPC client: %v", err)
 	}
 	defer func() {
-		if err := teamsClient.Close(); err != nil {
-			log.Printf("failed to close teams gRPC client: %v", err)
+		if err := agentsClient.Close(); err != nil {
+			log.Printf("failed to close agents gRPC client: %v", err)
 		}
 	}()
 
-	root := chi.NewRouter()
-	root.Use(chimw.RequestID)
-	root.Use(chimw.RealIP)
-	root.Use(chimw.Recoverer)
-	root.Use(chimw.Logger)
-
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete, http.MethodOptions},
-		AllowedHeaders: []string{"*"},
-	})
-	root.Use(corsMiddleware.Handler)
-
-	if zitiMgmtClient != nil {
-		root.Use(handlers.NewAuthMiddleware(zitiMgmtClient))
-	}
-
-	root.Get("/me", handlers.MeHandler)
-
-	teamRouter := chi.NewRouter()
-
-	requestValidator, err := handlers.NewRequestValidationMiddleware(teamSpec)
+	threadsClient, err := threadsclient.NewClient(config.ThreadsGRPCTarget)
 	if err != nil {
-		log.Fatalf("failed to initialise request validation: %v", err)
+		log.Fatalf("failed to create threads gRPC client: %v", err)
 	}
-	teamRouter.Use(requestValidator)
-
-	if isResponseValidationEnabled() {
-		responseValidator, err := handlers.NewResponseValidationMiddleware(teamSpec)
-		if err != nil {
-			log.Fatalf("failed to initialise response validation: %v", err)
+	defer func() {
+		if err := threadsClient.Close(); err != nil {
+			log.Printf("failed to close threads gRPC client: %v", err)
 		}
-		teamRouter.Use(responseValidator)
+	}()
+
+	chatClient, err := chatclient.NewClient(config.ChatGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create chat gRPC client: %v", err)
 	}
+	defer func() {
+		if err := chatClient.Close(); err != nil {
+			log.Printf("failed to close chat gRPC client: %v", err)
+		}
+	}()
 
-	strictHandler := gen.NewStrictHandlerWithOptions(handlers.NewTeam(teamsClient.TeamsServiceClient()), nil, gen.StrictHTTPServerOptions{
-		RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-		ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-	})
-	gen.HandlerWithOptions(strictHandler, gen.ChiServerOptions{BaseRouter: teamRouter})
-
-	root.Mount(handlers.TeamBasePath(), teamRouter)
+	notificationsClient, err := notificationsclient.NewClient(config.NotificationsGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create notifications gRPC client: %v", err)
+	}
+	defer func() {
+		if err := notificationsClient.Close(); err != nil {
+			log.Printf("failed to close notifications gRPC client: %v", err)
+		}
+	}()
 
 	filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
 	if err != nil {
@@ -125,63 +104,36 @@ func main() {
 			log.Printf("failed to close files gRPC client: %v", err)
 		}
 	}()
-	filesHandler := handlers.NewFilesHandler(filesClient)
-	root.Route("/files/v1", func(r chi.Router) {
-		r.Post("/files", filesHandler.Upload)
-	})
 
-	if config.LLMGRPCTarget != "" {
-		llmSpec, err := loadLLMSpec()
-		if err != nil {
-			log.Fatalf("failed to load llm OpenAPI spec: %v", err)
-		}
-
-		llmRequestValidator, err := handlers.NewRequestValidationMiddleware(llmSpec)
-		if err != nil {
-			log.Fatalf("failed to initialise llm request validation: %v", err)
-		}
-
-		llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
-		if err != nil {
-			log.Fatalf("failed to create llm gRPC client: %v", err)
-		}
-		defer func() {
-			if err := llmClient.Close(); err != nil {
-				log.Printf("failed to close llm gRPC client: %v", err)
-			}
-		}()
-
-		llmHandler := handlers.NewLLMHandler(llmClient)
-		llmStrictHandler := llmgen.NewStrictHandlerWithOptions(llmHandler, nil, llmgen.StrictHTTPServerOptions{
-			RequestErrorHandlerFunc:  handlers.StrictRequestErrorHandler,
-			ResponseErrorHandlerFunc: handlers.StrictErrorHandler,
-		})
-
-		llmRouter := chi.NewRouter()
-		llmRouter.Use(llmRequestValidator)
-
-		var llmResponseValidator func(http.Handler) http.Handler
-		if isResponseValidationEnabled() {
-			llmResponseValidator, err = handlers.NewResponseValidationMiddleware(llmSpec)
-			if err != nil {
-				log.Fatalf("failed to initialise llm response validation: %v", err)
-			}
-		}
-
-		llmRouter.Group(func(r chi.Router) {
-			if llmResponseValidator != nil {
-				r.Use(llmResponseValidator)
-			}
-			llmgen.HandlerWithOptions(llmStrictHandler, llmgen.ChiServerOptions{BaseRouter: r})
-		})
-
-		// Mount streaming handler as raw http.Handler — SSE streaming is
-		// incompatible with oapi-codegen strict server return-value model.
-		llmResponsesHandler := handlers.NewLLMResponsesHandler(llmClient)
-		llmRouter.Post("/responses", llmResponsesHandler.ServeHTTP)
-
-		root.Mount(handlers.LLMBasePath(), llmRouter)
+	agentStateClient, err := agentstateclient.NewClient(config.AgentStateGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create agent state gRPC client: %v", err)
 	}
+	defer func() {
+		if err := agentStateClient.Close(); err != nil {
+			log.Printf("failed to close agent state gRPC client: %v", err)
+		}
+	}()
+
+	tokenCountingClient, err := tokencountingclient.NewClient(config.TokenCountingGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create token counting gRPC client: %v", err)
+	}
+	defer func() {
+		if err := tokenCountingClient.Close(); err != nil {
+			log.Printf("failed to close token counting gRPC client: %v", err)
+		}
+	}()
+
+	llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
+	if err != nil {
+		log.Fatalf("failed to create llm gRPC client: %v", err)
+	}
+	defer func() {
+		if err := llmClient.Close(); err != nil {
+			log.Printf("failed to close llm gRPC client: %v", err)
+		}
+	}()
 
 	secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
 	if err != nil {
@@ -193,19 +145,53 @@ func main() {
 		}
 	}()
 
-	secretsHandler := handlers.NewSecretsHandler(secretsClient)
-	root.Route("/secrets/v1", func(r chi.Router) {
-		r.Post("/secret-providers", secretsHandler.CreateProvider)
-		r.Get("/secret-providers", secretsHandler.ListProviders)
-		r.Get("/secret-providers/{providerId}", secretsHandler.GetProvider)
-		r.Patch("/secret-providers/{providerId}", secretsHandler.UpdateProvider)
-		r.Delete("/secret-providers/{providerId}", secretsHandler.DeleteProvider)
-		r.Post("/secrets", secretsHandler.CreateSecret)
-		r.Get("/secrets", secretsHandler.ListSecrets)
-		r.Get("/secrets/{secretId}", secretsHandler.GetSecret)
-		r.Patch("/secrets/{secretId}", secretsHandler.UpdateSecret)
-		r.Delete("/secrets/{secretId}", secretsHandler.DeleteSecret)
-		r.Post("/secrets/{secretId}/resolve", secretsHandler.ResolveSecret)
+	gatewayHandler := gateway.New(
+		agentsClient.AgentsServiceClient(),
+		threadsClient.ThreadsServiceClient(),
+		notificationsClient.NotificationsServiceClient(),
+		filesClient.FilesServiceClient(),
+		agentStateClient.AgentStateServiceClient(),
+		tokenCountingClient.TokenCountingServiceClient(),
+		llmClient.LLMServiceClient(),
+		secretsClient.SecretsServiceClient(),
+	)
+	chatGateway := gateway.NewChatGateway(chatClient.ChatServiceClient())
+
+	interceptors := []connect.Interceptor{
+		gateway.NewRecoveryInterceptor(),
+		gateway.NewLoggingInterceptor(),
+	}
+	if zitiMgmtClient != nil {
+		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiMgmtClient)}, interceptors...)
+	}
+	handlerOptions := connect.WithInterceptors(interceptors...)
+
+	mux := http.NewServeMux()
+
+	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
+	if zitiMgmtClient != nil {
+		meHandler = gateway.NewAuthMiddleware(zitiMgmtClient)(meHandler)
+	}
+	mux.Handle("/me", meHandler)
+
+	registerConnect := func(handlerPath string, handler http.Handler) {
+		mux.Handle(handlerPath, handler)
+	}
+
+	registerConnect(gatewayv1connect.NewAgentsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewThreadsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewChatGatewayHandler(chatGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewNotificationsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewFilesGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewAgentStateGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewTokenCountingGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowedHeaders: []string{"*"},
 	})
 
 	addr := defaultAddr
@@ -221,9 +207,10 @@ func main() {
 		return ziticonn.WithSourceIdentity(ctx, sourceIdentity)
 	}
 
+	h2cHandler := h2c.NewHandler(corsMiddleware.Handler(mux), &http2.Server{})
 	server := &http.Server{
 		Addr:        addr,
-		Handler:     root,
+		Handler:     h2cHandler,
 		ConnContext: connContext,
 	}
 
@@ -254,31 +241,9 @@ func main() {
 	}
 }
 
-func loadTeamSpec() (*openapi3.T, error) {
-	swagger, err := teamv1schema.LoadSpec()
-	if err != nil {
-		return nil, err
-	}
-	swagger.Servers = []*openapi3.Server{{URL: handlers.TeamBasePath()}}
-	return swagger, nil
-}
-
-func loadLLMSpec() (*openapi3.T, error) {
-	swagger, err := llmv1schema.LoadSpec()
-	if err != nil {
-		return nil, err
-	}
-	swagger.Servers = []*openapi3.Server{{URL: handlers.LLMBasePath()}}
-	return swagger, nil
-}
-
-func isResponseValidationEnabled() bool {
-	return strings.EqualFold(os.Getenv("OPENAPI_VALIDATE_RESPONSE"), "true")
-}
-
 func zitiServiceName() string {
-	if value := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); value != "" {
-		return value
+	if v := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); v != "" {
+		return v
 	}
 	return defaultZitiServiceName
 }

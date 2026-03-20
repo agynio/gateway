@@ -1,18 +1,18 @@
-package filesclient
+package chatclient
 
 import (
 	"fmt"
 	"strings"
 
-	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
+	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client wraps the Files gRPC connection and client.
+// Client wraps the Chat gRPC connection and client.
 type Client struct {
 	conn   *grpc.ClientConn
-	client filesv1.FilesServiceClient
+	client chatv1.ChatServiceClient
 }
 
 func NewClient(target string) (*Client, error) {
@@ -27,7 +27,7 @@ func NewClient(target string) (*Client, error) {
 
 	return &Client{
 		conn:   conn,
-		client: filesv1.NewFilesServiceClient(conn),
+		client: chatv1.NewChatServiceClient(conn),
 	}, nil
 }
 
@@ -35,6 +35,6 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) FilesServiceClient() filesv1.FilesServiceClient {
+func (c *Client) ChatServiceClient() chatv1.ChatServiceClient {
 	return c.client
 }
