@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"connectrpc.com/connect"
@@ -84,7 +85,7 @@ func (recoveryInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (resp connect.AnyResponse, err error) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
-				log.Printf("panic in %s: %v", req.Spec().Procedure, recovered)
+				log.Printf("panic in %s: %v\n%s", req.Spec().Procedure, recovered, debug.Stack())
 				err = connect.NewError(connect.CodeInternal, fmt.Errorf("internal error"))
 			}
 		}()
@@ -100,7 +101,7 @@ func (recoveryInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFun
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) (err error) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
-				log.Printf("panic in %s: %v", conn.Spec().Procedure, recovered)
+				log.Printf("panic in %s: %v\n%s", conn.Spec().Procedure, recovered, debug.Stack())
 				err = connect.NewError(connect.CodeInternal, fmt.Errorf("internal error"))
 			}
 		}()

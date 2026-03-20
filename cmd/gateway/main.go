@@ -14,19 +14,21 @@ import (
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 
+	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
+	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
+	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
+	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
-	"github.com/agynio/gateway/internal/agentsclient"
-	"github.com/agynio/gateway/internal/agentstateclient"
-	"github.com/agynio/gateway/internal/chatclient"
-	"github.com/agynio/gateway/internal/filesclient"
+	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
+	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
+	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
+	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
+	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
 	"github.com/agynio/gateway/internal/gateway"
-	"github.com/agynio/gateway/internal/llmclient"
-	"github.com/agynio/gateway/internal/notificationsclient"
+	"github.com/agynio/gateway/internal/grpcclient"
 	"github.com/agynio/gateway/internal/platform"
-	"github.com/agynio/gateway/internal/secretsclient"
-	"github.com/agynio/gateway/internal/threadsclient"
-	"github.com/agynio/gateway/internal/tokencountingclient"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
@@ -55,107 +57,35 @@ func main() {
 		}()
 	}
 
-	agentsClient, err := agentsclient.NewClient(config.AgentsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create agents gRPC client: %v", err)
-	}
+	cleanup := make([]func(), 0, 9)
 	defer func() {
-		if err := agentsClient.Close(); err != nil {
-			log.Printf("failed to close agents gRPC client: %v", err)
+		for _, closeFn := range cleanup {
+			closeFn()
 		}
 	}()
 
-	threadsClient, err := threadsclient.NewClient(config.ThreadsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create threads gRPC client: %v", err)
-	}
-	defer func() {
-		if err := threadsClient.Close(); err != nil {
-			log.Printf("failed to close threads gRPC client: %v", err)
-		}
-	}()
-
-	chatClient, err := chatclient.NewClient(config.ChatGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create chat gRPC client: %v", err)
-	}
-	defer func() {
-		if err := chatClient.Close(); err != nil {
-			log.Printf("failed to close chat gRPC client: %v", err)
-		}
-	}()
-
-	notificationsClient, err := notificationsclient.NewClient(config.NotificationsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create notifications gRPC client: %v", err)
-	}
-	defer func() {
-		if err := notificationsClient.Close(); err != nil {
-			log.Printf("failed to close notifications gRPC client: %v", err)
-		}
-	}()
-
-	filesClient, err := filesclient.NewClient(config.FilesGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create files gRPC client: %v", err)
-	}
-	defer func() {
-		if err := filesClient.Close(); err != nil {
-			log.Printf("failed to close files gRPC client: %v", err)
-		}
-	}()
-
-	agentStateClient, err := agentstateclient.NewClient(config.AgentStateGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create agent state gRPC client: %v", err)
-	}
-	defer func() {
-		if err := agentStateClient.Close(); err != nil {
-			log.Printf("failed to close agent state gRPC client: %v", err)
-		}
-	}()
-
-	tokenCountingClient, err := tokencountingclient.NewClient(config.TokenCountingGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create token counting gRPC client: %v", err)
-	}
-	defer func() {
-		if err := tokenCountingClient.Close(); err != nil {
-			log.Printf("failed to close token counting gRPC client: %v", err)
-		}
-	}()
-
-	llmClient, err := llmclient.NewClient(config.LLMGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create llm gRPC client: %v", err)
-	}
-	defer func() {
-		if err := llmClient.Close(); err != nil {
-			log.Printf("failed to close llm gRPC client: %v", err)
-		}
-	}()
-
-	secretsClient, err := secretsclient.NewClient(config.SecretsGRPCTarget)
-	if err != nil {
-		log.Fatalf("failed to create secrets gRPC client: %v", err)
-	}
-	defer func() {
-		if err := secretsClient.Close(); err != nil {
-			log.Printf("failed to close secrets gRPC client: %v", err)
-		}
-	}()
+	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
+	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
+	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
+	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
+	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
+	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
+	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
+	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
+	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
 
 	gatewayHandler := gateway.New(
-		agentsClient.AgentsServiceClient(),
-		threadsClient.ThreadsServiceClient(),
-		notificationsClient.NotificationsServiceClient(),
-		filesClient.FilesServiceClient(),
-		agentStateClient.AgentStateServiceClient(),
-		tokenCountingClient.TokenCountingServiceClient(),
-		llmClient.LLMServiceClient(),
-		secretsClient.SecretsServiceClient(),
+		agentsClient,
+		threadsClient,
+		chatClient,
+		notificationsClient,
+		filesClient,
+		agentStateClient,
+		tokenCountingClient,
+		llmClient,
+		secretsClient,
 	)
-	chatGateway := gateway.NewChatGateway(chatClient.ChatServiceClient())
+	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),
@@ -179,8 +109,8 @@ func main() {
 	}
 
 	registerConnect(gatewayv1connect.NewAgentsGatewayHandler(gatewayHandler, handlerOptions))
-	registerConnect(gatewayv1connect.NewThreadsGatewayHandler(gatewayHandler, handlerOptions))
-	registerConnect(gatewayv1connect.NewChatGatewayHandler(chatGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewThreadsGatewayHandler(threadsGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewChatGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewNotificationsGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewFilesGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewAgentStateGatewayHandler(gatewayHandler, handlerOptions))
@@ -246,4 +176,21 @@ func zitiServiceName() string {
 		return v
 	}
 	return defaultZitiServiceName
+}
+
+func mustClient[T any](target, name string, factory func(grpc.ClientConnInterface) T, cleanup *[]func()) T {
+	client, err := grpcclient.New(target, factory)
+	if err != nil {
+		log.Fatalf("failed to create %s gRPC client: %v", name, err)
+	}
+
+	if cleanup != nil {
+		*cleanup = append(*cleanup, func() {
+			if err := client.Close(); err != nil {
+				log.Printf("failed to close %s gRPC client: %v", name, err)
+			}
+		})
+	}
+
+	return client.Service()
 }

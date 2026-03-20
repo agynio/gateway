@@ -4,11 +4,9 @@ package e2e
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"connectrpc.com/connect"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
@@ -16,10 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func newClient() *http.Client {
-	return &http.Client{Timeout: 10 * time.Second}
-}
 
 func TestAgentsGateway_ListAgents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)

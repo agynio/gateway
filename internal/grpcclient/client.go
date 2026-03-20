@@ -1,23 +1,25 @@
-package filesclient
+package grpcclient
 
 import (
 	"fmt"
 	"strings"
 
-	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Client wraps the Files gRPC connection and client.
-type Client struct {
+// Client wraps a gRPC connection with a typed service client.
+type Client[T any] struct {
 	conn   *grpc.ClientConn
-	client filesv1.FilesServiceClient
+	client T
 }
 
-func NewClient(target string) (*Client, error) {
+func New[T any](target string, factory func(grpc.ClientConnInterface) T) (*Client[T], error) {
 	if strings.TrimSpace(target) == "" {
 		return nil, fmt.Errorf("target is required")
+	}
+	if factory == nil {
+		return nil, fmt.Errorf("client factory is required")
 	}
 
 	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -25,16 +27,16 @@ func NewClient(target string) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &Client[T]{
 		conn:   conn,
-		client: filesv1.NewFilesServiceClient(conn),
+		client: factory(conn),
 	}, nil
 }
 
-func (c *Client) Close() error {
+func (c *Client[T]) Close() error {
 	return c.conn.Close()
 }
 
-func (c *Client) FilesServiceClient() filesv1.FilesServiceClient {
+func (c *Client[T]) Service() T {
 	return c.client
 }

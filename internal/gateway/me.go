@@ -78,6 +78,9 @@ func writeProblem(w http.ResponseWriter, status int, detail string) {
 	_, _ = w.Write(payload)
 }
 
+// httpStatusFromError maps gRPC errors to HTTP status codes for the /me HTTP endpoint.
+// ConnectRPC handlers use grpcCodeToConnectCode in errors.go, so both mappings exist
+// to target different transports with different default fallbacks.
 func httpStatusFromError(err error) int {
 	grpcStatus, ok := status.FromError(err)
 	if !ok {

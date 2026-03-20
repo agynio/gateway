@@ -3,6 +3,7 @@ package gateway
 import (
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
+	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
@@ -15,6 +16,7 @@ import (
 type Gateway struct {
 	agents        agentsv1.AgentsServiceClient
 	threads       threadsv1.ThreadsServiceClient
+	chat          chatv1.ChatServiceClient
 	notifications notificationsv1.NotificationsServiceClient
 	files         filesv1.FilesServiceClient
 	agentState    agentstatev1.AgentStateServiceClient
@@ -26,6 +28,7 @@ type Gateway struct {
 func New(
 	agents agentsv1.AgentsServiceClient,
 	threads threadsv1.ThreadsServiceClient,
+	chat chatv1.ChatServiceClient,
 	notifications notificationsv1.NotificationsServiceClient,
 	files filesv1.FilesServiceClient,
 	agentState agentstatev1.AgentStateServiceClient,
@@ -36,6 +39,7 @@ func New(
 	return &Gateway{
 		agents:        agents,
 		threads:       threads,
+		chat:          chat,
 		notifications: notifications,
 		files:         files,
 		agentState:    agentState,
