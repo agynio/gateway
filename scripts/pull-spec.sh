@@ -23,4 +23,5 @@ pull_spec() {
 }
 
 pull_spec "${TEAM_OPENAPI_IMAGE:-agynio/openapi/team:1}" "team-v1.yaml"
+pull_spec "${CHAT_OPENAPI_IMAGE:-agynio/openapi/chat:1}" "chat-v1.yaml"
 pull_spec "${LLM_OPENAPI_IMAGE:-agynio/openapi/llm:1}" "llm-v1.yaml"

@@ -151,6 +151,7 @@ dev:
               - .devspace/
               - /internal/apischema/
               - /internal/gen/server.gen.go
+              - /internal/chatgen/
               - /internal/llmgen/
               - gateway.log
               - gateway.pid
@@ -161,6 +162,7 @@ dev:
               - dist/
               - /internal/apischema/
               - /internal/gen/server.gen.go
+              - /internal/chatgen/
               - /internal/llmgen/
             downloadExcludePaths:
               - .git/
@@ -169,6 +171,7 @@ dev:
               - dist/
               - /internal/apischema/
               - /internal/gen/server.gen.go
+              - /internal/chatgen/
               - /internal/llmgen/
         logs:
           enabled: true

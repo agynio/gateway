@@ -9,4 +9,5 @@ gateway.pid
 gen/
 internal/apischema/
 internal/gen/server.gen.go
+internal/chatgen/
 internal/llmgen/

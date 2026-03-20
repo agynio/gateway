@@ -50,7 +50,7 @@ jobs:
 
       - name: Generate gRPC stubs
         run: |
-          buf generate buf.build/agynio/api --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1 --path agynio/api/ziti_management/v1
+          buf generate buf.build/agynio/api --path agynio/api/chat/v1 --path agynio/api/files/v1 --path agynio/api/llm/v1 --path agynio/api/secrets/v1 --path agynio/api/teams/v1 --path agynio/api/ziti_management/v1
 
       - name: Generate OpenAPI code
         env:
@@ -71,6 +71,7 @@ jobs:
           mkdir -p dist
           redocly build-docs .openapi/team-v1.yaml --output dist/redoc.html
           redocly build-docs .openapi/llm-v1.yaml --output dist/llm-redoc.html
+          redocly build-docs .openapi/chat-v1.yaml --output dist/chat-redoc.html
 
       - name: Upload Redoc artifact
         uses: actions/upload-artifact@v4

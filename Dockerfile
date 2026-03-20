@@ -40,6 +40,7 @@ COPY scripts/ scripts/
 
 # Generate protobuf stubs
 RUN buf generate buf.build/agynio/api \
+      --path agynio/api/chat/v1 \
       --path agynio/api/files/v1 \
       --path agynio/api/llm/v1 \
       --path agynio/api/secrets/v1 \

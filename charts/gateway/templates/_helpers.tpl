@@ -4,6 +4,9 @@
 {{- $teamsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.teamsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "TEAMS_GRPC_TARGET" "value" $teamsGrpcTarget) -}}
 
+{{- $chatGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.chatGrpcTarget) -}}
+{{- $env = append $env (dict "name" "CHAT_GRPC_TARGET" "value" $chatGrpcTarget) -}}
+
 {{- $filesGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.filesGrpcTarget) -}}
 {{- $env = append $env (dict "name" "FILES_GRPC_TARGET" "value" $filesGrpcTarget) -}}
 

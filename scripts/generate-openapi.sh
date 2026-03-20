@@ -10,12 +10,32 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 bash "${SCRIPT_DIR}/pull-spec.sh"
 
 # -- Step 2: Place specs for //go:embed -------------------------------
+mkdir -p "${ROOT_DIR}/internal/apischema/chatv1"
 mkdir -p "${ROOT_DIR}/internal/apischema/teamv1"
 mkdir -p "${ROOT_DIR}/internal/apischema/llmv1"
+cp "${ROOT_DIR}/.openapi/chat-v1.yaml" "${ROOT_DIR}/internal/apischema/chatv1/chat-v1.yaml"
 cp "${ROOT_DIR}/.openapi/team-v1.yaml" "${ROOT_DIR}/internal/apischema/teamv1/team-v1.yaml"
 cp "${ROOT_DIR}/.openapi/llm-v1.yaml"  "${ROOT_DIR}/internal/apischema/llmv1/llm-v1.yaml"
 
 # -- Step 3: Generate spec.go loaders ---------------------------------
+cat > "${ROOT_DIR}/internal/apischema/chatv1/spec.go" << 'GOEOF'
+package chatv1
+
+import (
+	_ "embed"
+
+	"github.com/getkin/kin-openapi/openapi3"
+)
+
+//go:embed chat-v1.yaml
+var Spec []byte
+
+func LoadSpec() (*openapi3.T, error) {
+	loader := openapi3.NewLoader()
+	return loader.LoadFromData(Spec)
+}
+GOEOF
+
 cat > "${ROOT_DIR}/internal/apischema/teamv1/spec.go" << 'GOEOF'
 package teamv1
 
@@ -53,8 +73,15 @@ func LoadSpec() (*openapi3.T, error) {
 GOEOF
 
 # -- Step 4: Run oapi-codegen -----------------------------------------
+mkdir -p "${ROOT_DIR}/internal/chatgen"
 mkdir -p "${ROOT_DIR}/internal/gen"
 mkdir -p "${ROOT_DIR}/internal/llmgen"
+
+oapi-codegen \
+  -package chatgen \
+  -generate chi-server,strict-server,models \
+  -o "${ROOT_DIR}/internal/chatgen/server.gen.go" \
+  "${ROOT_DIR}/.openapi/chat-v1.yaml"
 
 oapi-codegen \
   -package gen \
@@ -69,6 +96,7 @@ oapi-codegen \
   "${ROOT_DIR}/.openapi/llm-v1.yaml"
 
 # -- Step 5: Format generated code ------------------------------------
+gofmt -w "${ROOT_DIR}/internal/chatgen/server.gen.go"
 gofmt -w "${ROOT_DIR}/internal/gen/server.gen.go"
 gofmt -w "${ROOT_DIR}/internal/llmgen/server.gen.go"
 
