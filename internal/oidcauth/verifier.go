@@ -14,15 +14,13 @@ import (
 
 type Claims struct {
 	Subject string
-	Name    string
-	Email   string
-	Picture string
 }
 
 type Verifier struct {
 	issuer            string
 	clientID          string
 	keySet            oidc.KeySet
+	userinfoEndpoint  string
 	supportedSignAlgs []string
 	clockSkew         time.Duration
 }
@@ -45,19 +43,23 @@ func NewVerifier(ctx context.Context, issuer, clientID string) (*Verifier, error
 	if jwksURI == "" {
 		return nil, fmt.Errorf("jwks uri missing from discovery")
 	}
+	userinfoEndpoint := strings.TrimSpace(discovery.UserinfoEndpoint)
 
 	return &Verifier{
-		issuer:    trimmedIssuer,
-		clientID:  trimmedClientID,
-		keySet:    rp.NewRemoteKeySet(httphelper.DefaultHTTPClient, jwksURI),
-		clockSkew: time.Second,
+		issuer:           trimmedIssuer,
+		clientID:         trimmedClientID,
+		keySet:           rp.NewRemoteKeySet(httphelper.DefaultHTTPClient, jwksURI),
+		userinfoEndpoint: userinfoEndpoint,
+		clockSkew:        time.Second,
 	}, nil
+}
+
+func (v *Verifier) UserinfoEndpoint() string {
+	return v.userinfoEndpoint
 }
 
 type tokenClaims struct {
 	oidc.TokenClaims
-	oidc.UserInfoProfile
-	oidc.UserInfoEmail
 }
 
 func (v *Verifier) Verify(ctx context.Context, accessToken string) (Claims, error) {
@@ -95,8 +97,5 @@ func (v *Verifier) Verify(ctx context.Context, accessToken string) (Claims, erro
 
 	return Claims{
 		Subject: subject,
-		Name:    strings.TrimSpace(parsed.Name),
-		Email:   strings.TrimSpace(parsed.Email),
-		Picture: strings.TrimSpace(parsed.Picture),
 	}, nil
 }

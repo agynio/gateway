@@ -83,7 +83,7 @@ func main() {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
 		usersClient := mustClient(config.UsersGRPCTarget, "users", usersv1.NewUsersServiceClient, &cleanup)
-		resolver, err := oidcresolver.NewResolver(verifier, usersClient)
+		resolver, err := oidcresolver.NewResolver(verifier, usersClient, http.DefaultClient)
 		if err != nil {
 			log.Fatalf("failed to create OIDC resolver: %v", err)
 		}
