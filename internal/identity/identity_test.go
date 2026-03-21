@@ -10,8 +10,6 @@ func TestIdentityContextRoundTrip(t *testing.T) {
 	input := ResolvedIdentity{
 		IdentityID:   "id-123",
 		IdentityType: IdentityTypeUser,
-		TenantID:     "tenant-1",
-		AuthMethod:   AuthMethodZiti,
 	}
 
 	ctx = WithIdentity(ctx, input)

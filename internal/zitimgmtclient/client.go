@@ -53,11 +53,6 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 		return identity.ResolvedIdentity{}, fmt.Errorf("identity id missing")
 	}
 
-	tenantID := strings.TrimSpace(response.GetTenantId())
-	if tenantID == "" {
-		return identity.ResolvedIdentity{}, fmt.Errorf("tenant id missing")
-	}
-
 	identityType, err := parseIdentityType(response.GetIdentityType())
 	if err != nil {
 		return identity.ResolvedIdentity{}, err
@@ -66,8 +61,6 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 	return identity.ResolvedIdentity{
 		IdentityID:   identityID,
 		IdentityType: identityType,
-		TenantID:     tenantID,
-		AuthMethod:   identity.AuthMethodZiti,
 	}, nil
 }
 

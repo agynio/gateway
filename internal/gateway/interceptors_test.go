@@ -52,8 +52,6 @@ func TestAuthInterceptorWrapUnarySuccess(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-1",
 			IdentityType: identity.IdentityTypeUser,
-			TenantID:     "tenant-1",
-			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
 	interceptor := authInterceptor{zitiResolver: resolver}
@@ -115,7 +113,6 @@ func TestAuthInterceptorWrapUnaryBearer(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-oidc",
 			IdentityType: identity.IdentityTypeUser,
-			AuthMethod:   identity.AuthMethodOIDC,
 		},
 	}
 	interceptor := authInterceptor{oidcResolver: resolver}
@@ -222,8 +219,6 @@ func TestNewAuthMiddlewareSuccess(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-2",
 			IdentityType: identity.IdentityTypeUser,
-			TenantID:     "tenant-2",
-			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
 	middleware := NewAuthMiddleware(resolver, nil)
@@ -254,7 +249,6 @@ func TestNewAuthMiddlewareBearer(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-oidc",
 			IdentityType: identity.IdentityTypeUser,
-			AuthMethod:   identity.AuthMethodOIDC,
 		},
 	}
 	middleware := NewAuthMiddleware(nil, resolver)
@@ -303,8 +297,6 @@ func TestResolveIdentityWithSource(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-3",
 			IdentityType: identity.IdentityTypeAgent,
-			TenantID:     "tenant-3",
-			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
 	ctx := ziticonn.WithSourceIdentity(context.Background(), "source-identity")
@@ -329,7 +321,6 @@ func TestResolveIdentityWithBearer(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-bearer",
 			IdentityType: identity.IdentityTypeUser,
-			AuthMethod:   identity.AuthMethodOIDC,
 		},
 	}
 	ctx := httpauth.WithBearerToken(context.Background(), "token-bearer")
@@ -357,15 +348,12 @@ func TestResolveIdentityPrefersZiti(t *testing.T) {
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-ziti",
 			IdentityType: identity.IdentityTypeUser,
-			TenantID:     "tenant-1",
-			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
 	oidcResolver := &fakeOIDCResolver{
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-oidc",
 			IdentityType: identity.IdentityTypeUser,
-			AuthMethod:   identity.AuthMethodOIDC,
 		},
 	}
 

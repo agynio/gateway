@@ -15,18 +15,9 @@ const (
 	IdentityTypeRunner  IdentityType = "runner"
 )
 
-type AuthMethod string
-
-const (
-	AuthMethodZiti AuthMethod = "ziti"
-	AuthMethodOIDC AuthMethod = "oidc"
-)
-
 type ResolvedIdentity struct {
 	IdentityID   string
 	IdentityType IdentityType
-	TenantID     string
-	AuthMethod   AuthMethod
 }
 
 func ParseIdentityType(value string) (IdentityType, error) {

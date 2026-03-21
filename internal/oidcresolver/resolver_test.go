@@ -234,7 +234,4 @@ func assertResolvedIdentity(t *testing.T, resolved identity.ResolvedIdentity, ex
 	if resolved.IdentityType != identity.IdentityTypeUser {
 		t.Fatalf("expected identity type %q, got %q", identity.IdentityTypeUser, resolved.IdentityType)
 	}
-	if resolved.AuthMethod != identity.AuthMethodOIDC {
-		t.Fatalf("expected auth method %q, got %q", identity.AuthMethodOIDC, resolved.AuthMethod)
-	}
 }

@@ -18,8 +18,6 @@ const (
 type MeResponse struct {
 	IdentityID   string                `json:"identity_id"`
 	IdentityType identity.IdentityType `json:"identity_type"`
-	TenantID     string                `json:"tenant_id"`
-	AuthMethod   identity.AuthMethod   `json:"auth_method"`
 }
 
 type problemResponse struct {
@@ -39,8 +37,6 @@ func MeHandler(w http.ResponseWriter, r *http.Request) {
 	response := MeResponse{
 		IdentityID:   resolvedIdentity.IdentityID,
 		IdentityType: resolvedIdentity.IdentityType,
-		TenantID:     resolvedIdentity.TenantID,
-		AuthMethod:   resolvedIdentity.AuthMethod,
 	}
 
 	payload, err := json.Marshal(response)
