@@ -21,8 +21,6 @@ const defaultZitiServiceName = "gateway"
 type mePayload struct {
 	IdentityID   string `json:"identity_id"`
 	IdentityType string `json:"identity_type"`
-	TenantID     string `json:"tenant_id"`
-	AuthMethod   string `json:"auth_method"`
 }
 
 func TestZitiMeEndpointAuthenticated(t *testing.T) {
@@ -64,12 +62,6 @@ func TestZitiMeEndpointAuthenticated(t *testing.T) {
 	}
 	if payload.IdentityType == "" {
 		t.Fatalf("expected identity_type field")
-	}
-	if payload.TenantID == "" {
-		t.Fatalf("expected tenant_id field")
-	}
-	if payload.AuthMethod != "ziti" {
-		t.Fatalf("unexpected auth_method: %s", payload.AuthMethod)
 	}
 }
 

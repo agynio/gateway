@@ -11,8 +11,6 @@ func TestAppendToOutgoingContext(t *testing.T) {
 	input := ResolvedIdentity{
 		IdentityID:   "identity-123",
 		IdentityType: IdentityTypeAgent,
-		TenantID:     "tenant-9",
-		AuthMethod:   AuthMethodOIDC,
 	}
 
 	ctx := WithIdentity(context.Background(), input)
@@ -23,10 +21,8 @@ func TestAppendToOutgoingContext(t *testing.T) {
 		t.Fatalf("expected outgoing metadata")
 	}
 
-	assertMetadataValue(t, md, MetadataKeyTenantID, input.TenantID)
 	assertMetadataValue(t, md, MetadataKeyIdentityID, input.IdentityID)
 	assertMetadataValue(t, md, MetadataKeyIdentityType, string(input.IdentityType))
-	assertMetadataValue(t, md, MetadataKeyAuthMethod, string(input.AuthMethod))
 }
 
 func TestAppendToOutgoingContextMissingIdentity(t *testing.T) {
@@ -44,10 +40,8 @@ func TestAppendToOutgoingContextMissingIdentity(t *testing.T) {
 
 func TestIdentityFromIncomingContext(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		MetadataKeyTenantID, "tenant-7",
 		MetadataKeyIdentityID, "identity-777",
 		MetadataKeyIdentityType, string(IdentityTypeUser),
-		MetadataKeyAuthMethod, string(AuthMethodZiti),
 	))
 
 	got, err := IdentityFromIncomingContext(ctx)
@@ -58,8 +52,6 @@ func TestIdentityFromIncomingContext(t *testing.T) {
 	expected := ResolvedIdentity{
 		IdentityID:   "identity-777",
 		IdentityType: IdentityTypeUser,
-		TenantID:     "tenant-7",
-		AuthMethod:   AuthMethodZiti,
 	}
 	if got != expected {
 		t.Fatalf("unexpected identity: %+v", got)
@@ -68,9 +60,7 @@ func TestIdentityFromIncomingContext(t *testing.T) {
 
 func TestIdentityFromIncomingContextMissingField(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		MetadataKeyTenantID, "tenant-7",
 		MetadataKeyIdentityID, "identity-777",
-		MetadataKeyAuthMethod, string(AuthMethodZiti),
 	))
 
 	_, err := IdentityFromIncomingContext(ctx)
@@ -81,24 +71,8 @@ func TestIdentityFromIncomingContextMissingField(t *testing.T) {
 
 func TestIdentityFromIncomingContextInvalidType(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		MetadataKeyTenantID, "tenant-7",
 		MetadataKeyIdentityID, "identity-777",
 		MetadataKeyIdentityType, "unknown",
-		MetadataKeyAuthMethod, string(AuthMethodZiti),
-	))
-
-	_, err := IdentityFromIncomingContext(ctx)
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-}
-
-func TestIdentityFromIncomingContextInvalidAuthMethod(t *testing.T) {
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
-		MetadataKeyTenantID, "tenant-7",
-		MetadataKeyIdentityID, "identity-777",
-		MetadataKeyIdentityType, string(IdentityTypeUser),
-		MetadataKeyAuthMethod, "banana",
 	))
 
 	_, err := IdentityFromIncomingContext(ctx)

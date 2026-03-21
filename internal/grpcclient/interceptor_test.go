@@ -13,8 +13,6 @@ func TestIdentityUnaryInterceptorAppendsMetadata(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-42",
 		IdentityType: identity.IdentityTypeAgent,
-		TenantID:     "tenant-42",
-		AuthMethod:   identity.AuthMethodZiti,
 	}
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
@@ -33,8 +31,6 @@ func TestIdentityStreamInterceptorAppendsMetadata(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-99",
 		IdentityType: identity.IdentityTypeUser,
-		TenantID:     "tenant-99",
-		AuthMethod:   identity.AuthMethodOIDC,
 	}
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
@@ -58,10 +54,8 @@ func assertOutgoingIdentity(t *testing.T, ctx context.Context, resolved identity
 	if !ok {
 		t.Fatalf("expected outgoing metadata")
 	}
-	assertMetadataValue(t, md, identity.MetadataKeyTenantID, resolved.TenantID)
 	assertMetadataValue(t, md, identity.MetadataKeyIdentityID, resolved.IdentityID)
 	assertMetadataValue(t, md, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
-	assertMetadataValue(t, md, identity.MetadataKeyAuthMethod, string(resolved.AuthMethod))
 }
 
 func assertMetadataValue(t *testing.T, md metadata.MD, key, expected string) {

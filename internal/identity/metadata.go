@@ -9,10 +9,8 @@ import (
 )
 
 const (
-	MetadataKeyTenantID     = "x-agyn-tenant-id"
-	MetadataKeyIdentityID   = "x-agyn-identity-id"
-	MetadataKeyIdentityType = "x-agyn-identity-type"
-	MetadataKeyAuthMethod   = "x-agyn-auth-method"
+	MetadataKeyIdentityID   = "x-identity-id"
+	MetadataKeyIdentityType = "x-identity-type"
 )
 
 func AppendToOutgoingContext(ctx context.Context) context.Context {
@@ -23,10 +21,8 @@ func AppendToOutgoingContext(ctx context.Context) context.Context {
 
 	return metadata.AppendToOutgoingContext(
 		ctx,
-		MetadataKeyTenantID, resolved.TenantID,
 		MetadataKeyIdentityID, resolved.IdentityID,
 		MetadataKeyIdentityType, string(resolved.IdentityType),
-		MetadataKeyAuthMethod, string(resolved.AuthMethod),
 	)
 }
 
@@ -34,11 +30,6 @@ func IdentityFromIncomingContext(ctx context.Context) (ResolvedIdentity, error) 
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ResolvedIdentity{}, fmt.Errorf("missing identity metadata")
-	}
-
-	tenantID, err := requiredMetadataValue(md, MetadataKeyTenantID)
-	if err != nil {
-		return ResolvedIdentity{}, err
 	}
 
 	identityID, err := requiredMetadataValue(md, MetadataKeyIdentityID)
@@ -55,20 +46,9 @@ func IdentityFromIncomingContext(ctx context.Context) (ResolvedIdentity, error) 
 		return ResolvedIdentity{}, err
 	}
 
-	authMethodValue, err := requiredMetadataValue(md, MetadataKeyAuthMethod)
-	if err != nil {
-		return ResolvedIdentity{}, err
-	}
-	authMethod, err := ParseAuthMethod(authMethodValue)
-	if err != nil {
-		return ResolvedIdentity{}, err
-	}
-
 	return ResolvedIdentity{
-		TenantID:     tenantID,
 		IdentityID:   identityID,
 		IdentityType: identityType,
-		AuthMethod:   authMethod,
 	}, nil
 }
 

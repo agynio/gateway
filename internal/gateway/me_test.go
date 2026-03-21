@@ -14,8 +14,6 @@ func TestMeHandlerSuccess(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-1",
 		IdentityType: identity.IdentityTypeUser,
-		TenantID:     "tenant-1",
-		AuthMethod:   identity.AuthMethodOIDC,
 	}
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
@@ -39,12 +37,6 @@ func TestMeHandlerSuccess(t *testing.T) {
 	}
 	if payload.IdentityType != resolved.IdentityType {
 		t.Fatalf("expected identity_type %q, got %q", resolved.IdentityType, payload.IdentityType)
-	}
-	if payload.TenantID != resolved.TenantID {
-		t.Fatalf("expected tenant_id %q, got %q", resolved.TenantID, payload.TenantID)
-	}
-	if payload.AuthMethod != resolved.AuthMethod {
-		t.Fatalf("expected auth_method %q, got %q", resolved.AuthMethod, payload.AuthMethod)
 	}
 }
 
