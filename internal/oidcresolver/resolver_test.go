@@ -222,6 +222,22 @@ func (f *fakeUsersClient) UpdateUser(ctx context.Context, in *usersv1.UpdateUser
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeUsersClient) CreateAPIToken(ctx context.Context, in *usersv1.CreateAPITokenRequest, opts ...grpc.CallOption) (*usersv1.CreateAPITokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeUsersClient) ListAPITokens(ctx context.Context, in *usersv1.ListAPITokensRequest, opts ...grpc.CallOption) (*usersv1.ListAPITokensResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeUsersClient) RevokeAPIToken(ctx context.Context, in *usersv1.RevokeAPITokenRequest, opts ...grpc.CallOption) (*usersv1.RevokeAPITokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeUsersClient) ResolveAPIToken(ctx context.Context, in *usersv1.ResolveAPITokenRequest, opts ...grpc.CallOption) (*usersv1.ResolveAPITokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func buildUser(id string) *usersv1.User {
 	return &usersv1.User{Meta: &usersv1.EntityMeta{Id: id}}
 }

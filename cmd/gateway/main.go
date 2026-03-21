@@ -28,6 +28,7 @@ import (
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
+	"github.com/agynio/gateway/internal/apitokenresolver"
 	"github.com/agynio/gateway/internal/gateway"
 	"github.com/agynio/gateway/internal/grpcclient"
 	"github.com/agynio/gateway/internal/oidcauth"
@@ -73,6 +74,8 @@ func main() {
 		}
 	}()
 
+	usersClient := mustClient(config.UsersGRPCTarget, "users", usersv1.NewUsersServiceClient, &cleanup)
+
 	var oidcResolver gateway.BearerTokenResolver
 	oidcConfigured := config.OIDCIssuerURL != "" || config.OIDCClientID != ""
 	if oidcConfigured {
@@ -83,7 +86,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
-		usersClient := mustClient(config.UsersGRPCTarget, "users", usersv1.NewUsersServiceClient, &cleanup)
 		userinfoHTTPClient := &http.Client{Timeout: 10 * time.Second}
 		resolver, err := oidcresolver.NewResolver(verifier, usersClient, userinfoHTTPClient)
 		if err != nil {
@@ -91,6 +93,8 @@ func main() {
 		}
 		oidcResolver = resolver
 	}
+
+	apiTokenResolver := apitokenresolver.NewResolver(usersClient)
 
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
@@ -114,21 +118,22 @@ func main() {
 		secretsClient,
 	)
 	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
+	usersGateway := gateway.NewUsersGateway(usersClient)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),
 		gateway.NewLoggingInterceptor(),
 	}
-	if zitiResolver != nil || oidcResolver != nil {
-		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver)}, interceptors...)
+	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil {
+		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver)}, interceptors...)
 	}
 	handlerOptions := connect.WithInterceptors(interceptors...)
 
 	mux := http.NewServeMux()
 
 	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
-	if zitiResolver != nil || oidcResolver != nil {
-		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver)(meHandler)
+	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil {
+		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver)(meHandler)
 	}
 	mux.Handle("/me", meHandler)
 
@@ -145,6 +150,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewTokenCountingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
