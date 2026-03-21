@@ -61,16 +61,7 @@ type tokenClaims struct {
 }
 
 func (v *Verifier) Verify(ctx context.Context, accessToken string) (Claims, error) {
-	if v == nil {
-		return Claims{}, fmt.Errorf("verifier is required")
-	}
-
-	token := strings.TrimSpace(accessToken)
-	if token == "" {
-		return Claims{}, fmt.Errorf("access token is required")
-	}
-
-	decrypted, err := oidc.DecryptToken(token)
+	decrypted, err := oidc.DecryptToken(accessToken)
 	if err != nil {
 		return Claims{}, err
 	}

@@ -32,16 +32,7 @@ func NewResolver(verifier *oidcauth.Verifier, usersClient usersv1.UsersServiceCl
 }
 
 func (r *Resolver) ResolveFromToken(ctx context.Context, accessToken string) (identity.ResolvedIdentity, error) {
-	if r == nil {
-		return identity.ResolvedIdentity{}, status.Error(codes.Unauthenticated, "oidc resolver is required")
-	}
-
-	token := strings.TrimSpace(accessToken)
-	if token == "" {
-		return identity.ResolvedIdentity{}, status.Error(codes.Unauthenticated, "bearer token is required")
-	}
-
-	claims, err := r.verifier.Verify(ctx, token)
+	claims, err := r.verifier.Verify(ctx, accessToken)
 	if err != nil {
 		return identity.ResolvedIdentity{}, status.Errorf(codes.Unauthenticated, "invalid bearer token: %v", err)
 	}
