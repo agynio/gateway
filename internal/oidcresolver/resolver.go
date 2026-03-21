@@ -93,8 +93,11 @@ func (r *Resolver) fetchUserInfo(ctx context.Context, accessToken, expectedSub s
 	}
 	defer resp.Body.Close()
 
+	const maxUserInfoResponseBytes = 1 << 20
+	limitedBody := io.LimitReader(resp.Body, maxUserInfoResponseBytes)
+
 	if resp.StatusCode != http.StatusOK {
-		body, readErr := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(limitedBody)
 		if readErr != nil {
 			return nil, fmt.Errorf("userinfo request failed with status %s", resp.Status)
 		}
@@ -102,7 +105,7 @@ func (r *Resolver) fetchUserInfo(ctx context.Context, accessToken, expectedSub s
 	}
 
 	var userInfo oidc.UserInfo
-	decoder := json.NewDecoder(resp.Body)
+	decoder := json.NewDecoder(limitedBody)
 	if err := decoder.Decode(&userInfo); err != nil {
 		return nil, err
 	}

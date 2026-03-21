@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"github.com/openziti/sdk-golang/ziti"
@@ -83,7 +84,8 @@ func main() {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
 		usersClient := mustClient(config.UsersGRPCTarget, "users", usersv1.NewUsersServiceClient, &cleanup)
-		resolver, err := oidcresolver.NewResolver(verifier, usersClient, http.DefaultClient)
+		userinfoHTTPClient := &http.Client{Timeout: 10 * time.Second}
+		resolver, err := oidcresolver.NewResolver(verifier, usersClient, userinfoHTTPClient)
 		if err != nil {
 			log.Fatalf("failed to create OIDC resolver: %v", err)
 		}

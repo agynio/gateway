@@ -2,18 +2,14 @@ package oidcresolver
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"encoding/json"
 	"net/http"
-	"net/http/httptest"
+	"strings"
 	"testing"
-	"time"
 
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/oidcauth"
-	jose "github.com/go-jose/go-jose/v4"
+	"github.com/agynio/gateway/internal/oidctestutil"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -21,8 +17,8 @@ import (
 )
 
 func TestResolveFromTokenUsesExistingUser(t *testing.T) {
-	provider := newOIDCTestProvider(t)
-	verifier, err := oidcauth.NewVerifier(context.Background(), provider.issuer, provider.clientID)
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
 	if err != nil {
 		t.Fatalf("failed to create verifier: %v", err)
 	}
@@ -30,12 +26,12 @@ func TestResolveFromTokenUsesExistingUser(t *testing.T) {
 	usersClient := &fakeUsersClient{
 		getBySubjectResp: &usersv1.GetUserByOIDCSubjectResponse{User: buildUser("user-1")},
 	}
-	resolver, err := NewResolver(verifier, usersClient, provider.server.Client())
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
 	if err != nil {
 		t.Fatalf("failed to create resolver: %v", err)
 	}
 
-	resolved, err := resolver.ResolveFromToken(context.Background(), provider.token)
+	resolved, err := resolver.ResolveFromToken(context.Background(), provider.Token)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -43,20 +39,20 @@ func TestResolveFromTokenUsesExistingUser(t *testing.T) {
 	if usersClient.getBySubjectCalls != 1 {
 		t.Fatalf("expected get-by-subject to be called once, got %d", usersClient.getBySubjectCalls)
 	}
-	if usersClient.lastSubject != provider.subject {
-		t.Fatalf("expected subject %q, got %q", provider.subject, usersClient.lastSubject)
+	if usersClient.lastSubject != provider.Subject {
+		t.Fatalf("expected subject %q, got %q", provider.Subject, usersClient.lastSubject)
 	}
 	if usersClient.resolveCalls != 0 {
 		t.Fatalf("expected resolve-or-create not to be called, got %d", usersClient.resolveCalls)
 	}
-	if provider.userinfoCalls != 0 {
-		t.Fatalf("expected userinfo not to be called, got %d", provider.userinfoCalls)
+	if provider.UserinfoCalls != 0 {
+		t.Fatalf("expected userinfo not to be called, got %d", provider.UserinfoCalls)
 	}
 }
 
 func TestResolveFromTokenCreatesUserOnFirstLogin(t *testing.T) {
-	provider := newOIDCTestProvider(t)
-	verifier, err := oidcauth.NewVerifier(context.Background(), provider.issuer, provider.clientID)
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
 	if err != nil {
 		t.Fatalf("failed to create verifier: %v", err)
 	}
@@ -65,12 +61,12 @@ func TestResolveFromTokenCreatesUserOnFirstLogin(t *testing.T) {
 		getBySubjectErr: status.Error(codes.NotFound, "not found"),
 		resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-2")},
 	}
-	resolver, err := NewResolver(verifier, usersClient, provider.server.Client())
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
 	if err != nil {
 		t.Fatalf("failed to create resolver: %v", err)
 	}
 
-	resolved, err := resolver.ResolveFromToken(context.Background(), provider.token)
+	resolved, err := resolver.ResolveFromToken(context.Background(), provider.Token)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -84,96 +80,111 @@ func TestResolveFromTokenCreatesUserOnFirstLogin(t *testing.T) {
 	if usersClient.lastResolve == nil {
 		t.Fatalf("expected resolve-or-create request to be captured")
 	}
-	if usersClient.lastResolve.OidcSubject != provider.userInfo.Subject {
-		t.Fatalf("expected resolve subject %q, got %q", provider.userInfo.Subject, usersClient.lastResolve.OidcSubject)
+	if usersClient.lastResolve.OidcSubject != provider.UserInfo.Subject {
+		t.Fatalf("expected resolve subject %q, got %q", provider.UserInfo.Subject, usersClient.lastResolve.OidcSubject)
 	}
-	if usersClient.lastResolve.Name != provider.userInfo.Name {
-		t.Fatalf("expected resolve name %q, got %q", provider.userInfo.Name, usersClient.lastResolve.Name)
+	if usersClient.lastResolve.Name != provider.UserInfo.Name {
+		t.Fatalf("expected resolve name %q, got %q", provider.UserInfo.Name, usersClient.lastResolve.Name)
 	}
-	if usersClient.lastResolve.Email != provider.userInfo.Email {
-		t.Fatalf("expected resolve email %q, got %q", provider.userInfo.Email, usersClient.lastResolve.Email)
+	if usersClient.lastResolve.Email != provider.UserInfo.Email {
+		t.Fatalf("expected resolve email %q, got %q", provider.UserInfo.Email, usersClient.lastResolve.Email)
 	}
-	if usersClient.lastResolve.PhotoUrl != provider.userInfo.Picture {
-		t.Fatalf("expected resolve photo %q, got %q", provider.userInfo.Picture, usersClient.lastResolve.PhotoUrl)
+	if usersClient.lastResolve.PhotoUrl != provider.UserInfo.Picture {
+		t.Fatalf("expected resolve photo %q, got %q", provider.UserInfo.Picture, usersClient.lastResolve.PhotoUrl)
 	}
-	if provider.userinfoCalls != 1 {
-		t.Fatalf("expected userinfo to be called once, got %d", provider.userinfoCalls)
+	if provider.UserinfoCalls != 1 {
+		t.Fatalf("expected userinfo to be called once, got %d", provider.UserinfoCalls)
 	}
-	if provider.lastAuthHeader != "Bearer "+provider.token {
-		t.Fatalf("expected bearer token header, got %q", provider.lastAuthHeader)
+	if provider.LastAuthHeader != "Bearer "+provider.Token {
+		t.Fatalf("expected bearer token header, got %q", provider.LastAuthHeader)
 	}
 }
 
-type oidcTestProvider struct {
-	issuer           string
-	clientID         string
-	subject          string
-	token            string
-	userinfoCalls    int
-	lastAuthHeader   string
-	userInfo         oidc.UserInfo
-	server           *httptest.Server
-	userinfoEndpoint string
+func TestResolveFromTokenGetUserBySubjectError(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.Internal, "boom"),
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
+	if err != nil {
+		t.Fatalf("failed to create resolver: %v", err)
+	}
+
+	_, err = resolver.ResolveFromToken(context.Background(), provider.Token)
+	if status.Code(err) != codes.Internal {
+		t.Fatalf("expected internal error, got %v", err)
+	}
+	if provider.UserinfoCalls != 0 {
+		t.Fatalf("expected userinfo not to be called, got %d", provider.UserinfoCalls)
+	}
+	if usersClient.resolveCalls != 0 {
+		t.Fatalf("expected resolve-or-create not to be called, got %d", usersClient.resolveCalls)
+	}
 }
 
-func newOIDCTestProvider(t *testing.T) *oidcTestProvider {
-	t.Helper()
-
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+func TestResolveFromTokenUserInfoStatusFailure(t *testing.T) {
+	provider := oidctestutil.NewProvider(t, oidctestutil.WithUserInfoResponse(http.StatusBadGateway, "bad gateway"))
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
 	if err != nil {
-		t.Fatalf("failed to generate key: %v", err)
+		t.Fatalf("failed to create verifier: %v", err)
 	}
-	keyID := "test-key"
-	signer, err := jose.NewSigner(
-		jose.SigningKey{Algorithm: jose.RS256, Key: key},
-		(&jose.SignerOptions{}).WithType("JWT").WithHeader("kid", keyID),
-	)
+
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.NotFound, "not found"),
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
 	if err != nil {
-		t.Fatalf("failed to create signer: %v", err)
-	}
-	publicKey := jose.JSONWebKey{Key: &key.PublicKey, KeyID: keyID, Use: oidc.KeyUseSignature, Algorithm: string(jose.RS256)}
-	jwks := jose.JSONWebKeySet{Keys: []jose.JSONWebKey{publicKey}}
-
-	provider := &oidcTestProvider{
-		clientID: "client-id",
-		subject:  "user-123",
-		userInfo: oidc.UserInfo{
-			Subject: "user-123",
-			UserInfoProfile: oidc.UserInfoProfile{
-				Name:    "Test User",
-				Picture: "https://example.com/photo.png",
-			},
-			UserInfoEmail: oidc.UserInfoEmail{
-				Email: "test@example.com",
-			},
-		},
+		t.Fatalf("failed to create resolver: %v", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc(oidc.DiscoveryEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"issuer":            provider.issuer,
-			"jwks_uri":          provider.issuer + "/jwks",
-			"userinfo_endpoint": provider.issuer + "/userinfo",
-		})
-	})
-	mux.HandleFunc("/jwks", func(w http.ResponseWriter, r *http.Request) {
-		_ = json.NewEncoder(w).Encode(jwks)
-	})
-	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
-		provider.userinfoCalls++
-		provider.lastAuthHeader = r.Header.Get("Authorization")
-		_ = json.NewEncoder(w).Encode(provider.userInfo)
-	})
-	provider.server = httptest.NewServer(mux)
-	t.Cleanup(provider.server.Close)
-	provider.issuer = provider.server.URL
-	provider.userinfoEndpoint = provider.issuer + "/userinfo"
+	_, err = resolver.ResolveFromToken(context.Background(), provider.Token)
+	if status.Code(err) != codes.Internal {
+		t.Fatalf("expected internal error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "failed to fetch user info") {
+		t.Fatalf("expected userinfo failure, got %v", err)
+	}
+	if provider.UserinfoCalls != 1 {
+		t.Fatalf("expected userinfo to be called once, got %d", provider.UserinfoCalls)
+	}
+	if usersClient.resolveCalls != 0 {
+		t.Fatalf("expected resolve-or-create not to be called, got %d", usersClient.resolveCalls)
+	}
+}
 
-	claims := oidc.NewAccessTokenClaims(provider.issuer, provider.subject, []string{provider.clientID}, time.Now().Add(time.Hour), "jwtid", provider.clientID, time.Second)
-	provider.token = signToken(t, signer, claims)
+func TestResolveFromTokenUserInfoSubjectMismatch(t *testing.T) {
+	provider := oidctestutil.NewProvider(t, oidctestutil.WithUserInfo(oidc.UserInfo{Subject: "mismatch"}))
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
 
-	return provider
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.NotFound, "not found"),
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
+	if err != nil {
+		t.Fatalf("failed to create resolver: %v", err)
+	}
+
+	_, err = resolver.ResolveFromToken(context.Background(), provider.Token)
+	if status.Code(err) != codes.Internal {
+		t.Fatalf("expected internal error, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "subject does not match expected subject") {
+		t.Fatalf("expected subject mismatch error, got %v", err)
+	}
+	if provider.UserinfoCalls != 1 {
+		t.Fatalf("expected userinfo to be called once, got %d", provider.UserinfoCalls)
+	}
+	if usersClient.resolveCalls != 0 {
+		t.Fatalf("expected resolve-or-create not to be called, got %d", usersClient.resolveCalls)
+	}
 }
 
 type fakeUsersClient struct {
@@ -226,21 +237,4 @@ func assertResolvedIdentity(t *testing.T, resolved identity.ResolvedIdentity, ex
 	if resolved.AuthMethod != identity.AuthMethodOIDC {
 		t.Fatalf("expected auth method %q, got %q", identity.AuthMethodOIDC, resolved.AuthMethod)
 	}
-}
-
-func signToken(t *testing.T, signer jose.Signer, claims any) string {
-	t.Helper()
-	payload, err := json.Marshal(claims)
-	if err != nil {
-		t.Fatalf("failed to marshal claims: %v", err)
-	}
-	object, err := signer.Sign(payload)
-	if err != nil {
-		t.Fatalf("failed to sign token: %v", err)
-	}
-	token, err := object.CompactSerialize()
-	if err != nil {
-		t.Fatalf("failed to serialize token: %v", err)
-	}
-	return token
 }
