@@ -12,8 +12,6 @@ func TestAppendIdentityMetadataWithIdentity(t *testing.T) {
 	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
 		IdentityID:   "identity-123",
 		IdentityType: identity.IdentityTypeUser,
-		TenantID:     "tenant-1",
-		AuthMethod:   identity.AuthMethodOIDC,
 	})
 
 	ctx = appendIdentityMetadata(ctx)
@@ -45,8 +43,6 @@ func TestAppendIdentityMetadataPreservesExisting(t *testing.T) {
 	ctx = identity.WithIdentity(ctx, identity.ResolvedIdentity{
 		IdentityID:   "identity-456",
 		IdentityType: identity.IdentityTypeAgent,
-		TenantID:     "tenant-2",
-		AuthMethod:   identity.AuthMethodZiti,
 	})
 
 	ctx = appendIdentityMetadata(ctx)

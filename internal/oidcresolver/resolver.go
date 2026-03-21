@@ -140,6 +140,5 @@ func identityFromUser(user *usersv1.User) (identity.ResolvedIdentity, error) {
 	return identity.ResolvedIdentity{
 		IdentityID:   identityID,
 		IdentityType: identity.IdentityTypeUser,
-		AuthMethod:   identity.AuthMethodOIDC,
 	}, nil
 }
