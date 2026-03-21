@@ -22,7 +22,12 @@ func New[T any](target string, factory func(grpc.ClientConnInterface) T) (*Clien
 		return nil, fmt.Errorf("client factory is required")
 	}
 
-	conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(
+		target,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(identityUnaryClientInterceptor()),
+		grpc.WithChainStreamInterceptor(identityStreamClientInterceptor()),
+	)
 	if err != nil {
 		return nil, err
 	}
