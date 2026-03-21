@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/agynio/gateway/internal/apitokenresolver"
 	"github.com/agynio/gateway/internal/httpauth"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/ziticonn"
@@ -24,15 +25,15 @@ type BearerTokenResolver interface {
 	ResolveFromToken(ctx context.Context, accessToken string) (identity.ResolvedIdentity, error)
 }
 
-func NewAuthInterceptor(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) connect.Interceptor {
-	if zitiResolver == nil && oidcResolver == nil {
+func NewAuthInterceptor(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver, apiTokenResolver BearerTokenResolver) connect.Interceptor {
+	if zitiResolver == nil && oidcResolver == nil && apiTokenResolver == nil {
 		panic("at least one identity resolver is required")
 	}
-	return authInterceptor{zitiResolver: zitiResolver, oidcResolver: oidcResolver}
+	return authInterceptor{zitiResolver: zitiResolver, oidcResolver: oidcResolver, apiTokenResolver: apiTokenResolver}
 }
 
-func NewAuthMiddleware(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) func(http.Handler) http.Handler {
-	if zitiResolver == nil && oidcResolver == nil {
+func NewAuthMiddleware(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver, apiTokenResolver BearerTokenResolver) func(http.Handler) http.Handler {
+	if zitiResolver == nil && oidcResolver == nil && apiTokenResolver == nil {
 		panic("at least one identity resolver is required")
 	}
 
@@ -44,7 +45,7 @@ func NewAuthMiddleware(zitiResolver IdentityResolver, oidcResolver BearerTokenRe
 			}
 
 			ctx := withBearerToken(r.Context(), r.Header.Get("Authorization"))
-			ctx, err := resolveIdentity(ctx, zitiResolver, oidcResolver)
+			ctx, err := resolveIdentity(ctx, zitiResolver, oidcResolver, apiTokenResolver)
 			if err != nil {
 				writeProblem(w, httpStatusFromError(err), err.Error())
 				return
@@ -56,14 +57,15 @@ func NewAuthMiddleware(zitiResolver IdentityResolver, oidcResolver BearerTokenRe
 }
 
 type authInterceptor struct {
-	zitiResolver IdentityResolver
-	oidcResolver BearerTokenResolver
+	zitiResolver     IdentityResolver
+	oidcResolver     BearerTokenResolver
+	apiTokenResolver BearerTokenResolver
 }
 
 func (a authInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
 		ctx = withBearerToken(ctx, req.Header().Get("Authorization"))
-		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver)
+		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver, a.apiTokenResolver)
 		if err != nil {
 			return nil, toConnectError(err)
 		}
@@ -78,7 +80,7 @@ func (a authInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) c
 func (a authInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
 		ctx = withBearerToken(ctx, conn.RequestHeader().Get("Authorization"))
-		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver)
+		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver, a.apiTokenResolver)
 		if err != nil {
 			return toConnectError(err)
 		}
@@ -158,7 +160,7 @@ func (loggingInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc
 	}
 }
 
-func resolveIdentity(ctx context.Context, zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) (context.Context, error) {
+func resolveIdentity(ctx context.Context, zitiResolver IdentityResolver, oidcResolver BearerTokenResolver, apiTokenResolver BearerTokenResolver) (context.Context, error) {
 	sourceIdentity, ok := ziticonn.SourceIdentityFromContext(ctx)
 	if ok {
 		if zitiResolver == nil {
@@ -173,6 +175,16 @@ func resolveIdentity(ctx context.Context, zitiResolver IdentityResolver, oidcRes
 
 	accessToken, ok := httpauth.BearerTokenFromContext(ctx)
 	if ok {
+		if apitokenresolver.HasPrefix(accessToken) {
+			if apiTokenResolver == nil {
+				return ctx, status.Error(codes.Unauthenticated, "api token resolver is not configured")
+			}
+			resolvedIdentity, err := apiTokenResolver.ResolveFromToken(ctx, accessToken)
+			if err != nil {
+				return ctx, err
+			}
+			return identity.WithIdentity(ctx, resolvedIdentity), nil
+		}
 		if oidcResolver == nil {
 			return ctx, status.Error(codes.Unauthenticated, "oidc resolver is not configured")
 		}
