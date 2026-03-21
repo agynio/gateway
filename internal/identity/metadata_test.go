@@ -93,6 +93,20 @@ func TestIdentityFromIncomingContextInvalidType(t *testing.T) {
 	}
 }
 
+func TestIdentityFromIncomingContextInvalidAuthMethod(t *testing.T) {
+	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+		MetadataKeyTenantID, "tenant-7",
+		MetadataKeyIdentityID, "identity-777",
+		MetadataKeyIdentityType, string(IdentityTypeUser),
+		MetadataKeyAuthMethod, "banana",
+	))
+
+	_, err := IdentityFromIncomingContext(ctx)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
 func assertMetadataValue(t *testing.T, md metadata.MD, key, expected string) {
 	t.Helper()
 	values := md.Get(key)

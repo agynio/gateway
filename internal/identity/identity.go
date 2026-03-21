@@ -45,6 +45,18 @@ func ParseIdentityType(value string) (IdentityType, error) {
 	}
 }
 
+func ParseAuthMethod(value string) (AuthMethod, error) {
+	trimmed := strings.TrimSpace(value)
+	switch trimmed {
+	case string(AuthMethodZiti):
+		return AuthMethodZiti, nil
+	case string(AuthMethodOIDC):
+		return AuthMethodOIDC, nil
+	default:
+		return "", fmt.Errorf("unsupported auth method: %q", value)
+	}
+}
+
 type contextKey struct{}
 
 func WithIdentity(ctx context.Context, identity ResolvedIdentity) context.Context {

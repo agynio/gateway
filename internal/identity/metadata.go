@@ -59,12 +59,16 @@ func IdentityFromIncomingContext(ctx context.Context) (ResolvedIdentity, error) 
 	if err != nil {
 		return ResolvedIdentity{}, err
 	}
+	authMethod, err := ParseAuthMethod(authMethodValue)
+	if err != nil {
+		return ResolvedIdentity{}, err
+	}
 
 	return ResolvedIdentity{
 		TenantID:     tenantID,
 		IdentityID:   identityID,
 		IdentityType: identityType,
-		AuthMethod:   AuthMethod(authMethodValue),
+		AuthMethod:   authMethod,
 	}, nil
 }
 

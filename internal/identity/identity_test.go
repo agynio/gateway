@@ -31,3 +31,20 @@ func TestIdentityContextMissing(t *testing.T) {
 		t.Fatalf("expected no identity")
 	}
 }
+
+func TestParseAuthMethod(t *testing.T) {
+	method, err := ParseAuthMethod("  ziti ")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if method != AuthMethodZiti {
+		t.Fatalf("expected %q, got %q", AuthMethodZiti, method)
+	}
+}
+
+func TestParseAuthMethodInvalid(t *testing.T) {
+	_, err := ParseAuthMethod("banana")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
