@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/agynio/gateway/internal/httpauth"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"google.golang.org/grpc/codes"
@@ -14,14 +15,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type fakeResolver struct {
+type fakeZitiResolver struct {
 	resolved   identity.ResolvedIdentity
 	err        error
 	calls      int
 	lastSource string
 }
 
-func (f *fakeResolver) ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error) {
+func (f *fakeZitiResolver) ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error) {
 	f.calls++
 	f.lastSource = sourceIdentity
 	if f.err != nil {
@@ -30,16 +31,32 @@ func (f *fakeResolver) ResolveIdentity(ctx context.Context, sourceIdentity strin
 	return f.resolved, nil
 }
 
+type fakeOIDCResolver struct {
+	resolved  identity.ResolvedIdentity
+	err       error
+	calls     int
+	lastToken string
+}
+
+func (f *fakeOIDCResolver) ResolveFromToken(ctx context.Context, accessToken string) (identity.ResolvedIdentity, error) {
+	f.calls++
+	f.lastToken = accessToken
+	if f.err != nil {
+		return identity.ResolvedIdentity{}, f.err
+	}
+	return f.resolved, nil
+}
+
 func TestAuthInterceptorWrapUnarySuccess(t *testing.T) {
-	resolver := &fakeResolver{
+	resolver := &fakeZitiResolver{
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-1",
 			IdentityType: identity.IdentityTypeUser,
 			TenantID:     "tenant-1",
-			AuthMethod:   identity.AuthMethodOIDC,
+			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
-	interceptor := authInterceptor{resolver: resolver}
+	interceptor := authInterceptor{zitiResolver: resolver}
 
 	called := false
 	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -71,8 +88,8 @@ func TestAuthInterceptorWrapUnarySuccess(t *testing.T) {
 }
 
 func TestAuthInterceptorWrapUnaryError(t *testing.T) {
-	resolver := &fakeResolver{err: status.Error(codes.Unauthenticated, "missing")}
-	interceptor := authInterceptor{resolver: resolver}
+	resolver := &fakeZitiResolver{err: status.Error(codes.Unauthenticated, "missing")}
+	interceptor := authInterceptor{zitiResolver: resolver}
 
 	called := false
 	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -93,6 +110,49 @@ func TestAuthInterceptorWrapUnaryError(t *testing.T) {
 	}
 }
 
+func TestAuthInterceptorWrapUnaryBearer(t *testing.T) {
+	resolver := &fakeOIDCResolver{
+		resolved: identity.ResolvedIdentity{
+			IdentityID:   "identity-oidc",
+			IdentityType: identity.IdentityTypeUser,
+			AuthMethod:   identity.AuthMethodOIDC,
+		},
+	}
+	interceptor := authInterceptor{oidcResolver: resolver}
+
+	called := false
+	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		called = true
+		resolved, ok := identity.IdentityFromContext(ctx)
+		if !ok {
+			t.Fatalf("expected identity in context")
+		}
+		if resolved.IdentityID != resolver.resolved.IdentityID {
+			t.Fatalf("expected identity %q, got %q", resolver.resolved.IdentityID, resolved.IdentityID)
+		}
+		return connect.NewResponse(&emptypb.Empty{}), nil
+	})
+
+	req := connect.NewRequest(&emptypb.Empty{})
+	req.Header().Set("Authorization", "Bearer token-abc")
+	resp, err := wrapped(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if !called {
+		t.Fatalf("expected next handler to be called")
+	}
+	if resolver.calls != 1 {
+		t.Fatalf("expected resolver to be called once, got %d", resolver.calls)
+	}
+	if resolver.lastToken != "token-abc" {
+		t.Fatalf("expected token to be propagated, got %q", resolver.lastToken)
+	}
+}
+
 func TestRecoveryInterceptorWrapUnary(t *testing.T) {
 	interceptor := NewRecoveryInterceptor()
 	wrapped := interceptor.WrapUnary(func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
@@ -109,8 +169,8 @@ func TestRecoveryInterceptorWrapUnary(t *testing.T) {
 }
 
 func TestNewAuthMiddlewareOptionsPassthrough(t *testing.T) {
-	resolver := &fakeResolver{}
-	middleware := NewAuthMiddleware(resolver)
+	resolver := &fakeZitiResolver{}
+	middleware := NewAuthMiddleware(resolver, nil)
 
 	called := false
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -134,8 +194,8 @@ func TestNewAuthMiddlewareOptionsPassthrough(t *testing.T) {
 }
 
 func TestNewAuthMiddlewareMissingIdentity(t *testing.T) {
-	resolver := &fakeResolver{}
-	middleware := NewAuthMiddleware(resolver)
+	resolver := &fakeZitiResolver{}
+	middleware := NewAuthMiddleware(resolver, nil)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := identity.IdentityFromContext(r.Context()); ok {
@@ -158,7 +218,7 @@ func TestNewAuthMiddlewareMissingIdentity(t *testing.T) {
 }
 
 func TestNewAuthMiddlewareSuccess(t *testing.T) {
-	resolver := &fakeResolver{
+	resolver := &fakeZitiResolver{
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-2",
 			IdentityType: identity.IdentityTypeUser,
@@ -166,7 +226,7 @@ func TestNewAuthMiddlewareSuccess(t *testing.T) {
 			AuthMethod:   identity.AuthMethodZiti,
 		},
 	}
-	middleware := NewAuthMiddleware(resolver)
+	middleware := NewAuthMiddleware(resolver, nil)
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, ok := identity.IdentityFromContext(r.Context()); !ok {
@@ -189,22 +249,57 @@ func TestNewAuthMiddlewareSuccess(t *testing.T) {
 	}
 }
 
+func TestNewAuthMiddlewareBearer(t *testing.T) {
+	resolver := &fakeOIDCResolver{
+		resolved: identity.ResolvedIdentity{
+			IdentityID:   "identity-oidc",
+			IdentityType: identity.IdentityTypeUser,
+			AuthMethod:   identity.AuthMethodOIDC,
+		},
+	}
+	middleware := NewAuthMiddleware(nil, resolver)
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := identity.IdentityFromContext(r.Context()); !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/me", nil)
+	req.Header.Set("Authorization", "Bearer token-xyz")
+	resp := httptest.NewRecorder()
+	middleware(handler).ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, resp.Code)
+	}
+	if resolver.calls != 1 {
+		t.Fatalf("expected resolver to be called once, got %d", resolver.calls)
+	}
+}
+
 func TestResolveIdentityWithoutSource(t *testing.T) {
-	resolver := &fakeResolver{}
-	ctx, err := resolveIdentity(context.Background(), resolver)
+	zitiResolver := &fakeZitiResolver{}
+	oidcResolver := &fakeOIDCResolver{}
+	ctx, err := resolveIdentity(context.Background(), zitiResolver, oidcResolver)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if _, ok := identity.IdentityFromContext(ctx); ok {
 		t.Fatalf("expected no identity in context")
 	}
-	if resolver.calls != 0 {
-		t.Fatalf("expected resolver not to be called, got %d", resolver.calls)
+	if zitiResolver.calls != 0 {
+		t.Fatalf("expected ziti resolver not to be called, got %d", zitiResolver.calls)
+	}
+	if oidcResolver.calls != 0 {
+		t.Fatalf("expected oidc resolver not to be called, got %d", oidcResolver.calls)
 	}
 }
 
 func TestResolveIdentityWithSource(t *testing.T) {
-	resolver := &fakeResolver{
+	resolver := &fakeZitiResolver{
 		resolved: identity.ResolvedIdentity{
 			IdentityID:   "identity-3",
 			IdentityType: identity.IdentityTypeAgent,
@@ -213,7 +308,7 @@ func TestResolveIdentityWithSource(t *testing.T) {
 		},
 	}
 	ctx := ziticonn.WithSourceIdentity(context.Background(), "source-identity")
-	ctx, err := resolveIdentity(ctx, resolver)
+	ctx, err := resolveIdentity(ctx, resolver, nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -226,5 +321,71 @@ func TestResolveIdentityWithSource(t *testing.T) {
 	}
 	if resolver.calls != 1 {
 		t.Fatalf("expected resolver to be called once, got %d", resolver.calls)
+	}
+}
+
+func TestResolveIdentityWithBearer(t *testing.T) {
+	resolver := &fakeOIDCResolver{
+		resolved: identity.ResolvedIdentity{
+			IdentityID:   "identity-bearer",
+			IdentityType: identity.IdentityTypeUser,
+			AuthMethod:   identity.AuthMethodOIDC,
+		},
+	}
+	ctx := httpauth.WithBearerToken(context.Background(), "token-bearer")
+	ctx, err := resolveIdentity(ctx, nil, resolver)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resolved, ok := identity.IdentityFromContext(ctx)
+	if !ok {
+		t.Fatalf("expected identity in context")
+	}
+	if resolved.IdentityID != resolver.resolved.IdentityID {
+		t.Fatalf("expected identity %q, got %q", resolver.resolved.IdentityID, resolved.IdentityID)
+	}
+	if resolver.calls != 1 {
+		t.Fatalf("expected resolver to be called once, got %d", resolver.calls)
+	}
+	if resolver.lastToken != "token-bearer" {
+		t.Fatalf("expected token to be propagated, got %q", resolver.lastToken)
+	}
+}
+
+func TestResolveIdentityPrefersZiti(t *testing.T) {
+	zitiResolver := &fakeZitiResolver{
+		resolved: identity.ResolvedIdentity{
+			IdentityID:   "identity-ziti",
+			IdentityType: identity.IdentityTypeUser,
+			TenantID:     "tenant-1",
+			AuthMethod:   identity.AuthMethodZiti,
+		},
+	}
+	oidcResolver := &fakeOIDCResolver{
+		resolved: identity.ResolvedIdentity{
+			IdentityID:   "identity-oidc",
+			IdentityType: identity.IdentityTypeUser,
+			AuthMethod:   identity.AuthMethodOIDC,
+		},
+	}
+
+	ctx := ziticonn.WithSourceIdentity(context.Background(), "source-identity")
+	ctx = httpauth.WithBearerToken(ctx, "token-preferred")
+	ctx, err := resolveIdentity(ctx, zitiResolver, oidcResolver)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	resolved, ok := identity.IdentityFromContext(ctx)
+	if !ok {
+		t.Fatalf("expected identity in context")
+	}
+	if resolved.IdentityID != zitiResolver.resolved.IdentityID {
+		t.Fatalf("expected identity %q, got %q", zitiResolver.resolved.IdentityID, resolved.IdentityID)
+	}
+	if zitiResolver.calls != 1 {
+		t.Fatalf("expected ziti resolver to be called once, got %d", zitiResolver.calls)
+	}
+	if oidcResolver.calls != 0 {
+		t.Fatalf("expected oidc resolver not to be called, got %d", oidcResolver.calls)
 	}
 }

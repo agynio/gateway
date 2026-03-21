@@ -160,3 +160,6 @@ gateway:
   tokenCountingGrpcTarget: "token-counting:50051"
   llmGrpcTarget: "llm:50051"
   secretsGrpcTarget: "secrets:50051"
+  usersGrpcTarget: "users:50051"
+  oidcIssuerUrl: ""
+  oidcClientId: ""

@@ -9,24 +9,31 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/agynio/gateway/internal/httpauth"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/agynio/gateway/internal/ziticonn"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type IdentityResolver interface {
 	ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error)
 }
 
-func NewAuthInterceptor(resolver IdentityResolver) connect.Interceptor {
-	if resolver == nil {
-		panic("identity resolver is required")
-	}
-	return authInterceptor{resolver: resolver}
+type BearerTokenResolver interface {
+	ResolveFromToken(ctx context.Context, accessToken string) (identity.ResolvedIdentity, error)
 }
 
-func NewAuthMiddleware(resolver IdentityResolver) func(http.Handler) http.Handler {
-	if resolver == nil {
-		panic("identity resolver is required")
+func NewAuthInterceptor(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) connect.Interceptor {
+	if zitiResolver == nil && oidcResolver == nil {
+		panic("at least one identity resolver is required")
+	}
+	return authInterceptor{zitiResolver: zitiResolver, oidcResolver: oidcResolver}
+}
+
+func NewAuthMiddleware(zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) func(http.Handler) http.Handler {
+	if zitiResolver == nil && oidcResolver == nil {
+		panic("at least one identity resolver is required")
 	}
 
 	return func(next http.Handler) http.Handler {
@@ -36,7 +43,8 @@ func NewAuthMiddleware(resolver IdentityResolver) func(http.Handler) http.Handle
 				return
 			}
 
-			ctx, err := resolveIdentity(r.Context(), resolver)
+			ctx := withBearerToken(r.Context(), r.Header.Get("Authorization"))
+			ctx, err := resolveIdentity(ctx, zitiResolver, oidcResolver)
 			if err != nil {
 				writeProblem(w, httpStatusFromError(err), err.Error())
 				return
@@ -48,12 +56,14 @@ func NewAuthMiddleware(resolver IdentityResolver) func(http.Handler) http.Handle
 }
 
 type authInterceptor struct {
-	resolver IdentityResolver
+	zitiResolver IdentityResolver
+	oidcResolver BearerTokenResolver
 }
 
 func (a authInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		ctx, err := resolveIdentity(ctx, a.resolver)
+		ctx = withBearerToken(ctx, req.Header().Get("Authorization"))
+		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver)
 		if err != nil {
 			return nil, toConnectError(err)
 		}
@@ -67,7 +77,8 @@ func (a authInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) c
 
 func (a authInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, conn connect.StreamingHandlerConn) error {
-		ctx, err := resolveIdentity(ctx, a.resolver)
+		ctx = withBearerToken(ctx, conn.RequestHeader().Get("Authorization"))
+		ctx, err := resolveIdentity(ctx, a.zitiResolver, a.oidcResolver)
 		if err != nil {
 			return toConnectError(err)
 		}
@@ -147,16 +158,38 @@ func (loggingInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc
 	}
 }
 
-func resolveIdentity(ctx context.Context, resolver IdentityResolver) (context.Context, error) {
+func resolveIdentity(ctx context.Context, zitiResolver IdentityResolver, oidcResolver BearerTokenResolver) (context.Context, error) {
 	sourceIdentity, ok := ziticonn.SourceIdentityFromContext(ctx)
+	if ok {
+		if zitiResolver == nil {
+			return ctx, status.Error(codes.Unauthenticated, "ziti identity resolver is not configured")
+		}
+		resolvedIdentity, err := zitiResolver.ResolveIdentity(ctx, sourceIdentity)
+		if err != nil {
+			return ctx, err
+		}
+		return identity.WithIdentity(ctx, resolvedIdentity), nil
+	}
+
+	accessToken, ok := httpauth.BearerTokenFromContext(ctx)
+	if ok {
+		if oidcResolver == nil {
+			return ctx, status.Error(codes.Unauthenticated, "oidc resolver is not configured")
+		}
+		resolvedIdentity, err := oidcResolver.ResolveFromToken(ctx, accessToken)
+		if err != nil {
+			return ctx, err
+		}
+		return identity.WithIdentity(ctx, resolvedIdentity), nil
+	}
+
+	return ctx, nil
+}
+
+func withBearerToken(ctx context.Context, authHeader string) context.Context {
+	accessToken, ok := httpauth.ExtractBearerToken(authHeader)
 	if !ok {
-		return ctx, nil
+		return ctx
 	}
-
-	resolvedIdentity, err := resolver.ResolveIdentity(ctx, sourceIdentity)
-	if err != nil {
-		return ctx, err
-	}
-
-	return identity.WithIdentity(ctx, resolvedIdentity), nil
+	return httpauth.WithBearerToken(ctx, accessToken)
 }

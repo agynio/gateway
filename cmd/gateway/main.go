@@ -26,8 +26,11 @@ import (
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
+	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	"github.com/agynio/gateway/internal/gateway"
 	"github.com/agynio/gateway/internal/grpcclient"
+	"github.com/agynio/gateway/internal/oidcauth"
+	"github.com/agynio/gateway/internal/oidcresolver"
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/ziticonn"
 	"github.com/agynio/gateway/internal/zitimgmtclient"
@@ -57,12 +60,29 @@ func main() {
 		}()
 	}
 
-	cleanup := make([]func(), 0, 9)
+	cleanup := make([]func(), 0, 10)
 	defer func() {
 		for _, closeFn := range cleanup {
 			closeFn()
 		}
 	}()
+
+	var oidcResolver *oidcresolver.Resolver
+	oidcConfigured := strings.TrimSpace(config.OIDCIssuerURL) != "" || strings.TrimSpace(config.OIDCClientID) != ""
+	if oidcConfigured {
+		if strings.TrimSpace(config.OIDCIssuerURL) == "" || strings.TrimSpace(config.OIDCClientID) == "" {
+			log.Fatalf("both OIDC issuer URL and client ID are required when OIDC is enabled")
+		}
+		verifier, err := oidcauth.NewVerifier(context.Background(), config.OIDCIssuerURL, config.OIDCClientID)
+		if err != nil {
+			log.Fatalf("failed to create OIDC verifier: %v", err)
+		}
+		usersClient := mustClient(config.UsersGRPCTarget, "users", usersv1.NewUsersServiceClient, &cleanup)
+		oidcResolver, err = oidcresolver.NewResolver(verifier, usersClient)
+		if err != nil {
+			log.Fatalf("failed to create OIDC resolver: %v", err)
+		}
+	}
 
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
@@ -91,16 +111,16 @@ func main() {
 		gateway.NewRecoveryInterceptor(),
 		gateway.NewLoggingInterceptor(),
 	}
-	if zitiMgmtClient != nil {
-		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiMgmtClient)}, interceptors...)
+	if zitiMgmtClient != nil || oidcResolver != nil {
+		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiMgmtClient, oidcResolver)}, interceptors...)
 	}
 	handlerOptions := connect.WithInterceptors(interceptors...)
 
 	mux := http.NewServeMux()
 
 	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
-	if zitiMgmtClient != nil {
-		meHandler = gateway.NewAuthMiddleware(zitiMgmtClient)(meHandler)
+	if zitiMgmtClient != nil || oidcResolver != nil {
+		meHandler = gateway.NewAuthMiddleware(zitiMgmtClient, oidcResolver)(meHandler)
 	}
 	mux.Handle("/me", meHandler)
 
