@@ -12,6 +12,9 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "token-counting:50057")
 	t.Setenv("LLM_GRPC_TARGET", "llm:50058")
 	t.Setenv("SECRETS_GRPC_TARGET", "secrets:50059")
+	t.Setenv("USERS_GRPC_TARGET", "users:50060")
+	t.Setenv("OIDC_ISSUER_URL", "https://issuer.example.com")
+	t.Setenv("OIDC_CLIENT_ID", "client-123")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -53,6 +56,18 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if got := cfg.SecretsGRPCTarget; got != "secrets:50059" {
 		t.Fatalf("unexpected secrets grpc target: %s", got)
 	}
+
+	if got := cfg.UsersGRPCTarget; got != "users:50060" {
+		t.Fatalf("unexpected users grpc target: %s", got)
+	}
+
+	if got := cfg.OIDCIssuerURL; got != "https://issuer.example.com" {
+		t.Fatalf("unexpected oidc issuer url: %s", got)
+	}
+
+	if got := cfg.OIDCClientID; got != "client-123" {
+		t.Fatalf("unexpected oidc client id: %s", got)
+	}
 }
 
 func TestLoadConfigFromEnvMissingAgentsGRPC(t *testing.T) {
@@ -78,6 +93,9 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "")
 	t.Setenv("LLM_GRPC_TARGET", "")
 	t.Setenv("SECRETS_GRPC_TARGET", "")
+	t.Setenv("USERS_GRPC_TARGET", "")
+	t.Setenv("OIDC_ISSUER_URL", "")
+	t.Setenv("OIDC_CLIENT_ID", "")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -110,5 +128,14 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.SecretsGRPCTarget != defaultSecretsGRPCTarget {
 		t.Fatalf("unexpected secrets grpc target: %s", cfg.SecretsGRPCTarget)
+	}
+	if cfg.UsersGRPCTarget != defaultUsersGRPCTarget {
+		t.Fatalf("unexpected users grpc target: %s", cfg.UsersGRPCTarget)
+	}
+	if cfg.OIDCIssuerURL != "" {
+		t.Fatalf("unexpected oidc issuer url: %s", cfg.OIDCIssuerURL)
+	}
+	if cfg.OIDCClientID != "" {
+		t.Fatalf("unexpected oidc client id: %s", cfg.OIDCClientID)
 	}
 }

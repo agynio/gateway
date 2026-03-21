@@ -16,6 +16,7 @@ const (
 	defaultLLMGRPCTarget            = "llm:50051"
 	defaultSecretsGRPCTarget        = "secrets:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
+	defaultUsersGRPCTarget          = "users:50051"
 )
 
 // Config holds the runtime configuration for communicating with upstream services.
@@ -31,6 +32,9 @@ type Config struct {
 	SecretsGRPCTarget        string
 	ZitiIdentityFile         string
 	ZitiManagementGRPCTarget string
+	OIDCIssuerURL            string
+	OIDCClientID             string
+	UsersGRPCTarget          string
 }
 
 // LoadConfigFromEnv constructs a Config instance from environment variables.
@@ -47,6 +51,9 @@ func LoadConfigFromEnv() (*Config, error) {
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
 		ZitiIdentityFile:         strings.TrimSpace(os.Getenv("ZITI_IDENTITY_FILE")),
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
+		OIDCIssuerURL:            strings.TrimSpace(os.Getenv("OIDC_ISSUER_URL")),
+		OIDCClientID:             strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")),
+		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),
 	}, nil
 }
 

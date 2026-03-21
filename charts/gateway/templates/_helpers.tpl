@@ -28,6 +28,19 @@
 {{- $secretsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.secretsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "SECRETS_GRPC_TARGET" "value" $secretsGrpcTarget) -}}
 
+{{- $usersGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.usersGrpcTarget) -}}
+{{- $env = append $env (dict "name" "USERS_GRPC_TARGET" "value" $usersGrpcTarget) -}}
+
+{{- $oidcIssuerUrl := trimAll " \n\t" (default "" .Values.gateway.oidcIssuerUrl) -}}
+{{- if $oidcIssuerUrl -}}
+{{- $env = append $env (dict "name" "OIDC_ISSUER_URL" "value" $oidcIssuerUrl) -}}
+{{- end -}}
+
+{{- $oidcClientId := trimAll " \n\t" (default "" .Values.gateway.oidcClientId) -}}
+{{- if $oidcClientId -}}
+{{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
+{{- end -}}
+
 {{- $userEnv := .Values.env | default (list) -}}
 {{- $_ := set .Values "env" (concat $env $userEnv) -}}
 {{- end -}}
