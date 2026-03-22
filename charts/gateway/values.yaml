@@ -163,3 +163,6 @@ gateway:
   usersGrpcTarget: "users:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
+  zitiEnabled: false
+  zitiManagementGrpcTarget: "ziti-management:50051"
+  zitiLeaseRenewalInterval: ""

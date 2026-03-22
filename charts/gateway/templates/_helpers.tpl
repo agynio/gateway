@@ -41,6 +41,17 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- $zitiEnabled := .Values.gateway.zitiEnabled | default false -}}
+{{- $env = append $env (dict "name" "ZITI_ENABLED" "value" (printf "%t" $zitiEnabled)) -}}
+
+{{- $zitiManagementGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.zitiManagementGrpcTarget) -}}
+{{- $env = append $env (dict "name" "ZITI_MANAGEMENT_GRPC_TARGET" "value" $zitiManagementGrpcTarget) -}}
+
+{{- $zitiLeaseRenewalInterval := trimAll " \n\t" (default "" .Values.gateway.zitiLeaseRenewalInterval) -}}
+{{- if $zitiLeaseRenewalInterval -}}
+{{- $env = append $env (dict "name" "ZITI_LEASE_RENEWAL_INTERVAL" "value" $zitiLeaseRenewalInterval) -}}
+{{- end -}}
+
 {{- $userEnv := .Values.env | default (list) -}}
 {{- $_ := set .Values "env" (concat $env $userEnv) -}}
 {{- end -}}
