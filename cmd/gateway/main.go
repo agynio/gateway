@@ -183,10 +183,6 @@ func main() {
 	}
 
 	if config.ZitiEnabled {
-		if zitiMgmtClient == nil {
-			log.Fatalf("ziti management client missing")
-		}
-
 		zitiIdentityID, identityJSON, err := zitiMgmtClient.RequestServiceIdentity(ctx, zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY)
 		if err != nil {
 			log.Fatalf("failed to request ziti service identity: %v", err)
@@ -196,16 +192,18 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to create ziti identity file: %v", err)
 		}
-		identityPath := identityFile.Name()
+		defer os.Remove(identityFile.Name())
+		if _, err := identityFile.Write(identityJSON); err != nil {
+			if closeErr := identityFile.Close(); closeErr != nil {
+				log.Printf("failed to close ziti identity file: %v", closeErr)
+			}
+			log.Fatalf("failed to write ziti identity file: %v", err)
+		}
 		if err := identityFile.Close(); err != nil {
 			log.Fatalf("failed to close ziti identity file: %v", err)
 		}
-		if err := os.WriteFile(identityPath, identityJSON, 0600); err != nil {
-			log.Fatalf("failed to write ziti identity file: %v", err)
-		}
-		defer os.Remove(identityPath)
 
-		zitiContext, err := ziti.NewContextFromFile(identityPath)
+		zitiContext, err := ziti.NewContextFromFile(identityFile.Name())
 		if err != nil {
 			log.Fatalf("failed to create ziti context: %v", err)
 		}
