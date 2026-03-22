@@ -16,7 +16,16 @@ buf generate buf.build/agynio/api \
   --path agynio/api/secrets/v1 \
   --path agynio/api/users/v1 \
   --path agynio/api/ziti_management/v1 \
-  --path agynio/api/gateway/v1
+  --path agynio/api/gateway/v1/agent_state.proto \
+  --path agynio/api/gateway/v1/agents.proto \
+  --path agynio/api/gateway/v1/chat.proto \
+  --path agynio/api/gateway/v1/files.proto \
+  --path agynio/api/gateway/v1/llm.proto \
+  --path agynio/api/gateway/v1/notifications.proto \
+  --path agynio/api/gateway/v1/secrets.proto \
+  --path agynio/api/gateway/v1/threads.proto \
+  --path agynio/api/gateway/v1/token_counting.proto \
+  --path agynio/api/gateway/v1/users.proto
 
 echo "Downloading Go modules..."
 go mod download
