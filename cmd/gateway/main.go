@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net"
@@ -28,6 +29,7 @@ import (
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
+	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 	"github.com/agynio/gateway/internal/apitokenresolver"
 	"github.com/agynio/gateway/internal/gateway"
 	"github.com/agynio/gateway/internal/grpcclient"
@@ -44,13 +46,16 @@ const (
 )
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	config, err := platform.LoadConfigFromEnv()
 	if err != nil {
 		log.Fatalf("failed to load platform configuration: %v", err)
 	}
 
 	var zitiMgmtClient *zitimgmtclient.Client
-	if config.ZitiIdentityFile != "" {
+	if config.ZitiEnabled {
 		zitiMgmtClient, err = zitimgmtclient.NewClient(config.ZitiManagementGRPCTarget)
 		if err != nil {
 			log.Fatalf("failed to create ziti management gRPC client: %v", err)
@@ -82,7 +87,7 @@ func main() {
 		if config.OIDCIssuerURL == "" || config.OIDCClientID == "" {
 			log.Fatalf("both OIDC issuer URL and client ID are required when OIDC is enabled")
 		}
-		verifier, err := oidcauth.NewVerifier(context.Background(), config.OIDCIssuerURL, config.OIDCClientID)
+		verifier, err := oidcauth.NewVerifier(ctx, config.OIDCIssuerURL, config.OIDCClientID)
 		if err != nil {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
@@ -178,12 +183,24 @@ func main() {
 		ConnContext: connContext,
 	}
 
-	if config.ZitiIdentityFile != "" {
-		zitiContext, err := ziti.NewContextFromFile(config.ZitiIdentityFile)
+	if config.ZitiEnabled {
+		zitiIdentityID, identityJSON, err := zitiMgmtClient.RequestServiceIdentity(ctx, zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY)
+		if err != nil {
+			log.Fatalf("failed to request ziti service identity: %v", err)
+		}
+
+		zitiConfig := &ziti.Config{}
+		if err := json.Unmarshal(identityJSON, zitiConfig); err != nil {
+			log.Fatalf("failed to parse ziti identity: %v", err)
+		}
+
+		zitiContext, err := ziti.NewContext(zitiConfig)
 		if err != nil {
 			log.Fatalf("failed to create ziti context: %v", err)
 		}
 		defer zitiContext.Close()
+
+		go renewLease(ctx, zitiMgmtClient, zitiIdentityID, config.ZitiLeaseRenewalInterval)
 
 		serviceName := zitiServiceName()
 		listener, err := zitiContext.ListenWithOptions(serviceName, ziti.DefaultListenOptions())
@@ -202,6 +219,24 @@ func main() {
 	log.Printf("gateway listening on %s", addr)
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("server stopped: %v", err)
+	}
+}
+
+func renewLease(ctx context.Context, client *zitimgmtclient.Client, identityID string, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if ctx.Err() != nil {
+				return
+			}
+			if err := client.ExtendIdentityLease(ctx, identityID); err != nil {
+				log.Printf("failed to extend ziti lease: %v", err)
+			}
+		}
 	}
 }
 

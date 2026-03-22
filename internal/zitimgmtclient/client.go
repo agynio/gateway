@@ -37,6 +37,43 @@ func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
+func (c *Client) RequestServiceIdentity(ctx context.Context, serviceType zitimgmtv1.ServiceType) (string, []byte, error) {
+	if serviceType == zitimgmtv1.ServiceType_SERVICE_TYPE_UNSPECIFIED {
+		return "", nil, fmt.Errorf("service type is required")
+	}
+
+	response, err := c.client.RequestServiceIdentity(ctx, &zitimgmtv1.RequestServiceIdentityRequest{
+		ServiceType: serviceType,
+	})
+	if err != nil {
+		return "", nil, err
+	}
+
+	identityID := strings.TrimSpace(response.GetZitiIdentityId())
+	if identityID == "" {
+		return "", nil, fmt.Errorf("ziti identity id missing")
+	}
+
+	identityJSON := response.GetIdentityJson()
+	if len(identityJSON) == 0 {
+		return "", nil, fmt.Errorf("identity json missing")
+	}
+
+	return identityID, identityJSON, nil
+}
+
+func (c *Client) ExtendIdentityLease(ctx context.Context, zitiIdentityID string) error {
+	trimmed := strings.TrimSpace(zitiIdentityID)
+	if trimmed == "" {
+		return fmt.Errorf("ziti identity id is required")
+	}
+
+	_, err := c.client.ExtendIdentityLease(ctx, &zitimgmtv1.ExtendIdentityLeaseRequest{
+		ZitiIdentityId: trimmed,
+	})
+	return err
+}
+
 func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (identity.ResolvedIdentity, error) {
 	trimmed := strings.TrimSpace(sourceIdentity)
 	if trimmed == "" {
