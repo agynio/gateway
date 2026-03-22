@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net"
@@ -188,22 +189,12 @@ func main() {
 			log.Fatalf("failed to request ziti service identity: %v", err)
 		}
 
-		identityFile, err := os.CreateTemp("", "ziti-identity-*.json")
-		if err != nil {
-			log.Fatalf("failed to create ziti identity file: %v", err)
-		}
-		defer os.Remove(identityFile.Name())
-		if _, err := identityFile.Write(identityJSON); err != nil {
-			if closeErr := identityFile.Close(); closeErr != nil {
-				log.Printf("failed to close ziti identity file: %v", closeErr)
-			}
-			log.Fatalf("failed to write ziti identity file: %v", err)
-		}
-		if err := identityFile.Close(); err != nil {
-			log.Fatalf("failed to close ziti identity file: %v", err)
+		zitiConfig := &ziti.Config{}
+		if err := json.Unmarshal(identityJSON, zitiConfig); err != nil {
+			log.Fatalf("failed to parse ziti identity: %v", err)
 		}
 
-		zitiContext, err := ziti.NewContextFromFile(identityFile.Name())
+		zitiContext, err := ziti.NewContext(zitiConfig)
 		if err != nil {
 			log.Fatalf("failed to create ziti context: %v", err)
 		}
@@ -239,6 +230,9 @@ func renewLease(ctx context.Context, client *zitimgmtclient.Client, identityID s
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			if ctx.Err() != nil {
+				return
+			}
 			if err := client.ExtendIdentityLease(ctx, identityID); err != nil {
 				log.Printf("failed to extend ziti lease: %v", err)
 			}
