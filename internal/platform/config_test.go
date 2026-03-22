@@ -1,6 +1,9 @@
 package platform
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("AGENTS_GRPC_TARGET", "agents:50052")
@@ -13,6 +16,9 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("LLM_GRPC_TARGET", "llm:50058")
 	t.Setenv("SECRETS_GRPC_TARGET", "secrets:50059")
 	t.Setenv("USERS_GRPC_TARGET", "users:50060")
+	t.Setenv("ZITI_ENABLED", "true")
+	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "3m")
+	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "ziti-management:50061")
 	t.Setenv("OIDC_ISSUER_URL", "https://issuer.example.com")
 	t.Setenv("OIDC_CLIENT_ID", "client-123")
 
@@ -61,6 +67,18 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Fatalf("unexpected users grpc target: %s", got)
 	}
 
+	if !cfg.ZitiEnabled {
+		t.Fatalf("expected ziti to be enabled")
+	}
+
+	if got := cfg.ZitiLeaseRenewalInterval; got != 3*time.Minute {
+		t.Fatalf("unexpected ziti lease renewal interval: %s", got)
+	}
+
+	if got := cfg.ZitiManagementGRPCTarget; got != "ziti-management:50061" {
+		t.Fatalf("unexpected ziti management grpc target: %s", got)
+	}
+
 	if got := cfg.OIDCIssuerURL; got != "https://issuer.example.com" {
 		t.Fatalf("unexpected oidc issuer url: %s", got)
 	}
@@ -94,6 +112,9 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("LLM_GRPC_TARGET", "")
 	t.Setenv("SECRETS_GRPC_TARGET", "")
 	t.Setenv("USERS_GRPC_TARGET", "")
+	t.Setenv("ZITI_ENABLED", "")
+	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "")
+	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "")
 	t.Setenv("OIDC_ISSUER_URL", "")
 	t.Setenv("OIDC_CLIENT_ID", "")
 
@@ -132,10 +153,28 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	if cfg.UsersGRPCTarget != defaultUsersGRPCTarget {
 		t.Fatalf("unexpected users grpc target: %s", cfg.UsersGRPCTarget)
 	}
+	if cfg.ZitiEnabled {
+		t.Fatalf("expected ziti to be disabled")
+	}
+	if cfg.ZitiLeaseRenewalInterval != defaultZitiLeaseRenewalInterval {
+		t.Fatalf("unexpected ziti lease renewal interval: %s", cfg.ZitiLeaseRenewalInterval)
+	}
+	if cfg.ZitiManagementGRPCTarget != defaultZitiManagementGRPCTarget {
+		t.Fatalf("unexpected ziti management grpc target: %s", cfg.ZitiManagementGRPCTarget)
+	}
 	if cfg.OIDCIssuerURL != "" {
 		t.Fatalf("unexpected oidc issuer url: %s", cfg.OIDCIssuerURL)
 	}
 	if cfg.OIDCClientID != "" {
 		t.Fatalf("unexpected oidc client id: %s", cfg.OIDCClientID)
+	}
+}
+
+func TestLoadConfigFromEnvInvalidZitiLeaseRenewalInterval(t *testing.T) {
+	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "0s")
+
+	_, err := LoadConfigFromEnv()
+	if err == nil {
+		t.Fatalf("expected error for invalid ziti lease renewal interval")
 	}
 }
