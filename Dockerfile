@@ -37,8 +37,7 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/secrets/v1 \
       --path agynio/api/users/v1 \
       --path agynio/api/ziti_management/v1 \
-      --path agynio/api/gateway/v1 \
-      --exclude-path agynio/api/gateway/v1/tracing.proto
+      --path agynio/api/gateway/v1
 
 COPY . .
 
