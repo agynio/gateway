@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
