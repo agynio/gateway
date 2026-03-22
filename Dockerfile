@@ -24,11 +24,6 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 COPY buf.gen.yaml buf.yaml ./
 
-# Install protoc plugins for local buf generation
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11 && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.1 && \
-    go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.19.1
-
 # Generate protobuf stubs
 RUN buf generate buf.build/agynio/api \
       --path agynio/api/agents/v1 \
@@ -38,10 +33,8 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/files/v1 \
       --path agynio/api/agent_state/v1 \
       --path agynio/api/token_counting/v1 \
-      --path agynio/api/tracing/v1 \
       --path agynio/api/llm/v1 \
       --path agynio/api/secrets/v1 \
-      --path agynio/api/users/v1 \
       --path agynio/api/ziti_management/v1 \
       --path agynio/api/gateway/v1
 

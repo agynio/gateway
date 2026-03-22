@@ -1,22 +1,19 @@
 version: v2
 managed:
   enabled: true
-  disable:
-    - file_option: go_package
-      module: buf.build/opentelemetry/opentelemetry
   override:
     - file_option: go_package_prefix
       value: github.com/agynio/gateway/gen
 plugins:
-  - local: protoc-gen-go
+  - remote: buf.build/protocolbuffers/go
     out: gen
     opt:
       - paths=source_relative
-  - local: protoc-gen-go-grpc
+  - remote: buf.build/grpc/go
     out: gen
     opt:
       - paths=source_relative
-  - local: protoc-gen-connect-go
+  - remote: buf.build/connectrpc/go
     out: gen
     opt:
       - paths=source_relative

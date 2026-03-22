@@ -26,12 +26,6 @@ jobs:
       - name: Set up Buf
         uses: bufbuild/buf-setup-action@v1
 
-      - name: Install protoc plugins
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
-          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.1
-          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.19.1
-
       - name: Generate gRPC stubs
         run: |
           buf generate buf.build/agynio/api \
@@ -42,7 +36,6 @@ jobs:
             --path agynio/api/files/v1 \
             --path agynio/api/agent_state/v1 \
             --path agynio/api/token_counting/v1 \
-            --path agynio/api/tracing/v1 \
             --path agynio/api/llm/v1 \
             --path agynio/api/secrets/v1 \
             --path agynio/api/users/v1 \
