@@ -10,6 +10,7 @@ import (
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
+	tracingv1 "github.com/agynio/gateway/gen/agynio/api/tracing/v1"
 )
 
 // Gateway forwards ConnectRPC requests to internal gRPC services.
@@ -23,6 +24,7 @@ type Gateway struct {
 	tokenCounting tokencountingv1.TokenCountingServiceClient
 	llm           llmv1.LLMServiceClient
 	secrets       secretsv1.SecretsServiceClient
+	tracing       tracingv1.TracingServiceClient
 }
 
 func New(
@@ -35,6 +37,7 @@ func New(
 	tokenCounting tokencountingv1.TokenCountingServiceClient,
 	llm llmv1.LLMServiceClient,
 	secrets secretsv1.SecretsServiceClient,
+	tracing tracingv1.TracingServiceClient,
 ) *Gateway {
 	return &Gateway{
 		agents:        agents,
@@ -46,5 +49,6 @@ func New(
 		tokenCounting: tokenCounting,
 		llm:           llm,
 		secrets:       secrets,
+		tracing:       tracing,
 	}
 }

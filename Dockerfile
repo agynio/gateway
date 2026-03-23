@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 ARG GO_VERSION=1.24.10
-ARG BUF_VERSION=1.64.0
+ARG BUF_VERSION=1.66.1
 
 # Stage 1: Download buf binary
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS buf
@@ -35,6 +35,8 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/token_counting/v1 \
       --path agynio/api/llm/v1 \
       --path agynio/api/secrets/v1 \
+      --path agynio/api/identity/v1 \
+      --path agynio/api/tracing/v1 \
       --path agynio/api/users/v1 \
       --path agynio/api/ziti_management/v1 \
       --path agynio/api/gateway/v1
