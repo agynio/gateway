@@ -27,8 +27,11 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           version: '1.66.1'
+          buf_token: ${{ secrets.BUF_TOKEN }}
 
       - name: Generate gRPC stubs
+        env:
+          BUF_TOKEN: ${{ secrets.BUF_TOKEN }}
         run: |
           buf generate buf.build/agynio/api \
             --path agynio/api/agents/v1 \
