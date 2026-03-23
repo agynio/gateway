@@ -28,6 +28,7 @@ import (
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
+	tracingv1 "github.com/agynio/gateway/gen/agynio/api/tracing/v1"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 	"github.com/agynio/gateway/internal/apitokenresolver"
@@ -110,6 +111,7 @@ func main() {
 	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
 	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
 	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
+	tracingClient := mustClient(config.TracingGRPCTarget, "tracing", tracingv1.NewTracingServiceClient, &cleanup)
 
 	gatewayHandler := gateway.New(
 		agentsClient,
@@ -121,6 +123,7 @@ func main() {
 		tokenCountingClient,
 		llmClient,
 		secretsClient,
+		tracingClient,
 	)
 	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
 	usersGateway := gateway.NewUsersGateway(usersClient)
@@ -155,6 +158,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewTokenCountingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewTracingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{

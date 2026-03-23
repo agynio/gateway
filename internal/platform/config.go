@@ -18,6 +18,7 @@ const (
 	defaultTokenCountingGRPCTarget  = "token-counting:50051"
 	defaultLLMGRPCTarget            = "llm:50051"
 	defaultSecretsGRPCTarget        = "secrets:50051"
+	defaultTracingGRPCTarget        = "tracing:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
 	defaultZitiLeaseRenewalInterval = 2 * time.Minute
 	defaultUsersGRPCTarget          = "users:50051"
@@ -34,6 +35,7 @@ type Config struct {
 	TokenCountingGRPCTarget  string
 	LLMGRPCTarget            string
 	SecretsGRPCTarget        string
+	TracingGRPCTarget        string
 	ZitiEnabled              bool
 	ZitiLeaseRenewalInterval time.Duration
 	ZitiManagementGRPCTarget string
@@ -67,6 +69,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		TokenCountingGRPCTarget:  envOrDefault("TOKEN_COUNTING_GRPC_TARGET", defaultTokenCountingGRPCTarget),
 		LLMGRPCTarget:            envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
+		TracingGRPCTarget:        envOrDefault("TRACING_GRPC_TARGET", defaultTracingGRPCTarget),
 		ZitiEnabled:              zitiEnabled,
 		ZitiLeaseRenewalInterval: zitiLeaseRenewalInterval,
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
