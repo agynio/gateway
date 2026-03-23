@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 ARG GO_VERSION=1.24.10
-ARG BUF_VERSION=1.64.0
+ARG BUF_VERSION=1.66.1
 
 # Stage 1: Download buf binary
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-bookworm AS buf
