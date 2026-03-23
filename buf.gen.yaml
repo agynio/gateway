@@ -3,7 +3,7 @@ managed:
   enabled: true
   disable:
     - file_option: go_package_prefix
-      module: buf.build/opentelemetry/opentelemetry
+      path: opentelemetry/proto
   override:
     - file_option: go_package_prefix
       value: github.com/agynio/gateway/gen
