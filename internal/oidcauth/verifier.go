@@ -80,9 +80,6 @@ func (v *Verifier) Verify(ctx context.Context, accessToken string) (Claims, erro
 	if err := oidc.CheckIssuer(&parsed, v.issuer); err != nil {
 		return Claims{}, err
 	}
-	if err := oidc.CheckAudience(&parsed, v.clientID); err != nil {
-		return Claims{}, err
-	}
 	if err := oidc.CheckSignature(ctx, decrypted, payload, &parsed, v.supportedSignAlgs, v.keySet); err != nil {
 		return Claims{}, err
 	}

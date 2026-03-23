@@ -24,6 +24,7 @@ type Provider struct {
 	Server           *httptest.Server
 	UserinfoCalls    int
 	LastAuthHeader   string
+	signer           jose.Signer
 }
 
 type Option func(*providerConfig)
@@ -87,6 +88,7 @@ func NewProvider(t *testing.T, opts ...Option) *Provider {
 		ClientID: cfg.clientID,
 		Subject:  cfg.subject,
 		UserInfo: cfg.userInfo,
+		signer:   signer,
 	}
 
 	var issuer string
@@ -127,7 +129,7 @@ func NewProvider(t *testing.T, opts ...Option) *Provider {
 	claims := oidc.NewAccessTokenClaims(
 		issuer,
 		provider.Subject,
-		[]string{provider.ClientID},
+		[]string{issuer},
 		time.Now().Add(time.Hour),
 		"jwtid",
 		provider.ClientID,
@@ -136,6 +138,12 @@ func NewProvider(t *testing.T, opts ...Option) *Provider {
 	provider.Token = SignToken(t, signer, claims)
 
 	return provider
+}
+
+func (p *Provider) SignAccessToken(t *testing.T, claims *oidc.AccessTokenClaims) string {
+	t.Helper()
+
+	return SignToken(t, p.signer, claims)
 }
 
 func NewRSAKey(t *testing.T) *rsa.PrivateKey {
