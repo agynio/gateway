@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	identityv1 "github.com/agynio/gateway/gen/agynio/api/identity/v1"
 	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 )
 
@@ -101,15 +102,17 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 	}, nil
 }
 
-func parseIdentityType(identityType zitimgmtv1.IdentityType) (identity.IdentityType, error) {
+func parseIdentityType(identityType identityv1.IdentityType) (identity.IdentityType, error) {
 	switch identityType {
-	case zitimgmtv1.IdentityType_IDENTITY_TYPE_AGENT:
+	case identityv1.IdentityType_IDENTITY_TYPE_AGENT:
 		return identity.IdentityTypeAgent, nil
-	case zitimgmtv1.IdentityType_IDENTITY_TYPE_RUNNER:
+	case identityv1.IdentityType_IDENTITY_TYPE_RUNNER:
 		return identity.IdentityTypeRunner, nil
-	case zitimgmtv1.IdentityType_IDENTITY_TYPE_CHANNEL:
+	case identityv1.IdentityType_IDENTITY_TYPE_CHANNEL:
 		return identity.IdentityTypeChannel, nil
-	case zitimgmtv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
+	case identityv1.IdentityType_IDENTITY_TYPE_USER:
+		return identity.IdentityTypeUser, nil
+	case identityv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
 		return "", fmt.Errorf("identity type unspecified")
 	default:
 		return "", fmt.Errorf("identity type unsupported: %s", identityType.String())
