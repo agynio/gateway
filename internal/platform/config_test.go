@@ -13,7 +13,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("FILES_GRPC_TARGET", "files:50053")
 	t.Setenv("AGENT_STATE_GRPC_TARGET", "agent-state:50056")
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "token-counting:50057")
-	t.Setenv("LLM_GRPC_TARGET", "llm:50058")
 	t.Setenv("SECRETS_GRPC_TARGET", "secrets:50059")
 	t.Setenv("USERS_GRPC_TARGET", "users:50060")
 	t.Setenv("ZITI_ENABLED", "true")
@@ -55,10 +54,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.TokenCountingGRPCTarget; got != "token-counting:50057" {
 		t.Fatalf("unexpected token counting grpc target: %s", got)
-	}
-
-	if got := cfg.LLMGRPCTarget; got != "llm:50058" {
-		t.Fatalf("unexpected llm grpc target: %s", got)
 	}
 
 	if got := cfg.SecretsGRPCTarget; got != "secrets:50059" {
@@ -120,7 +115,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("FILES_GRPC_TARGET", "")
 	t.Setenv("AGENT_STATE_GRPC_TARGET", "")
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "")
-	t.Setenv("LLM_GRPC_TARGET", "")
 	t.Setenv("SECRETS_GRPC_TARGET", "")
 	t.Setenv("USERS_GRPC_TARGET", "")
 	t.Setenv("ZITI_ENABLED", "")
@@ -156,9 +150,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.TokenCountingGRPCTarget != defaultTokenCountingGRPCTarget {
 		t.Fatalf("unexpected token counting grpc target: %s", cfg.TokenCountingGRPCTarget)
-	}
-	if cfg.LLMGRPCTarget != defaultLLMGRPCTarget {
-		t.Fatalf("unexpected llm grpc target: %s", cfg.LLMGRPCTarget)
 	}
 	if cfg.SecretsGRPCTarget != defaultSecretsGRPCTarget {
 		t.Fatalf("unexpected secrets grpc target: %s", cfg.SecretsGRPCTarget)
