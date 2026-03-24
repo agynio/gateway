@@ -21,6 +21,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "ziti-management:50061")
 	t.Setenv("OIDC_ISSUER_URL", "https://issuer.example.com")
 	t.Setenv("OIDC_CLIENT_ID", "client-123")
+	t.Setenv("CLUSTER_ADMIN_TOKEN", "cluster-token")
+	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "cluster-identity")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -86,10 +88,19 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if got := cfg.OIDCClientID; got != "client-123" {
 		t.Fatalf("unexpected oidc client id: %s", got)
 	}
+
+	if got := cfg.ClusterAdminToken; got != "cluster-token" {
+		t.Fatalf("unexpected cluster admin token: %s", got)
+	}
+	if got := cfg.ClusterAdminIdentityID; got != "cluster-identity" {
+		t.Fatalf("unexpected cluster admin identity id: %s", got)
+	}
 }
 
 func TestLoadConfigFromEnvMissingAgentsGRPC(t *testing.T) {
 	t.Setenv("AGENTS_GRPC_TARGET", "")
+	t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -117,6 +128,8 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "")
 	t.Setenv("OIDC_ISSUER_URL", "")
 	t.Setenv("OIDC_CLIENT_ID", "")
+	t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
 
 	cfg, err := LoadConfigFromEnv()
 	if err != nil {
@@ -168,10 +181,72 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	if cfg.OIDCClientID != "" {
 		t.Fatalf("unexpected oidc client id: %s", cfg.OIDCClientID)
 	}
+	if cfg.ClusterAdminToken != "" {
+		t.Fatalf("unexpected cluster admin token: %s", cfg.ClusterAdminToken)
+	}
+	if cfg.ClusterAdminIdentityID != "" {
+		t.Fatalf("unexpected cluster admin identity id: %s", cfg.ClusterAdminIdentityID)
+	}
+}
+
+func TestLoadConfigFromEnvClusterAdminPairValidation(t *testing.T) {
+	t.Run("both set", func(t *testing.T) {
+		t.Setenv("CLUSTER_ADMIN_TOKEN", "cluster-token")
+		t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "cluster-identity")
+
+		cfg, err := LoadConfigFromEnv()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if cfg.ClusterAdminToken != "cluster-token" {
+			t.Fatalf("unexpected cluster admin token: %s", cfg.ClusterAdminToken)
+		}
+		if cfg.ClusterAdminIdentityID != "cluster-identity" {
+			t.Fatalf("unexpected cluster admin identity id: %s", cfg.ClusterAdminIdentityID)
+		}
+	})
+
+	t.Run("both empty", func(t *testing.T) {
+		t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+		t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
+
+		cfg, err := LoadConfigFromEnv()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if cfg.ClusterAdminToken != "" {
+			t.Fatalf("unexpected cluster admin token: %s", cfg.ClusterAdminToken)
+		}
+		if cfg.ClusterAdminIdentityID != "" {
+			t.Fatalf("unexpected cluster admin identity id: %s", cfg.ClusterAdminIdentityID)
+		}
+	})
+
+	t.Run("missing identity", func(t *testing.T) {
+		t.Setenv("CLUSTER_ADMIN_TOKEN", "cluster-token")
+		t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
+
+		_, err := LoadConfigFromEnv()
+		if err == nil {
+			t.Fatalf("expected error for missing cluster admin identity id")
+		}
+	})
+
+	t.Run("missing token", func(t *testing.T) {
+		t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+		t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "cluster-identity")
+
+		_, err := LoadConfigFromEnv()
+		if err == nil {
+			t.Fatalf("expected error for missing cluster admin token")
+		}
+	})
 }
 
 func TestLoadConfigFromEnvInvalidZitiLeaseRenewalInterval(t *testing.T) {
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "0s")
+	t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
 
 	_, err := LoadConfigFromEnv()
 	if err == nil {
