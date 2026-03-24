@@ -163,3 +163,5 @@ gateway:
   usersGrpcTarget: "users:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
+  clusterAdminToken: ""
+  clusterAdminIdentityId: ""

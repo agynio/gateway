@@ -41,6 +41,16 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- $clusterAdminToken := trimAll " \n\t" (default "" .Values.gateway.clusterAdminToken) -}}
+{{- if $clusterAdminToken -}}
+{{- $env = append $env (dict "name" "CLUSTER_ADMIN_TOKEN" "value" $clusterAdminToken) -}}
+{{- end -}}
+
+{{- $clusterAdminIdentityId := trimAll " \n\t" (default "" .Values.gateway.clusterAdminIdentityId) -}}
+{{- if $clusterAdminIdentityId -}}
+{{- $env = append $env (dict "name" "CLUSTER_ADMIN_IDENTITY_ID" "value" $clusterAdminIdentityId) -}}
+{{- end -}}
+
 {{- $userEnv := .Values.env | default (list) -}}
 {{- $_ := set .Values "env" (concat $env $userEnv) -}}
 {{- end -}}

@@ -32,6 +32,7 @@ import (
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 	"github.com/agynio/gateway/internal/apitokenresolver"
+	"github.com/agynio/gateway/internal/clusteradminresolver"
 	"github.com/agynio/gateway/internal/gateway"
 	"github.com/agynio/gateway/internal/grpcclient"
 	"github.com/agynio/gateway/internal/oidcauth"
@@ -102,6 +103,15 @@ func main() {
 
 	apiTokenResolver := apitokenresolver.NewResolver(usersClient)
 
+	var clusterAdminResolver *clusteradminresolver.Resolver
+	if config.ClusterAdminToken != "" {
+		resolver, err := clusteradminresolver.NewResolver(config.ClusterAdminToken, config.ClusterAdminIdentityID)
+		if err != nil {
+			log.Fatalf("failed to create cluster admin resolver: %v", err)
+		}
+		clusterAdminResolver = resolver
+	}
+
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
 	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
@@ -132,16 +142,16 @@ func main() {
 		gateway.NewRecoveryInterceptor(),
 		gateway.NewLoggingInterceptor(),
 	}
-	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil {
-		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver)}, interceptors...)
+	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
+		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)}, interceptors...)
 	}
 	handlerOptions := connect.WithInterceptors(interceptors...)
 
 	mux := http.NewServeMux()
 
 	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
-	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil {
-		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver)(meHandler)
+	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
+		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(meHandler)
 	}
 	mux.Handle("/me", meHandler)
 

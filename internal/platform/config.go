@@ -41,6 +41,8 @@ type Config struct {
 	ZitiManagementGRPCTarget string
 	OIDCIssuerURL            string
 	OIDCClientID             string
+	ClusterAdminToken        string
+	ClusterAdminIdentityID   string
 	UsersGRPCTarget          string
 }
 
@@ -59,6 +61,12 @@ func LoadConfigFromEnv() (*Config, error) {
 		return nil, fmt.Errorf("ZITI_LEASE_RENEWAL_INTERVAL must be positive")
 	}
 
+	clusterAdminToken := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_TOKEN"))
+	clusterAdminIdentityID := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_IDENTITY_ID"))
+	if (clusterAdminToken == "") != (clusterAdminIdentityID == "") {
+		return nil, fmt.Errorf("CLUSTER_ADMIN_TOKEN and CLUSTER_ADMIN_IDENTITY_ID must both be set or both be empty")
+	}
+
 	return &Config{
 		AgentsGRPCTarget:         envOrDefault("AGENTS_GRPC_TARGET", defaultAgentsGRPCTarget),
 		ThreadsGRPCTarget:        envOrDefault("THREADS_GRPC_TARGET", defaultThreadsGRPCTarget),
@@ -75,6 +83,8 @@ func LoadConfigFromEnv() (*Config, error) {
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
 		OIDCIssuerURL:            strings.TrimSpace(os.Getenv("OIDC_ISSUER_URL")),
 		OIDCClientID:             strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")),
+		ClusterAdminToken:        clusterAdminToken,
+		ClusterAdminIdentityID:   clusterAdminIdentityID,
 		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),
 	}, nil
 }

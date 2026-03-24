@@ -26,6 +26,7 @@ COPY buf.gen.yaml buf.yaml ./
 
 # Generate protobuf stubs
 RUN buf generate buf.build/agynio/api \
+      --include-imports \
       --path agynio/api/agents/v1 \
       --path agynio/api/threads/v1 \
       --path agynio/api/chat/v1 \
