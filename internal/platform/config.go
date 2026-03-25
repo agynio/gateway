@@ -21,6 +21,7 @@ const (
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
 	defaultZitiLeaseRenewalInterval = 2 * time.Minute
 	defaultUsersGRPCTarget          = "users:50051"
+	defaultOrganizationsGRPCTarget  = "organizations:50051"
 )
 
 // Config holds the runtime configuration for communicating with upstream services.
@@ -42,6 +43,7 @@ type Config struct {
 	ClusterAdminToken        string
 	ClusterAdminIdentityID   string
 	UsersGRPCTarget          string
+	OrganizationsGRPCTarget  string
 }
 
 // LoadConfigFromEnv constructs a Config instance from environment variables.
@@ -83,6 +85,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		ClusterAdminToken:        clusterAdminToken,
 		ClusterAdminIdentityID:   clusterAdminIdentityID,
 		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),
+		OrganizationsGRPCTarget:  envOrDefault("ORGANIZATIONS_GRPC_TARGET", defaultOrganizationsGRPCTarget),
 	}, nil
 }
 
