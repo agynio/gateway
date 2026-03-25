@@ -45,7 +45,7 @@ import (
 const (
 	defaultAddr             = ":8080"
 	defaultZitiServiceName  = "gateway"
-	defaultAppProxyCacheTTL = 5 * time.Minute
+	defaultAppProxyCacheTTL = 30 * time.Second
 )
 
 func main() {
