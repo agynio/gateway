@@ -39,12 +39,11 @@ const (
 var (
 	gatewayURL = envOrDefault("GATEWAY_URL", "http://gateway-gateway:8080")
 
-	apiTokenCreds   apiTokenCredentials
-	oidcAccessToken string
-	agentModelID    string
-	zitiHTTPClient  *http.Client
-	zitiIdentityID  string
-	zitiServiceID   string
+	apiTokenCreds  apiTokenCredentials
+	agentModelID   string
+	zitiHTTPClient *http.Client
+	zitiIdentityID string
+	zitiServiceID  string
 )
 
 type apiTokenCredentials struct {
@@ -81,9 +80,6 @@ type cleanupStack struct {
 }
 
 func (c *cleanupStack) Add(fn func()) {
-	if fn == nil {
-		return
-	}
 	c.fns = append(c.fns, fn)
 }
 
@@ -94,9 +90,7 @@ func (c *cleanupStack) Run() {
 }
 
 func exitWithSetupError(cleanup *cleanupStack, err error) {
-	if cleanup != nil {
-		cleanup.Run()
-	}
+	cleanup.Run()
 	fmt.Fprintf(os.Stderr, "e2e setup failed: %v\n", err)
 	os.Exit(1)
 }
@@ -109,7 +103,6 @@ func setupCredentials(ctx context.Context, cleanup *cleanupStack) error {
 	if err != nil {
 		return err
 	}
-	oidcAccessToken = accessToken
 
 	meCtx, meCancel := context.WithTimeout(ctx, 15*time.Second)
 	defer meCancel()
@@ -147,13 +140,11 @@ func setupCredentials(ctx context.Context, cleanup *cleanupStack) error {
 
 	apiTokenCreds.token = plaintextToken
 
-	if cleanup != nil {
-		cleanup.Add(func() {
-			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
-			defer cleanupCancel()
-			_, _ = client.RevokeAPIToken(cleanupCtx, connect.NewRequest(&usersv1.RevokeAPITokenRequest{TokenId: tokenID}))
-		})
-	}
+	cleanup.Add(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cleanupCancel()
+		_, _ = client.RevokeAPIToken(cleanupCtx, connect.NewRequest(&usersv1.RevokeAPITokenRequest{TokenId: tokenID}))
+	})
 
 	return nil
 }
@@ -199,10 +190,6 @@ func requestOIDCAccessToken(ctx context.Context) (string, error) {
 }
 
 func fetchIdentityID(ctx context.Context, accessToken string) (string, error) {
-	if strings.TrimSpace(accessToken) == "" {
-		return "", fmt.Errorf("access token is required")
-	}
-
 	client := newAuthenticatedClient(accessToken)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, gatewayURL+"/me", nil)
 	if err != nil {
@@ -243,19 +230,17 @@ func setupModelID(ctx context.Context, cleanup *cleanupStack) error {
 	var providerID string
 	var modelID string
 
-	if cleanup != nil {
-		cleanup.Add(func() {
-			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cleanupCancel()
-			if modelID != "" {
-				_, _ = client.DeleteModel(cleanupCtx, &llmv1.DeleteModelRequest{Id: modelID})
-			}
-			if providerID != "" {
-				_, _ = client.DeleteLLMProvider(cleanupCtx, &llmv1.DeleteLLMProviderRequest{Id: providerID})
-			}
-			_ = conn.Close()
-		})
-	}
+	cleanup.Add(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		if modelID != "" {
+			_, _ = client.DeleteModel(cleanupCtx, &llmv1.DeleteModelRequest{Id: modelID})
+		}
+		if providerID != "" {
+			_, _ = client.DeleteLLMProvider(cleanupCtx, &llmv1.DeleteLLMProviderRequest{Id: providerID})
+		}
+		_ = conn.Close()
+	})
 
 	providerCtx, providerCancel := context.WithTimeout(ctx, 15*time.Second)
 	defer providerCancel()
@@ -303,22 +288,20 @@ func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 	client := zitimgmtv1.NewZitiManagementServiceClient(conn)
 
 	var zitiContext ziti.Context
-	if cleanup != nil {
-		cleanup.Add(func() {
-			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer cleanupCancel()
-			if zitiIdentityID != "" && zitiServiceID != "" {
-				_, _ = client.DeleteAppIdentity(cleanupCtx, &zitimgmtv1.DeleteAppIdentityRequest{
-					ZitiIdentityId: zitiIdentityID,
-					ZitiServiceId:  zitiServiceID,
-				})
-			}
-			if zitiContext != nil {
-				zitiContext.Close()
-			}
-			_ = conn.Close()
-		})
-	}
+	cleanup.Add(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cleanupCancel()
+		if zitiIdentityID != "" && zitiServiceID != "" {
+			_, _ = client.DeleteAppIdentity(cleanupCtx, &zitimgmtv1.DeleteAppIdentityRequest{
+				ZitiIdentityId: zitiIdentityID,
+				ZitiServiceId:  zitiServiceID,
+			})
+		}
+		if zitiContext != nil {
+			zitiContext.Close()
+		}
+		_ = conn.Close()
+	})
 
 	createCtx, createCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer createCancel()
