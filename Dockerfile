@@ -41,7 +41,8 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/users/v1 \
       --path agynio/api/organizations/v1 \
       --path agynio/api/ziti_management/v1 \
-      --path agynio/api/gateway/v1
+      --path agynio/api/gateway/v1 \
+      --exclude-path agynio/api/gateway/v1/users.proto
 
 COPY . .
 
