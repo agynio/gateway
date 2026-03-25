@@ -152,6 +152,7 @@ metrics:
 
 gateway:
   agentsGrpcTarget: "agents:50051"
+  appsGrpcTarget: "apps:50051"
   threadsGrpcTarget: "threads:50051"
   chatGrpcTarget: "chat:50051"
   notificationsGrpcTarget: "notifications:50051"

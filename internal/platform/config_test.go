@@ -7,6 +7,7 @@ import (
 
 func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("AGENTS_GRPC_TARGET", "agents:50052")
+	t.Setenv("APPS_GRPC_TARGET", "apps:50062")
 	t.Setenv("THREADS_GRPC_TARGET", "threads:50053")
 	t.Setenv("CHAT_GRPC_TARGET", "chat:50054")
 	t.Setenv("NOTIFICATIONS_GRPC_TARGET", "notifications:50055")
@@ -30,6 +31,10 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.AgentsGRPCTarget; got != "agents:50052" {
 		t.Fatalf("unexpected agents grpc target: %s", got)
+	}
+
+	if got := cfg.AppsGRPCTarget; got != "apps:50062" {
+		t.Fatalf("unexpected apps grpc target: %s", got)
 	}
 
 	if got := cfg.ThreadsGRPCTarget; got != "threads:50053" {
@@ -109,6 +114,7 @@ func TestLoadConfigFromEnvMissingAgentsGRPC(t *testing.T) {
 
 func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("AGENTS_GRPC_TARGET", "")
+	t.Setenv("APPS_GRPC_TARGET", "")
 	t.Setenv("THREADS_GRPC_TARGET", "")
 	t.Setenv("CHAT_GRPC_TARGET", "")
 	t.Setenv("NOTIFICATIONS_GRPC_TARGET", "")
@@ -132,6 +138,9 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 
 	if cfg.AgentsGRPCTarget != defaultAgentsGRPCTarget {
 		t.Fatalf("unexpected agents grpc target: %s", cfg.AgentsGRPCTarget)
+	}
+	if cfg.AppsGRPCTarget != defaultAppsGRPCTarget {
+		t.Fatalf("unexpected apps grpc target: %s", cfg.AppsGRPCTarget)
 	}
 	if cfg.ThreadsGRPCTarget != defaultThreadsGRPCTarget {
 		t.Fatalf("unexpected threads grpc target: %s", cfg.ThreadsGRPCTarget)

@@ -4,6 +4,9 @@
 {{- $agentsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.agentsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "AGENTS_GRPC_TARGET" "value" $agentsGrpcTarget) -}}
 
+{{- $appsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.appsGrpcTarget) -}}
+{{- $env = append $env (dict "name" "APPS_GRPC_TARGET" "value" $appsGrpcTarget) -}}
+
 {{- $threadsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.threadsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "THREADS_GRPC_TARGET" "value" $threadsGrpcTarget) -}}
 

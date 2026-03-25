@@ -112,6 +112,8 @@ func parseIdentityType(identityType identityv1.IdentityType) (identity.IdentityT
 		return identity.IdentityTypeChannel, nil
 	case identityv1.IdentityType_IDENTITY_TYPE_USER:
 		return identity.IdentityTypeUser, nil
+	case identityv1.IdentityType_IDENTITY_TYPE_APP:
+		return identity.IdentityTypeApp, nil
 	case identityv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
 		return "", fmt.Errorf("identity type unspecified")
 	default:

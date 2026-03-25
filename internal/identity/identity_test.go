@@ -29,3 +29,13 @@ func TestIdentityContextMissing(t *testing.T) {
 		t.Fatalf("expected no identity")
 	}
 }
+
+func TestParseIdentityTypeApp(t *testing.T) {
+	identityType, err := ParseIdentityType("app")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if identityType != IdentityTypeApp {
+		t.Fatalf("unexpected identity type: %s", identityType)
+	}
+}

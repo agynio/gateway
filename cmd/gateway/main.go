@@ -20,6 +20,7 @@ import (
 
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
+	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
@@ -42,8 +43,9 @@ import (
 )
 
 const (
-	defaultAddr            = ":8080"
-	defaultZitiServiceName = "gateway"
+	defaultAddr             = ":8080"
+	defaultZitiServiceName  = "gateway"
+	defaultAppProxyCacheTTL = 30 * time.Second
 )
 
 func main() {
@@ -112,6 +114,7 @@ func main() {
 	}
 
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
+	appsClient := mustClient(config.AppsGRPCTarget, "apps", appsv1.NewAppsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
 	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
 	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
@@ -123,6 +126,7 @@ func main() {
 
 	gatewayHandler := gateway.New(
 		agentsClient,
+		appsClient,
 		threadsClient,
 		chatClient,
 		notificationsClient,
@@ -157,6 +161,7 @@ func main() {
 	}
 
 	registerConnect(gatewayv1connect.NewAgentsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewAppsGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewThreadsGatewayHandler(threadsGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewChatGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewNotificationsGatewayHandler(gatewayHandler, handlerOptions))
@@ -209,6 +214,12 @@ func main() {
 			log.Fatalf("failed to create ziti context: %v", err)
 		}
 		defer zitiContext.Close()
+
+		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, zitiContext, defaultAppProxyCacheTTL))
+		if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
+			appProxyHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(appProxyHandler)
+		}
+		mux.Handle("/apps/", appProxyHandler)
 
 		go renewLease(ctx, zitiMgmtClient, zitiIdentityID, config.ZitiLeaseRenewalInterval)
 

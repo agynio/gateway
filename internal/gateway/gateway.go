@@ -3,6 +3,7 @@ package gateway
 import (
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
+	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
@@ -15,6 +16,7 @@ import (
 // Gateway forwards ConnectRPC requests to internal gRPC services.
 type Gateway struct {
 	agents        agentsv1.AgentsServiceClient
+	apps          appsv1.AppsServiceClient
 	threads       threadsv1.ThreadsServiceClient
 	chat          chatv1.ChatServiceClient
 	notifications notificationsv1.NotificationsServiceClient
@@ -27,6 +29,7 @@ type Gateway struct {
 
 func New(
 	agents agentsv1.AgentsServiceClient,
+	apps appsv1.AppsServiceClient,
 	threads threadsv1.ThreadsServiceClient,
 	chat chatv1.ChatServiceClient,
 	notifications notificationsv1.NotificationsServiceClient,
@@ -38,6 +41,7 @@ func New(
 ) *Gateway {
 	return &Gateway{
 		agents:        agents,
+		apps:          apps,
 		threads:       threads,
 		chat:          chat,
 		notifications: notifications,
