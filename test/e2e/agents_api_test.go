@@ -4,8 +4,6 @@ package e2e
 
 import (
 	"context"
-	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -28,10 +26,8 @@ func TestAgentsGateway_ListAgents(t *testing.T) {
 }
 
 func TestAgentsGateway_CreateAndDeleteAgent(t *testing.T) {
-	modelID := agentModelID()
-	if modelID == "" {
-		t.Skip("agent model id not configured")
-	}
+	modelID := agentModelID
+	require.NotEmpty(t, modelID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -74,11 +70,4 @@ func TestAgentsGateway_InvalidPayloadReturnsClientError(t *testing.T) {
 	client := gatewayv1connect.NewAgentsGatewayClient(newClient(), gatewayURL)
 	_, err := client.GetAgent(ctx, connect.NewRequest(&agentsv1.GetAgentRequest{}))
 	require.Error(t, err)
-}
-
-func agentModelID() string {
-	if value := strings.TrimSpace(os.Getenv("E2E_AGENT_MODEL_ID")); value != "" {
-		return value
-	}
-	return strings.TrimSpace(os.Getenv("AGENT_MODEL_ID"))
 }

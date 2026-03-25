@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -23,16 +22,10 @@ import (
 
 const invalidAPIToken = "agyn_invalid"
 
-type apiTokenCredentials struct {
-	token      string
-	identityID string
-}
-
 func TestAPIToken_MeEndpoint(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" || config.identityID == "" {
-		t.Skip("api token identity config not provided")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
+	require.NotEmpty(t, config.identityID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -73,10 +66,8 @@ func TestAPIToken_MeEndpointInvalidToken(t *testing.T) {
 }
 
 func TestAPIToken_ConnectRPCEndpointAuthenticated(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" {
-		t.Skip("api token not configured")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -99,10 +90,8 @@ func TestAPIToken_ConnectRPCEndpointInvalidToken(t *testing.T) {
 }
 
 func TestUsersGateway_CreateAndRevokeAPIToken(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" {
-		t.Skip("api token not configured")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -144,10 +133,8 @@ func TestUsersGateway_CreateAndRevokeAPIToken(t *testing.T) {
 }
 
 func TestUsersGateway_ListAPITokens(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" {
-		t.Skip("api token not configured")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -161,10 +148,8 @@ func TestUsersGateway_ListAPITokens(t *testing.T) {
 }
 
 func TestUsersGateway_RevokeAPITokenNotFound(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" {
-		t.Skip("api token not configured")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
@@ -186,10 +171,9 @@ func TestUsersGateway_CreateAPITokenUnauthenticated(t *testing.T) {
 }
 
 func TestAPIToken_CreatedTokenAuthenticates(t *testing.T) {
-	config := apiTokenConfig()
-	if config.token == "" || config.identityID == "" {
-		t.Skip("api token identity config not provided")
-	}
+	config := apiTokenCreds
+	require.NotEmpty(t, config.token)
+	require.NotEmpty(t, config.identityID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -237,20 +221,6 @@ func TestAPIToken_CreatedTokenAuthenticates(t *testing.T) {
 	assert.Equal(t, "user", payload.IdentityType)
 }
 
-func apiTokenConfig() apiTokenCredentials {
-	token := strings.TrimSpace(os.Getenv("E2E_API_TOKEN"))
-	if token == "" {
-		token = strings.TrimSpace(os.Getenv("API_TOKEN"))
-	}
-
-	identityID := strings.TrimSpace(os.Getenv("E2E_API_TOKEN_IDENTITY_ID"))
-	if identityID == "" {
-		identityID = strings.TrimSpace(os.Getenv("API_TOKEN_IDENTITY_ID"))
-	}
-
-	return apiTokenCredentials{token: token, identityID: identityID}
-}
-
 func hasTokenID(tokens []*usersv1.APIToken, tokenID string) bool {
 	for _, token := range tokens {
 		if token.GetId() == tokenID {
@@ -258,26 +228,4 @@ func hasTokenID(tokens []*usersv1.APIToken, tokenID string) bool {
 		}
 	}
 	return false
-}
-
-func newAuthenticatedClient(token string) *http.Client {
-	client := newClient()
-	client.Transport = bearerTransport{token: token, base: client.Transport}
-	return client
-}
-
-type bearerTransport struct {
-	token string
-	base  http.RoundTripper
-}
-
-func (t bearerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	base := t.base
-	if base == nil {
-		base = http.DefaultTransport
-	}
-
-	clone := req.Clone(req.Context())
-	clone.Header.Set("Authorization", "Bearer "+t.token)
-	return base.RoundTrip(clone)
 }
