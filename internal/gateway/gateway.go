@@ -6,6 +6,7 @@ import (
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
+	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
@@ -23,6 +24,7 @@ type Gateway struct {
 	files         filesv1.FilesServiceClient
 	agentState    agentstatev1.AgentStateServiceClient
 	tokenCounting tokencountingv1.TokenCountingServiceClient
+	llm           llmv1.LLMServiceClient
 	secrets       secretsv1.SecretsServiceClient
 	tracing       tracingv1.TracingServiceClient
 }
@@ -36,6 +38,7 @@ func New(
 	files filesv1.FilesServiceClient,
 	agentState agentstatev1.AgentStateServiceClient,
 	tokenCounting tokencountingv1.TokenCountingServiceClient,
+	llm llmv1.LLMServiceClient,
 	secrets secretsv1.SecretsServiceClient,
 	tracing tracingv1.TracingServiceClient,
 ) *Gateway {
@@ -48,6 +51,7 @@ func New(
 		files:         files,
 		agentState:    agentState,
 		tokenCounting: tokenCounting,
+		llm:           llm,
 		secrets:       secrets,
 		tracing:       tracing,
 	}

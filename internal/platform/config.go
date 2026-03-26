@@ -17,6 +17,7 @@ const (
 	defaultFilesGRPCTarget          = "files:50051"
 	defaultAgentStateGRPCTarget     = "agent-state:50051"
 	defaultTokenCountingGRPCTarget  = "token-counting:50051"
+	defaultLLMGRPCTarget            = "llm:50051"
 	defaultSecretsGRPCTarget        = "secrets:50051"
 	defaultTracingGRPCTarget        = "tracing:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
@@ -35,6 +36,7 @@ type Config struct {
 	FilesGRPCTarget          string
 	AgentStateGRPCTarget     string
 	TokenCountingGRPCTarget  string
+	LLMGRPCTarget            string
 	SecretsGRPCTarget        string
 	TracingGRPCTarget        string
 	ZitiEnabled              bool
@@ -78,6 +80,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		FilesGRPCTarget:          envOrDefault("FILES_GRPC_TARGET", defaultFilesGRPCTarget),
 		AgentStateGRPCTarget:     envOrDefault("AGENT_STATE_GRPC_TARGET", defaultAgentStateGRPCTarget),
 		TokenCountingGRPCTarget:  envOrDefault("TOKEN_COUNTING_GRPC_TARGET", defaultTokenCountingGRPCTarget),
+		LLMGRPCTarget:            envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
 		TracingGRPCTarget:        envOrDefault("TRACING_GRPC_TARGET", defaultTracingGRPCTarget),
 		ZitiEnabled:              zitiEnabled,
