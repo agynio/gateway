@@ -34,9 +34,6 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// UsersGatewayBatchGetUsersProcedure is the fully-qualified name of the UsersGateway's
-	// BatchGetUsers RPC.
-	UsersGatewayBatchGetUsersProcedure = "/agynio.api.gateway.v1.UsersGateway/BatchGetUsers"
 	// UsersGatewayCreateAPITokenProcedure is the fully-qualified name of the UsersGateway's
 	// CreateAPIToken RPC.
 	UsersGatewayCreateAPITokenProcedure = "/agynio.api.gateway.v1.UsersGateway/CreateAPIToken"
@@ -46,17 +43,18 @@ const (
 	// UsersGatewayRevokeAPITokenProcedure is the fully-qualified name of the UsersGateway's
 	// RevokeAPIToken RPC.
 	UsersGatewayRevokeAPITokenProcedure = "/agynio.api.gateway.v1.UsersGateway/RevokeAPIToken"
+	// UsersGatewayBatchGetUsersProcedure is the fully-qualified name of the UsersGateway's
+	// BatchGetUsers RPC.
+	UsersGatewayBatchGetUsersProcedure = "/agynio.api.gateway.v1.UsersGateway/BatchGetUsers"
 )
 
 // UsersGatewayClient is a client for the agynio.api.gateway.v1.UsersGateway service.
 type UsersGatewayClient interface {
-	// --- Users ---
-	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
-
 	// --- API Tokens ---
 	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
 	RevokeAPIToken(context.Context, *connect.Request[v1.RevokeAPITokenRequest]) (*connect.Response[v1.RevokeAPITokenResponse], error)
+	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
 }
 
 // NewUsersGatewayClient constructs a client for the agynio.api.gateway.v1.UsersGateway service. By
@@ -70,11 +68,6 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	usersGatewayMethods := v11.File_agynio_api_gateway_v1_users_proto.Services().ByName("UsersGateway").Methods()
 	return &usersGatewayClient{
-		batchGetUsers: connect.NewClient[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse](
-			httpClient,
-			baseURL+UsersGatewayBatchGetUsersProcedure,
-			connect.WithClientOptions(opts...),
-		),
 		createAPIToken: connect.NewClient[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse](
 			httpClient,
 			baseURL+UsersGatewayCreateAPITokenProcedure,
@@ -93,20 +86,21 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(usersGatewayMethods.ByName("RevokeAPIToken")),
 			connect.WithClientOptions(opts...),
 		),
+		batchGetUsers: connect.NewClient[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse](
+			httpClient,
+			baseURL+UsersGatewayBatchGetUsersProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("BatchGetUsers")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // usersGatewayClient implements UsersGatewayClient.
 type usersGatewayClient struct {
-	batchGetUsers  *connect.Client[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse]
 	createAPIToken *connect.Client[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse]
 	listAPITokens  *connect.Client[v1.ListAPITokensRequest, v1.ListAPITokensResponse]
 	revokeAPIToken *connect.Client[v1.RevokeAPITokenRequest, v1.RevokeAPITokenResponse]
-}
-
-// BatchGetUsers calls agynio.api.gateway.v1.UsersGateway.BatchGetUsers.
-func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, req *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error) {
-	return c.batchGetUsers.CallUnary(ctx, req)
+	batchGetUsers  *connect.Client[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse]
 }
 
 // CreateAPIToken calls agynio.api.gateway.v1.UsersGateway.CreateAPIToken.
@@ -124,15 +118,18 @@ func (c *usersGatewayClient) RevokeAPIToken(ctx context.Context, req *connect.Re
 	return c.revokeAPIToken.CallUnary(ctx, req)
 }
 
+// BatchGetUsers calls agynio.api.gateway.v1.UsersGateway.BatchGetUsers.
+func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, req *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error) {
+	return c.batchGetUsers.CallUnary(ctx, req)
+}
+
 // UsersGatewayHandler is an implementation of the agynio.api.gateway.v1.UsersGateway service.
 type UsersGatewayHandler interface {
-	// --- Users ---
-	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
-
 	// --- API Tokens ---
 	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
 	RevokeAPIToken(context.Context, *connect.Request[v1.RevokeAPITokenRequest]) (*connect.Response[v1.RevokeAPITokenResponse], error)
+	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
 }
 
 // NewUsersGatewayHandler builds an HTTP handler from the service implementation. It returns the
@@ -142,11 +139,6 @@ type UsersGatewayHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	usersGatewayMethods := v11.File_agynio_api_gateway_v1_users_proto.Services().ByName("UsersGateway").Methods()
-	usersGatewayBatchGetUsersHandler := connect.NewUnaryHandler(
-		UsersGatewayBatchGetUsersProcedure,
-		svc.BatchGetUsers,
-		connect.WithHandlerOptions(opts...),
-	)
 	usersGatewayCreateAPITokenHandler := connect.NewUnaryHandler(
 		UsersGatewayCreateAPITokenProcedure,
 		svc.CreateAPIToken,
@@ -165,16 +157,22 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(usersGatewayMethods.ByName("RevokeAPIToken")),
 		connect.WithHandlerOptions(opts...),
 	)
+	usersGatewayBatchGetUsersHandler := connect.NewUnaryHandler(
+		UsersGatewayBatchGetUsersProcedure,
+		svc.BatchGetUsers,
+		connect.WithSchema(usersGatewayMethods.ByName("BatchGetUsers")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/agynio.api.gateway.v1.UsersGateway/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case UsersGatewayBatchGetUsersProcedure:
-			usersGatewayBatchGetUsersHandler.ServeHTTP(w, r)
 		case UsersGatewayCreateAPITokenProcedure:
 			usersGatewayCreateAPITokenHandler.ServeHTTP(w, r)
 		case UsersGatewayListAPITokensProcedure:
 			usersGatewayListAPITokensHandler.ServeHTTP(w, r)
 		case UsersGatewayRevokeAPITokenProcedure:
 			usersGatewayRevokeAPITokenHandler.ServeHTTP(w, r)
+		case UsersGatewayBatchGetUsersProcedure:
+			usersGatewayBatchGetUsersHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -183,10 +181,6 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 
 // UnimplementedUsersGatewayHandler returns CodeUnimplemented from all methods.
 type UnimplementedUsersGatewayHandler struct{}
-
-func (UnimplementedUsersGatewayHandler) BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.BatchGetUsers is not implemented"))
-}
 
 func (UnimplementedUsersGatewayHandler) CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.CreateAPIToken is not implemented"))
@@ -198,4 +192,8 @@ func (UnimplementedUsersGatewayHandler) ListAPITokens(context.Context, *connect.
 
 func (UnimplementedUsersGatewayHandler) RevokeAPIToken(context.Context, *connect.Request[v1.RevokeAPITokenRequest]) (*connect.Response[v1.RevokeAPITokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.RevokeAPIToken is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.BatchGetUsers is not implemented"))
 }
