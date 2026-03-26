@@ -24,6 +24,7 @@ import (
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
+	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
 	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
@@ -123,6 +124,7 @@ func main() {
 	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
 	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
 	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
+	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
 	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
 	tracingClient := mustClient(config.TracingGRPCTarget, "tracing", tracingv1.NewTracingServiceClient, &cleanup)
 
@@ -135,6 +137,7 @@ func main() {
 		filesClient,
 		agentStateClient,
 		tokenCountingClient,
+		llmClient,
 		secretsClient,
 		tracingClient,
 	)
@@ -171,6 +174,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewFilesGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewAgentStateGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewTokenCountingGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewTracingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
