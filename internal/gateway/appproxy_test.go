@@ -23,6 +23,10 @@ func (f *fakeAppsClient) RegisterApp(ctx context.Context, req *appsv1.RegisterAp
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeAppsClient) EnrollApp(ctx context.Context, req *appsv1.EnrollAppRequest, opts ...grpc.CallOption) (*appsv1.EnrollAppResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeAppsClient) GetApp(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
