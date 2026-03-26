@@ -23,6 +23,7 @@ const (
 	UsersGateway_CreateAPIToken_FullMethodName = "/agynio.api.gateway.v1.UsersGateway/CreateAPIToken"
 	UsersGateway_ListAPITokens_FullMethodName  = "/agynio.api.gateway.v1.UsersGateway/ListAPITokens"
 	UsersGateway_RevokeAPIToken_FullMethodName = "/agynio.api.gateway.v1.UsersGateway/RevokeAPIToken"
+	UsersGateway_BatchGetUsers_FullMethodName  = "/agynio.api.gateway.v1.UsersGateway/BatchGetUsers"
 )
 
 // UsersGatewayClient is the client API for UsersGateway service.
@@ -33,6 +34,7 @@ type UsersGatewayClient interface {
 	CreateAPIToken(ctx context.Context, in *v1.CreateAPITokenRequest, opts ...grpc.CallOption) (*v1.CreateAPITokenResponse, error)
 	ListAPITokens(ctx context.Context, in *v1.ListAPITokensRequest, opts ...grpc.CallOption) (*v1.ListAPITokensResponse, error)
 	RevokeAPIToken(ctx context.Context, in *v1.RevokeAPITokenRequest, opts ...grpc.CallOption) (*v1.RevokeAPITokenResponse, error)
+	BatchGetUsers(ctx context.Context, in *v1.BatchGetUsersRequest, opts ...grpc.CallOption) (*v1.BatchGetUsersResponse, error)
 }
 
 type usersGatewayClient struct {
@@ -73,6 +75,16 @@ func (c *usersGatewayClient) RevokeAPIToken(ctx context.Context, in *v1.RevokeAP
 	return out, nil
 }
 
+func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, in *v1.BatchGetUsersRequest, opts ...grpc.CallOption) (*v1.BatchGetUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.BatchGetUsersResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_BatchGetUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsersGatewayServer is the server API for UsersGateway service.
 // All implementations must embed UnimplementedUsersGatewayServer
 // for forward compatibility.
@@ -81,6 +93,7 @@ type UsersGatewayServer interface {
 	CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error)
 	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
 	RevokeAPIToken(context.Context, *v1.RevokeAPITokenRequest) (*v1.RevokeAPITokenResponse, error)
+	BatchGetUsers(context.Context, *v1.BatchGetUsersRequest) (*v1.BatchGetUsersResponse, error)
 	mustEmbedUnimplementedUsersGatewayServer()
 }
 
@@ -99,6 +112,9 @@ func (UnimplementedUsersGatewayServer) ListAPITokens(context.Context, *v1.ListAP
 }
 func (UnimplementedUsersGatewayServer) RevokeAPIToken(context.Context, *v1.RevokeAPITokenRequest) (*v1.RevokeAPITokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeAPIToken not implemented")
+}
+func (UnimplementedUsersGatewayServer) BatchGetUsers(context.Context, *v1.BatchGetUsersRequest) (*v1.BatchGetUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BatchGetUsers not implemented")
 }
 func (UnimplementedUsersGatewayServer) mustEmbedUnimplementedUsersGatewayServer() {}
 func (UnimplementedUsersGatewayServer) testEmbeddedByValue()                      {}
@@ -175,6 +191,24 @@ func _UsersGateway_RevokeAPIToken_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsersGateway_BatchGetUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.BatchGetUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).BatchGetUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_BatchGetUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).BatchGetUsers(ctx, req.(*v1.BatchGetUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UsersGateway_ServiceDesc is the grpc.ServiceDesc for UsersGateway service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -193,6 +227,10 @@ var UsersGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeAPIToken",
 			Handler:    _UsersGateway_RevokeAPIToken_Handler,
+		},
+		{
+			MethodName: "BatchGetUsers",
+			Handler:    _UsersGateway_BatchGetUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
