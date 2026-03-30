@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.7
-ARG GO_VERSION=1.24.10
+ARG GO_VERSION=1.25
 ARG BUF_VERSION=1.66.1
 
 # Stage 1: Download buf binary
