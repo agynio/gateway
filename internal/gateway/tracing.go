@@ -30,3 +30,19 @@ func (g *Gateway) GetTrace(ctx context.Context, req *connect.Request[tracingv1.G
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *Gateway) GetTraceSummary(ctx context.Context, req *connect.Request[tracingv1.GetTraceSummaryRequest]) (*connect.Response[tracingv1.GetTraceSummaryResponse], error) {
+	resp, err := g.tracing.GetTraceSummary(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetTraceSpanTotals(ctx context.Context, req *connect.Request[tracingv1.GetTraceSpanTotalsRequest]) (*connect.Response[tracingv1.GetTraceSpanTotalsResponse], error) {
+	resp, err := g.tracing.GetTraceSpanTotals(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
