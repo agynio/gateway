@@ -22,6 +22,7 @@ const (
 	defaultTracingGRPCTarget        = "tracing:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
 	defaultZitiLeaseRenewalInterval = 2 * time.Minute
+	defaultZitiEnrollmentTimeout    = 2 * time.Minute
 	defaultUsersGRPCTarget          = "users:50051"
 	defaultOrganizationsGRPCTarget  = "organizations:50051"
 )
@@ -41,6 +42,7 @@ type Config struct {
 	TracingGRPCTarget        string
 	ZitiEnabled              bool
 	ZitiLeaseRenewalInterval time.Duration
+	ZitiEnrollmentTimeout    time.Duration
 	ZitiManagementGRPCTarget string
 	OIDCIssuerURL            string
 	OIDCClientID             string
@@ -65,6 +67,14 @@ func LoadConfigFromEnv() (*Config, error) {
 		return nil, fmt.Errorf("ZITI_LEASE_RENEWAL_INTERVAL must be positive")
 	}
 
+	zitiEnrollmentTimeout, err := envDuration("ZITI_ENROLLMENT_TIMEOUT", defaultZitiEnrollmentTimeout)
+	if err != nil {
+		return nil, err
+	}
+	if zitiEnrollmentTimeout <= 0 {
+		return nil, fmt.Errorf("ZITI_ENROLLMENT_TIMEOUT must be positive")
+	}
+
 	clusterAdminToken := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_TOKEN"))
 	clusterAdminIdentityID := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_IDENTITY_ID"))
 	if (clusterAdminToken == "") != (clusterAdminIdentityID == "") {
@@ -85,6 +95,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		TracingGRPCTarget:        envOrDefault("TRACING_GRPC_TARGET", defaultTracingGRPCTarget),
 		ZitiEnabled:              zitiEnabled,
 		ZitiLeaseRenewalInterval: zitiLeaseRenewalInterval,
+		ZitiEnrollmentTimeout:    zitiEnrollmentTimeout,
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
 		OIDCIssuerURL:            strings.TrimSpace(os.Getenv("OIDC_ISSUER_URL")),
 		OIDCClientID:             strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")),

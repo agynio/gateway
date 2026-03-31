@@ -17,6 +17,8 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
@@ -48,6 +50,8 @@ const (
 	defaultAddr             = ":8080"
 	defaultZitiServiceName  = "gateway"
 	defaultAppProxyCacheTTL = 30 * time.Second
+	retryInitialBackoff     = 1 * time.Second
+	retryMaxBackoff         = 15 * time.Second
 )
 
 func main() {
@@ -207,8 +211,16 @@ func main() {
 	}
 
 	if config.ZitiEnabled {
-		zitiIdentityID, identityJSON, err := zitiMgmtClient.RequestServiceIdentity(ctx, zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY)
-		if err != nil {
+		enrollmentCtx, cancel := context.WithTimeout(ctx, config.ZitiEnrollmentTimeout)
+		defer cancel()
+
+		var zitiIdentityID string
+		var identityJSON []byte
+		if err := retryWithBackoff(enrollmentCtx, "ziti enrollment", func(attemptCtx context.Context) error {
+			var requestErr error
+			zitiIdentityID, identityJSON, requestErr = zitiMgmtClient.RequestServiceIdentity(attemptCtx, zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY)
+			return requestErr
+		}); err != nil {
 			log.Fatalf("failed to request ziti service identity: %v", err)
 		}
 
@@ -274,6 +286,54 @@ func zitiServiceName() string {
 		return v
 	}
 	return defaultZitiServiceName
+}
+
+func retryWithBackoff(ctx context.Context, operationName string, fn func(context.Context) error) error {
+	backoff := retryInitialBackoff
+	attempt := 1
+	for {
+		err := fn(ctx)
+		if err == nil {
+			return nil
+		}
+
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
+		if !isRetryableGrpcError(err) {
+			return err
+		}
+
+		delay := backoff
+		if delay > retryMaxBackoff {
+			delay = retryMaxBackoff
+		}
+
+		log.Printf("%s failed (attempt %d), retrying in %s: %v", operationName, attempt, delay, err)
+
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+
+		backoff *= 2
+		if backoff > retryMaxBackoff {
+			backoff = retryMaxBackoff
+		}
+		attempt++
+	}
+}
+
+func isRetryableGrpcError(err error) bool {
+	statusErr, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	return statusErr.Code() == codes.Unavailable || statusErr.Code() == codes.Unknown
 }
 
 func mustClient[T any](target, name string, factory func(grpc.ClientConnInterface) T, cleanup *[]func()) T {
