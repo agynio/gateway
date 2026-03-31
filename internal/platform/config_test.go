@@ -20,6 +20,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "organizations:50062")
 	t.Setenv("ZITI_ENABLED", "true")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "3m")
+	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "90s")
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "ziti-management:50061")
 	t.Setenv("OIDC_ISSUER_URL", "https://issuer.example.com")
 	t.Setenv("OIDC_CLIENT_ID", "client-123")
@@ -87,6 +88,10 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Fatalf("unexpected ziti lease renewal interval: %s", got)
 	}
 
+	if got := cfg.ZitiEnrollmentTimeout; got != 90*time.Second {
+		t.Fatalf("unexpected ziti enrollment timeout: %s", got)
+	}
+
 	if got := cfg.ZitiManagementGRPCTarget; got != "ziti-management:50061" {
 		t.Fatalf("unexpected ziti management grpc target: %s", got)
 	}
@@ -137,6 +142,7 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "")
 	t.Setenv("ZITI_ENABLED", "")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "")
+	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "")
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "")
 	t.Setenv("OIDC_ISSUER_URL", "")
 	t.Setenv("OIDC_CLIENT_ID", "")
@@ -189,6 +195,9 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.ZitiLeaseRenewalInterval != defaultZitiLeaseRenewalInterval {
 		t.Fatalf("unexpected ziti lease renewal interval: %s", cfg.ZitiLeaseRenewalInterval)
+	}
+	if cfg.ZitiEnrollmentTimeout != defaultZitiEnrollmentTimeout {
+		t.Fatalf("unexpected ziti enrollment timeout: %s", cfg.ZitiEnrollmentTimeout)
 	}
 	if cfg.ZitiManagementGRPCTarget != defaultZitiManagementGRPCTarget {
 		t.Fatalf("unexpected ziti management grpc target: %s", cfg.ZitiManagementGRPCTarget)
@@ -269,5 +278,16 @@ func TestLoadConfigFromEnvInvalidZitiLeaseRenewalInterval(t *testing.T) {
 	_, err := LoadConfigFromEnv()
 	if err == nil {
 		t.Fatalf("expected error for invalid ziti lease renewal interval")
+	}
+}
+
+func TestLoadConfigFromEnvInvalidZitiEnrollmentTimeout(t *testing.T) {
+	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "0s")
+	t.Setenv("CLUSTER_ADMIN_TOKEN", "")
+	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
+
+	_, err := LoadConfigFromEnv()
+	if err == nil {
+		t.Fatalf("expected error for invalid ziti enrollment timeout")
 	}
 }
