@@ -27,7 +27,7 @@ func TestSourceIdentityFromConnMissingIdentity(t *testing.T) {
 }
 
 func TestSourceIdentityFromConnDialerOnlyEmptyFallsThrough(t *testing.T) {
-	_, ok := SourceIdentityFromConn(dialerOnlyConn{dialerID: "   "})
+	_, ok := SourceIdentityFromConn(dialerConn{dialerID: "   "})
 	if ok {
 		t.Fatalf("expected no identity")
 	}
@@ -80,15 +80,6 @@ func (stubAddr) String() string {
 type dialerConn struct {
 	stubConn
 	dialerID string
-}
-
-type dialerOnlyConn struct {
-	stubConn
-	dialerID string
-}
-
-func (conn dialerOnlyConn) GetDialerIdentityId() string {
-	return conn.dialerID
 }
 
 func (conn dialerConn) GetDialerIdentityId() string {
