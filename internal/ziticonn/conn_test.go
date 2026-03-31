@@ -7,11 +7,8 @@ import (
 	"time"
 )
 
-func TestSourceIdentityFromConnPrefersDialerID(t *testing.T) {
-	conn := dialerSourceConn{
-		dialerID: "  dialer-id  ",
-		sourceID: "source-name",
-	}
+func TestSourceIdentityFromConnDialerID(t *testing.T) {
+	conn := dialerConn{dialerID: "  dialer-id  "}
 
 	identity, ok := SourceIdentityFromConn(conn)
 	if !ok {
@@ -19,33 +16,6 @@ func TestSourceIdentityFromConnPrefersDialerID(t *testing.T) {
 	}
 	if identity != "dialer-id" {
 		t.Fatalf("expected dialer id, got %q", identity)
-	}
-}
-
-func TestSourceIdentityFromConnFallsBackToSourceIdentifier(t *testing.T) {
-	conn := dialerSourceConn{
-		dialerID: "   ",
-		sourceID: "  source-name  ",
-	}
-
-	identity, ok := SourceIdentityFromConn(conn)
-	if !ok {
-		t.Fatalf("expected identity")
-	}
-	if identity != "source-name" {
-		t.Fatalf("expected source identifier, got %q", identity)
-	}
-}
-
-func TestSourceIdentityFromConnSourceOnly(t *testing.T) {
-	conn := sourceConn{sourceID: "  source-name  "}
-
-	identity, ok := SourceIdentityFromConn(conn)
-	if !ok {
-		t.Fatalf("expected identity")
-	}
-	if identity != "source-name" {
-		t.Fatalf("expected source identifier, got %q", identity)
 	}
 }
 
@@ -107,19 +77,9 @@ func (stubAddr) String() string {
 	return "stub"
 }
 
-type sourceConn struct {
-	stubConn
-	sourceID string
-}
-
-func (conn sourceConn) SourceIdentifier() string {
-	return conn.sourceID
-}
-
-type dialerSourceConn struct {
+type dialerConn struct {
 	stubConn
 	dialerID string
-	sourceID string
 }
 
 type dialerOnlyConn struct {
@@ -127,14 +87,10 @@ type dialerOnlyConn struct {
 	dialerID string
 }
 
-func (conn dialerSourceConn) GetDialerIdentityId() string {
+func (conn dialerOnlyConn) GetDialerIdentityId() string {
 	return conn.dialerID
 }
 
-func (conn dialerSourceConn) SourceIdentifier() string {
-	return conn.sourceID
-}
-
-func (conn dialerOnlyConn) GetDialerIdentityId() string {
+func (conn dialerConn) GetDialerIdentityId() string {
 	return conn.dialerID
 }
