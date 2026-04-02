@@ -30,6 +30,10 @@ func (f *fakeUsersClient) GetUserByOIDCSubject(ctx context.Context, in *usersv1.
 	return nil, status.Error(codes.Unimplemented, "GetUserByOIDCSubject not implemented")
 }
 
+func (f *fakeUsersClient) GetMe(ctx context.Context, in *usersv1.GetMeRequest, opts ...grpc.CallOption) (*usersv1.GetMeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "GetMe not implemented")
+}
+
 func (f *fakeUsersClient) BatchGetUsers(ctx context.Context, in *usersv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*usersv1.BatchGetUsersResponse, error) {
 	f.batchGetUsersCalls++
 	f.batchGetUsersReq = in
@@ -44,6 +48,18 @@ func (f *fakeUsersClient) BatchGetUsers(ctx context.Context, in *usersv1.BatchGe
 
 func (f *fakeUsersClient) UpdateUser(ctx context.Context, in *usersv1.UpdateUserRequest, opts ...grpc.CallOption) (*usersv1.UpdateUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "UpdateUser not implemented")
+}
+
+func (f *fakeUsersClient) ListUsers(ctx context.Context, in *usersv1.ListUsersRequest, opts ...grpc.CallOption) (*usersv1.ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListUsers not implemented")
+}
+
+func (f *fakeUsersClient) CreateUser(ctx context.Context, in *usersv1.CreateUserRequest, opts ...grpc.CallOption) (*usersv1.CreateUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "CreateUser not implemented")
+}
+
+func (f *fakeUsersClient) DeleteUser(ctx context.Context, in *usersv1.DeleteUserRequest, opts ...grpc.CallOption) (*usersv1.DeleteUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "DeleteUser not implemented")
 }
 
 func (f *fakeUsersClient) CreateAPIToken(ctx context.Context, in *usersv1.CreateAPITokenRequest, opts ...grpc.CallOption) (*usersv1.CreateAPITokenResponse, error) {

@@ -51,6 +51,34 @@ func (f *fakeOrganizationsClient) ListAccessibleOrganizations(ctx context.Contex
 	return f.listAccessibleResp, nil
 }
 
+func (f *fakeOrganizationsClient) CreateMembership(ctx context.Context, in *organizationsv1.CreateMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.CreateMembershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "CreateMembership not implemented")
+}
+
+func (f *fakeOrganizationsClient) AcceptMembership(ctx context.Context, in *organizationsv1.AcceptMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.AcceptMembershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "AcceptMembership not implemented")
+}
+
+func (f *fakeOrganizationsClient) DeclineMembership(ctx context.Context, in *organizationsv1.DeclineMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.DeclineMembershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "DeclineMembership not implemented")
+}
+
+func (f *fakeOrganizationsClient) RemoveMembership(ctx context.Context, in *organizationsv1.RemoveMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.RemoveMembershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "RemoveMembership not implemented")
+}
+
+func (f *fakeOrganizationsClient) UpdateMembershipRole(ctx context.Context, in *organizationsv1.UpdateMembershipRoleRequest, opts ...grpc.CallOption) (*organizationsv1.UpdateMembershipRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "UpdateMembershipRole not implemented")
+}
+
+func (f *fakeOrganizationsClient) ListMembers(ctx context.Context, in *organizationsv1.ListMembersRequest, opts ...grpc.CallOption) (*organizationsv1.ListMembersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListMembers not implemented")
+}
+
+func (f *fakeOrganizationsClient) ListMyMemberships(ctx context.Context, in *organizationsv1.ListMyMembershipsRequest, opts ...grpc.CallOption) (*organizationsv1.ListMyMembershipsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListMyMemberships not implemented")
+}
+
 func TestOrganizationsGatewayListAccessibleOrganizations(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-1",

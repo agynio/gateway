@@ -34,6 +34,18 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// UsersGatewayGetMeProcedure is the fully-qualified name of the UsersGateway's GetMe RPC.
+	UsersGatewayGetMeProcedure = "/agynio.api.gateway.v1.UsersGateway/GetMe"
+	// UsersGatewayCreateUserProcedure is the fully-qualified name of the UsersGateway's CreateUser RPC.
+	UsersGatewayCreateUserProcedure = "/agynio.api.gateway.v1.UsersGateway/CreateUser"
+	// UsersGatewayGetUserProcedure is the fully-qualified name of the UsersGateway's GetUser RPC.
+	UsersGatewayGetUserProcedure = "/agynio.api.gateway.v1.UsersGateway/GetUser"
+	// UsersGatewayListUsersProcedure is the fully-qualified name of the UsersGateway's ListUsers RPC.
+	UsersGatewayListUsersProcedure = "/agynio.api.gateway.v1.UsersGateway/ListUsers"
+	// UsersGatewayUpdateUserProcedure is the fully-qualified name of the UsersGateway's UpdateUser RPC.
+	UsersGatewayUpdateUserProcedure = "/agynio.api.gateway.v1.UsersGateway/UpdateUser"
+	// UsersGatewayDeleteUserProcedure is the fully-qualified name of the UsersGateway's DeleteUser RPC.
+	UsersGatewayDeleteUserProcedure = "/agynio.api.gateway.v1.UsersGateway/DeleteUser"
 	// UsersGatewayCreateAPITokenProcedure is the fully-qualified name of the UsersGateway's
 	// CreateAPIToken RPC.
 	UsersGatewayCreateAPITokenProcedure = "/agynio.api.gateway.v1.UsersGateway/CreateAPIToken"
@@ -50,6 +62,14 @@ const (
 
 // UsersGatewayClient is a client for the agynio.api.gateway.v1.UsersGateway service.
 type UsersGatewayClient interface {
+	// --- Current User ---
+	GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error)
+	// --- Admin User Management ---
+	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
+	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
+	ListUsers(context.Context, *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error)
+	UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error)
+	DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error)
 	// --- API Tokens ---
 	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
@@ -68,6 +88,42 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	usersGatewayMethods := v11.File_agynio_api_gateway_v1_users_proto.Services().ByName("UsersGateway").Methods()
 	return &usersGatewayClient{
+		getMe: connect.NewClient[v1.GetMeRequest, v1.GetMeResponse](
+			httpClient,
+			baseURL+UsersGatewayGetMeProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("GetMe")),
+			connect.WithClientOptions(opts...),
+		),
+		createUser: connect.NewClient[v1.CreateUserRequest, v1.CreateUserResponse](
+			httpClient,
+			baseURL+UsersGatewayCreateUserProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("CreateUser")),
+			connect.WithClientOptions(opts...),
+		),
+		getUser: connect.NewClient[v1.GetUserRequest, v1.GetUserResponse](
+			httpClient,
+			baseURL+UsersGatewayGetUserProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("GetUser")),
+			connect.WithClientOptions(opts...),
+		),
+		listUsers: connect.NewClient[v1.ListUsersRequest, v1.ListUsersResponse](
+			httpClient,
+			baseURL+UsersGatewayListUsersProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("ListUsers")),
+			connect.WithClientOptions(opts...),
+		),
+		updateUser: connect.NewClient[v1.UpdateUserRequest, v1.UpdateUserResponse](
+			httpClient,
+			baseURL+UsersGatewayUpdateUserProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("UpdateUser")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteUser: connect.NewClient[v1.DeleteUserRequest, v1.DeleteUserResponse](
+			httpClient,
+			baseURL+UsersGatewayDeleteUserProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("DeleteUser")),
+			connect.WithClientOptions(opts...),
+		),
 		createAPIToken: connect.NewClient[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse](
 			httpClient,
 			baseURL+UsersGatewayCreateAPITokenProcedure,
@@ -97,10 +153,46 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // usersGatewayClient implements UsersGatewayClient.
 type usersGatewayClient struct {
+	getMe          *connect.Client[v1.GetMeRequest, v1.GetMeResponse]
+	createUser     *connect.Client[v1.CreateUserRequest, v1.CreateUserResponse]
+	getUser        *connect.Client[v1.GetUserRequest, v1.GetUserResponse]
+	listUsers      *connect.Client[v1.ListUsersRequest, v1.ListUsersResponse]
+	updateUser     *connect.Client[v1.UpdateUserRequest, v1.UpdateUserResponse]
+	deleteUser     *connect.Client[v1.DeleteUserRequest, v1.DeleteUserResponse]
 	createAPIToken *connect.Client[v1.CreateAPITokenRequest, v1.CreateAPITokenResponse]
 	listAPITokens  *connect.Client[v1.ListAPITokensRequest, v1.ListAPITokensResponse]
 	revokeAPIToken *connect.Client[v1.RevokeAPITokenRequest, v1.RevokeAPITokenResponse]
 	batchGetUsers  *connect.Client[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse]
+}
+
+// GetMe calls agynio.api.gateway.v1.UsersGateway.GetMe.
+func (c *usersGatewayClient) GetMe(ctx context.Context, req *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error) {
+	return c.getMe.CallUnary(ctx, req)
+}
+
+// CreateUser calls agynio.api.gateway.v1.UsersGateway.CreateUser.
+func (c *usersGatewayClient) CreateUser(ctx context.Context, req *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error) {
+	return c.createUser.CallUnary(ctx, req)
+}
+
+// GetUser calls agynio.api.gateway.v1.UsersGateway.GetUser.
+func (c *usersGatewayClient) GetUser(ctx context.Context, req *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error) {
+	return c.getUser.CallUnary(ctx, req)
+}
+
+// ListUsers calls agynio.api.gateway.v1.UsersGateway.ListUsers.
+func (c *usersGatewayClient) ListUsers(ctx context.Context, req *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error) {
+	return c.listUsers.CallUnary(ctx, req)
+}
+
+// UpdateUser calls agynio.api.gateway.v1.UsersGateway.UpdateUser.
+func (c *usersGatewayClient) UpdateUser(ctx context.Context, req *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error) {
+	return c.updateUser.CallUnary(ctx, req)
+}
+
+// DeleteUser calls agynio.api.gateway.v1.UsersGateway.DeleteUser.
+func (c *usersGatewayClient) DeleteUser(ctx context.Context, req *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error) {
+	return c.deleteUser.CallUnary(ctx, req)
 }
 
 // CreateAPIToken calls agynio.api.gateway.v1.UsersGateway.CreateAPIToken.
@@ -125,6 +217,14 @@ func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, req *connect.Req
 
 // UsersGatewayHandler is an implementation of the agynio.api.gateway.v1.UsersGateway service.
 type UsersGatewayHandler interface {
+	// --- Current User ---
+	GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error)
+	// --- Admin User Management ---
+	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
+	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
+	ListUsers(context.Context, *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error)
+	UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error)
+	DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error)
 	// --- API Tokens ---
 	CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error)
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
@@ -139,6 +239,42 @@ type UsersGatewayHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	usersGatewayMethods := v11.File_agynio_api_gateway_v1_users_proto.Services().ByName("UsersGateway").Methods()
+	usersGatewayGetMeHandler := connect.NewUnaryHandler(
+		UsersGatewayGetMeProcedure,
+		svc.GetMe,
+		connect.WithSchema(usersGatewayMethods.ByName("GetMe")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayCreateUserHandler := connect.NewUnaryHandler(
+		UsersGatewayCreateUserProcedure,
+		svc.CreateUser,
+		connect.WithSchema(usersGatewayMethods.ByName("CreateUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayGetUserHandler := connect.NewUnaryHandler(
+		UsersGatewayGetUserProcedure,
+		svc.GetUser,
+		connect.WithSchema(usersGatewayMethods.ByName("GetUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayListUsersHandler := connect.NewUnaryHandler(
+		UsersGatewayListUsersProcedure,
+		svc.ListUsers,
+		connect.WithSchema(usersGatewayMethods.ByName("ListUsers")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayUpdateUserHandler := connect.NewUnaryHandler(
+		UsersGatewayUpdateUserProcedure,
+		svc.UpdateUser,
+		connect.WithSchema(usersGatewayMethods.ByName("UpdateUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayDeleteUserHandler := connect.NewUnaryHandler(
+		UsersGatewayDeleteUserProcedure,
+		svc.DeleteUser,
+		connect.WithSchema(usersGatewayMethods.ByName("DeleteUser")),
+		connect.WithHandlerOptions(opts...),
+	)
 	usersGatewayCreateAPITokenHandler := connect.NewUnaryHandler(
 		UsersGatewayCreateAPITokenProcedure,
 		svc.CreateAPIToken,
@@ -165,6 +301,18 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 	)
 	return "/agynio.api.gateway.v1.UsersGateway/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case UsersGatewayGetMeProcedure:
+			usersGatewayGetMeHandler.ServeHTTP(w, r)
+		case UsersGatewayCreateUserProcedure:
+			usersGatewayCreateUserHandler.ServeHTTP(w, r)
+		case UsersGatewayGetUserProcedure:
+			usersGatewayGetUserHandler.ServeHTTP(w, r)
+		case UsersGatewayListUsersProcedure:
+			usersGatewayListUsersHandler.ServeHTTP(w, r)
+		case UsersGatewayUpdateUserProcedure:
+			usersGatewayUpdateUserHandler.ServeHTTP(w, r)
+		case UsersGatewayDeleteUserProcedure:
+			usersGatewayDeleteUserHandler.ServeHTTP(w, r)
 		case UsersGatewayCreateAPITokenProcedure:
 			usersGatewayCreateAPITokenHandler.ServeHTTP(w, r)
 		case UsersGatewayListAPITokensProcedure:
@@ -181,6 +329,30 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 
 // UnimplementedUsersGatewayHandler returns CodeUnimplemented from all methods.
 type UnimplementedUsersGatewayHandler struct{}
+
+func (UnimplementedUsersGatewayHandler) GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.GetMe is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.CreateUser is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.GetUser is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) ListUsers(context.Context, *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.ListUsers is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.UpdateUser is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.DeleteUser is not implemented"))
+}
 
 func (UnimplementedUsersGatewayHandler) CreateAPIToken(context.Context, *connect.Request[v1.CreateAPITokenRequest]) (*connect.Response[v1.CreateAPITokenResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.CreateAPIToken is not implemented"))

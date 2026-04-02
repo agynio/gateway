@@ -20,6 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	UsersGateway_GetMe_FullMethodName          = "/agynio.api.gateway.v1.UsersGateway/GetMe"
+	UsersGateway_CreateUser_FullMethodName     = "/agynio.api.gateway.v1.UsersGateway/CreateUser"
+	UsersGateway_GetUser_FullMethodName        = "/agynio.api.gateway.v1.UsersGateway/GetUser"
+	UsersGateway_ListUsers_FullMethodName      = "/agynio.api.gateway.v1.UsersGateway/ListUsers"
+	UsersGateway_UpdateUser_FullMethodName     = "/agynio.api.gateway.v1.UsersGateway/UpdateUser"
+	UsersGateway_DeleteUser_FullMethodName     = "/agynio.api.gateway.v1.UsersGateway/DeleteUser"
 	UsersGateway_CreateAPIToken_FullMethodName = "/agynio.api.gateway.v1.UsersGateway/CreateAPIToken"
 	UsersGateway_ListAPITokens_FullMethodName  = "/agynio.api.gateway.v1.UsersGateway/ListAPITokens"
 	UsersGateway_RevokeAPIToken_FullMethodName = "/agynio.api.gateway.v1.UsersGateway/RevokeAPIToken"
@@ -30,6 +36,14 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UsersGatewayClient interface {
+	// --- Current User ---
+	GetMe(ctx context.Context, in *v1.GetMeRequest, opts ...grpc.CallOption) (*v1.GetMeResponse, error)
+	// --- Admin User Management ---
+	CreateUser(ctx context.Context, in *v1.CreateUserRequest, opts ...grpc.CallOption) (*v1.CreateUserResponse, error)
+	GetUser(ctx context.Context, in *v1.GetUserRequest, opts ...grpc.CallOption) (*v1.GetUserResponse, error)
+	ListUsers(ctx context.Context, in *v1.ListUsersRequest, opts ...grpc.CallOption) (*v1.ListUsersResponse, error)
+	UpdateUser(ctx context.Context, in *v1.UpdateUserRequest, opts ...grpc.CallOption) (*v1.UpdateUserResponse, error)
+	DeleteUser(ctx context.Context, in *v1.DeleteUserRequest, opts ...grpc.CallOption) (*v1.DeleteUserResponse, error)
 	// --- API Tokens ---
 	CreateAPIToken(ctx context.Context, in *v1.CreateAPITokenRequest, opts ...grpc.CallOption) (*v1.CreateAPITokenResponse, error)
 	ListAPITokens(ctx context.Context, in *v1.ListAPITokensRequest, opts ...grpc.CallOption) (*v1.ListAPITokensResponse, error)
@@ -43,6 +57,66 @@ type usersGatewayClient struct {
 
 func NewUsersGatewayClient(cc grpc.ClientConnInterface) UsersGatewayClient {
 	return &usersGatewayClient{cc}
+}
+
+func (c *usersGatewayClient) GetMe(ctx context.Context, in *v1.GetMeRequest, opts ...grpc.CallOption) (*v1.GetMeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetMeResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_GetMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) CreateUser(ctx context.Context, in *v1.CreateUserRequest, opts ...grpc.CallOption) (*v1.CreateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.CreateUserResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_CreateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) GetUser(ctx context.Context, in *v1.GetUserRequest, opts ...grpc.CallOption) (*v1.GetUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.GetUserResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_GetUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) ListUsers(ctx context.Context, in *v1.ListUsersRequest, opts ...grpc.CallOption) (*v1.ListUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListUsersResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_ListUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) UpdateUser(ctx context.Context, in *v1.UpdateUserRequest, opts ...grpc.CallOption) (*v1.UpdateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.UpdateUserResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_UpdateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) DeleteUser(ctx context.Context, in *v1.DeleteUserRequest, opts ...grpc.CallOption) (*v1.DeleteUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.DeleteUserResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_DeleteUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *usersGatewayClient) CreateAPIToken(ctx context.Context, in *v1.CreateAPITokenRequest, opts ...grpc.CallOption) (*v1.CreateAPITokenResponse, error) {
@@ -89,6 +163,14 @@ func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, in *v1.BatchGetU
 // All implementations must embed UnimplementedUsersGatewayServer
 // for forward compatibility.
 type UsersGatewayServer interface {
+	// --- Current User ---
+	GetMe(context.Context, *v1.GetMeRequest) (*v1.GetMeResponse, error)
+	// --- Admin User Management ---
+	CreateUser(context.Context, *v1.CreateUserRequest) (*v1.CreateUserResponse, error)
+	GetUser(context.Context, *v1.GetUserRequest) (*v1.GetUserResponse, error)
+	ListUsers(context.Context, *v1.ListUsersRequest) (*v1.ListUsersResponse, error)
+	UpdateUser(context.Context, *v1.UpdateUserRequest) (*v1.UpdateUserResponse, error)
+	DeleteUser(context.Context, *v1.DeleteUserRequest) (*v1.DeleteUserResponse, error)
 	// --- API Tokens ---
 	CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error)
 	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
@@ -104,6 +186,24 @@ type UsersGatewayServer interface {
 // pointer dereference when methods are called.
 type UnimplementedUsersGatewayServer struct{}
 
+func (UnimplementedUsersGatewayServer) GetMe(context.Context, *v1.GetMeRequest) (*v1.GetMeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMe not implemented")
+}
+func (UnimplementedUsersGatewayServer) CreateUser(context.Context, *v1.CreateUserRequest) (*v1.CreateUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
+}
+func (UnimplementedUsersGatewayServer) GetUser(context.Context, *v1.GetUserRequest) (*v1.GetUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
+}
+func (UnimplementedUsersGatewayServer) ListUsers(context.Context, *v1.ListUsersRequest) (*v1.ListUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUsers not implemented")
+}
+func (UnimplementedUsersGatewayServer) UpdateUser(context.Context, *v1.UpdateUserRequest) (*v1.UpdateUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedUsersGatewayServer) DeleteUser(context.Context, *v1.DeleteUserRequest) (*v1.DeleteUserResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteUser not implemented")
+}
 func (UnimplementedUsersGatewayServer) CreateAPIToken(context.Context, *v1.CreateAPITokenRequest) (*v1.CreateAPITokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateAPIToken not implemented")
 }
@@ -135,6 +235,114 @@ func RegisterUsersGatewayServer(s grpc.ServiceRegistrar, srv UsersGatewayServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&UsersGateway_ServiceDesc, srv)
+}
+
+func _UsersGateway_GetMe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetMeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).GetMe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_GetMe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).GetMe(ctx, req.(*v1.GetMeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_CreateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).CreateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_CreateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).CreateUser(ctx, req.(*v1.CreateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_GetUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.GetUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).GetUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_GetUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).GetUser(ctx, req.(*v1.GetUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_ListUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).ListUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_ListUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).ListUsers(ctx, req.(*v1.ListUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).UpdateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_UpdateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).UpdateUser(ctx, req.(*v1.UpdateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_DeleteUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).DeleteUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_DeleteUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).DeleteUser(ctx, req.(*v1.DeleteUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _UsersGateway_CreateAPIToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -216,6 +424,30 @@ var UsersGateway_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "agynio.api.gateway.v1.UsersGateway",
 	HandlerType: (*UsersGatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetMe",
+			Handler:    _UsersGateway_GetMe_Handler,
+		},
+		{
+			MethodName: "CreateUser",
+			Handler:    _UsersGateway_CreateUser_Handler,
+		},
+		{
+			MethodName: "GetUser",
+			Handler:    _UsersGateway_GetUser_Handler,
+		},
+		{
+			MethodName: "ListUsers",
+			Handler:    _UsersGateway_ListUsers_Handler,
+		},
+		{
+			MethodName: "UpdateUser",
+			Handler:    _UsersGateway_UpdateUser_Handler,
+		},
+		{
+			MethodName: "DeleteUser",
+			Handler:    _UsersGateway_DeleteUser_Handler,
+		},
 		{
 			MethodName: "CreateAPIToken",
 			Handler:    _UsersGateway_CreateAPIToken_Handler,
