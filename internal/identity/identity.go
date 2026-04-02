@@ -12,7 +12,6 @@ const (
 	IdentityTypeUser    IdentityType = "user"
 	IdentityTypeAgent   IdentityType = "agent"
 	IdentityTypeApp     IdentityType = "app"
-	IdentityTypeChannel IdentityType = "channel"
 	IdentityTypeRunner  IdentityType = "runner"
 )
 
@@ -30,8 +29,6 @@ func ParseIdentityType(value string) (IdentityType, error) {
 		return IdentityTypeAgent, nil
 	case string(IdentityTypeApp):
 		return IdentityTypeApp, nil
-	case string(IdentityTypeChannel):
-		return IdentityTypeChannel, nil
 	case string(IdentityTypeRunner):
 		return IdentityTypeRunner, nil
 	default:
