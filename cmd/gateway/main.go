@@ -29,6 +29,7 @@ import (
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
 	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
+	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
@@ -125,6 +126,7 @@ func main() {
 	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
 	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
 	organizationsClient := mustClient(config.OrganizationsGRPCTarget, "organizations", organizationsv1.NewOrganizationsServiceClient, &cleanup)
+	runnersClient := mustClient(config.RunnersGRPCTarget, "runners", runnersv1.NewRunnersServiceClient, &cleanup)
 	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
 	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
 	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
@@ -148,6 +150,7 @@ func main() {
 	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
 	usersGateway := gateway.NewUsersGateway(usersClient)
 	organizationsGateway := gateway.NewOrganizationsGateway(organizationsClient)
+	runnersGateway := gateway.NewRunnersGateway(runnersClient)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),
@@ -183,6 +186,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewTracingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewOrganizationsGatewayHandler(organizationsGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewRunnersGatewayHandler(runnersGateway, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
