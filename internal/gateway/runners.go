@@ -23,6 +23,14 @@ func (g *RunnersGateway) RegisterRunner(ctx context.Context, req *connect.Reques
 	return connect.NewResponse(resp), nil
 }
 
+func (g *RunnersGateway) EnrollRunner(ctx context.Context, req *connect.Request[runnersv1.EnrollRunnerRequest]) (*connect.Response[runnersv1.EnrollRunnerResponse], error) {
+	resp, err := g.runners.EnrollRunner(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *RunnersGateway) GetRunner(ctx context.Context, req *connect.Request[runnersv1.GetRunnerRequest]) (*connect.Response[runnersv1.GetRunnerResponse], error) {
 	resp, err := g.runners.GetRunner(ctx, req.Msg)
 	if err != nil {
