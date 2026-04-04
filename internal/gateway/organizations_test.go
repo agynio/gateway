@@ -17,6 +17,10 @@ type fakeOrganizationsClient struct {
 	listAccessibleResp  *organizationsv1.ListAccessibleOrganizationsResponse
 	listAccessibleErr   error
 	listAccessibleCalls int
+	listMyMembershipsReq   *organizationsv1.ListMyMembershipsRequest
+	listMyMembershipsResp  *organizationsv1.ListMyMembershipsResponse
+	listMyMembershipsErr   error
+	listMyMembershipsCalls int
 }
 
 func (f *fakeOrganizationsClient) CreateOrganization(ctx context.Context, in *organizationsv1.CreateOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.CreateOrganizationResponse, error) {
@@ -76,7 +80,15 @@ func (f *fakeOrganizationsClient) ListMembers(ctx context.Context, in *organizat
 }
 
 func (f *fakeOrganizationsClient) ListMyMemberships(ctx context.Context, in *organizationsv1.ListMyMembershipsRequest, opts ...grpc.CallOption) (*organizationsv1.ListMyMembershipsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListMyMemberships not implemented")
+	f.listMyMembershipsCalls++
+	f.listMyMembershipsReq = in
+	if f.listMyMembershipsErr != nil {
+		return nil, f.listMyMembershipsErr
+	}
+	if f.listMyMembershipsResp == nil {
+		f.listMyMembershipsResp = &organizationsv1.ListMyMembershipsResponse{}
+	}
+	return f.listMyMembershipsResp, nil
 }
 
 func TestOrganizationsGatewayListAccessibleOrganizations(t *testing.T) {
@@ -130,5 +142,56 @@ func TestOrganizationsGatewayListAccessibleOrganizationsMissingIdentity(t *testi
 	}
 	if client.listAccessibleCalls != 0 {
 		t.Fatalf("expected list accessible to not be called, got %d", client.listAccessibleCalls)
+	}
+}
+
+func TestListMyMemberships_MissingIdentity(t *testing.T) {
+	client := &fakeOrganizationsClient{}
+	gateway := NewOrganizationsGateway(client)
+
+	req := connect.NewRequest(&organizationsv1.ListMyMembershipsRequest{})
+	resp, err := gateway.ListMyMemberships(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("expected CodeUnauthenticated, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.listMyMembershipsCalls != 0 {
+		t.Fatalf("expected list my memberships to not be called, got %d", client.listMyMembershipsCalls)
+	}
+}
+
+func TestListMyMemberships_Success(t *testing.T) {
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "identity-1",
+		IdentityType: identity.IdentityTypeUser,
+	}
+	ctx := identity.WithIdentity(context.Background(), resolved)
+
+	client := &fakeOrganizationsClient{
+		listMyMembershipsResp: &organizationsv1.ListMyMembershipsResponse{},
+	}
+	gateway := NewOrganizationsGateway(client)
+
+	req := connect.NewRequest(&organizationsv1.ListMyMembershipsRequest{})
+	resp, err := gateway.ListMyMemberships(ctx, req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.listMyMembershipsCalls != 1 {
+		t.Fatalf("expected list my memberships to be called once, got %d", client.listMyMembershipsCalls)
+	}
+	if client.listMyMembershipsReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.listMyMembershipsResp {
+		t.Fatalf("expected response to be forwarded")
 	}
 }
