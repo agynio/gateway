@@ -13,14 +13,18 @@ import (
 )
 
 type fakeUsersClient struct {
-	resolveReq   *usersv1.ResolveOrCreateUserRequest
-	resolveResp  *usersv1.ResolveOrCreateUserResponse
-	resolveErr   error
-	resolveCalls int
-	getUserReq   *usersv1.GetUserRequest
-	getUserResp  *usersv1.GetUserResponse
-	getUserErr   error
-	getUserCalls int
+	resolveReq         *usersv1.ResolveOrCreateUserRequest
+	resolveResp        *usersv1.ResolveOrCreateUserResponse
+	resolveErr         error
+	resolveCalls       int
+	getUserReq         *usersv1.GetUserRequest
+	getUserResp        *usersv1.GetUserResponse
+	getUserErr         error
+	getUserCalls       int
+	getMeReq           *usersv1.GetMeRequest
+	getMeResp          *usersv1.GetMeResponse
+	getMeErr           error
+	getMeCalls         int
 	batchGetUsersReq   *usersv1.BatchGetUsersRequest
 	batchGetUsersResp  *usersv1.BatchGetUsersResponse
 	batchGetUsersErr   error
@@ -56,7 +60,15 @@ func (f *fakeUsersClient) GetUserByOIDCSubject(ctx context.Context, in *usersv1.
 }
 
 func (f *fakeUsersClient) GetMe(ctx context.Context, in *usersv1.GetMeRequest, opts ...grpc.CallOption) (*usersv1.GetMeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "GetMe not implemented")
+	f.getMeCalls++
+	f.getMeReq = in
+	if f.getMeErr != nil {
+		return nil, f.getMeErr
+	}
+	if f.getMeResp == nil {
+		f.getMeResp = &usersv1.GetMeResponse{}
+	}
+	return f.getMeResp, nil
 }
 
 func (f *fakeUsersClient) BatchGetUsers(ctx context.Context, in *usersv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*usersv1.BatchGetUsersResponse, error) {
@@ -111,7 +123,7 @@ func TestGetMe_Success(t *testing.T) {
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
 	client := &fakeUsersClient{
-		getUserResp: &usersv1.GetUserResponse{
+		getMeResp: &usersv1.GetMeResponse{
 			User:        &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-1"}, Name: "Ada"},
 			ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_ADMIN,
 		},
@@ -126,20 +138,17 @@ func TestGetMe_Success(t *testing.T) {
 	if resp == nil {
 		t.Fatalf("expected response")
 	}
-	if client.getUserCalls != 1 {
-		t.Fatalf("expected get user to be called once, got %d", client.getUserCalls)
+	if client.getMeCalls != 1 {
+		t.Fatalf("expected get me to be called once, got %d", client.getMeCalls)
 	}
-	if client.getUserReq == nil {
-		t.Fatalf("expected get user request")
+	if client.getMeReq == nil {
+		t.Fatalf("expected get me request")
 	}
-	if client.getUserReq.IdentityId != resolved.IdentityID {
-		t.Fatalf("expected identity_id %q, got %q", resolved.IdentityID, client.getUserReq.IdentityId)
-	}
-	if resp.Msg.User != client.getUserResp.User {
+	if resp.Msg.User != client.getMeResp.User {
 		t.Fatalf("expected user to be forwarded")
 	}
-	if resp.Msg.ClusterRole != client.getUserResp.ClusterRole {
-		t.Fatalf("expected cluster role %v, got %v", client.getUserResp.ClusterRole, resp.Msg.ClusterRole)
+	if resp.Msg.ClusterRole != client.getMeResp.ClusterRole {
+		t.Fatalf("expected cluster role %v, got %v", client.getMeResp.ClusterRole, resp.Msg.ClusterRole)
 	}
 }
 
@@ -158,8 +167,8 @@ func TestGetMe_MissingIdentity(t *testing.T) {
 	if resp != nil {
 		t.Fatalf("expected no response")
 	}
-	if client.getUserCalls != 0 {
-		t.Fatalf("expected get user to not be called, got %d", client.getUserCalls)
+	if client.getMeCalls != 0 {
+		t.Fatalf("expected get me to not be called, got %d", client.getMeCalls)
 	}
 }
 
@@ -171,7 +180,7 @@ func TestGetMe_ClusterRoleDefault(t *testing.T) {
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
 	client := &fakeUsersClient{
-		getUserResp: &usersv1.GetUserResponse{
+		getMeResp: &usersv1.GetMeResponse{
 			User:        &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-2"}, Name: "Linus"},
 			ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_UNSPECIFIED,
 		},

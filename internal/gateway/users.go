@@ -20,12 +20,12 @@ func NewUsersGateway(users usersv1.UsersServiceClient) *UsersGateway {
 }
 
 func (g *UsersGateway) GetMe(ctx context.Context, req *connect.Request[usersv1.GetMeRequest]) (*connect.Response[usersv1.GetMeResponse], error) {
-	resolvedIdentity, ok := identity.IdentityFromContext(ctx)
+	_, ok := identity.IdentityFromContext(ctx)
 	if !ok {
 		return nil, toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
 	}
 
-	userResp, err := g.users.GetUser(ctx, &usersv1.GetUserRequest{IdentityId: resolvedIdentity.IdentityID})
+	userResp, err := g.users.GetMe(ctx, &usersv1.GetMeRequest{})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
