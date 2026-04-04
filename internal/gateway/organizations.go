@@ -121,6 +121,10 @@ func (g *OrganizationsGateway) ListMembers(ctx context.Context, req *connect.Req
 }
 
 func (g *OrganizationsGateway) ListMyMemberships(ctx context.Context, req *connect.Request[organizationsv1.ListMyMembershipsRequest]) (*connect.Response[organizationsv1.ListMyMembershipsResponse], error) {
+	if _, ok := identity.IdentityFromContext(ctx); !ok {
+		return nil, toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
+	}
+
 	resp, err := g.organizations.ListMyMemberships(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)

@@ -2,9 +2,13 @@ package gateway
 
 import (
 	"context"
+	"strings"
 
 	"connectrpc.com/connect"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
+	"github.com/agynio/gateway/internal/identity"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type UsersGateway struct {
@@ -16,18 +20,49 @@ func NewUsersGateway(users usersv1.UsersServiceClient) *UsersGateway {
 }
 
 func (g *UsersGateway) GetMe(ctx context.Context, req *connect.Request[usersv1.GetMeRequest]) (*connect.Response[usersv1.GetMeResponse], error) {
-	resp, err := g.users.GetMe(ctx, req.Msg)
+	resolvedIdentity, ok := identity.IdentityFromContext(ctx)
+	if !ok {
+		return nil, toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
+	}
+
+	userResp, err := g.users.GetUser(ctx, &usersv1.GetUserRequest{IdentityId: resolvedIdentity.IdentityID})
 	if err != nil {
 		return nil, toConnectError(err)
+	}
+
+	clusterRole := userResp.ClusterRole
+	if clusterRole == usersv1.ClusterRole_CLUSTER_ROLE_UNSPECIFIED {
+		clusterRole = usersv1.ClusterRole_CLUSTER_ROLE_ADMIN
+	}
+
+	resp := &usersv1.GetMeResponse{
+		User:        userResp.User,
+		ClusterRole: clusterRole,
 	}
 	return connect.NewResponse(resp), nil
 }
 
 func (g *UsersGateway) CreateUser(ctx context.Context, req *connect.Request[usersv1.CreateUserRequest]) (*connect.Response[usersv1.CreateUserResponse], error) {
-	resp, err := g.users.CreateUser(ctx, req.Msg)
+	oidcSubject := strings.TrimSpace(req.Msg.GetOidcSubject())
+	if oidcSubject == "" {
+		return nil, toConnectError(status.Error(codes.InvalidArgument, "oidc_subject is required"))
+	}
+
+	name := req.Msg.GetName()
+	createResp, err := g.users.ResolveOrCreateUser(ctx, &usersv1.ResolveOrCreateUserRequest{
+		OidcSubject: oidcSubject,
+		Name:        name,
+		Email:       name,
+		PhotoUrl:    req.Msg.GetPhotoUrl(),
+	})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
+	if createResp == nil || createResp.User == nil {
+		return nil, toConnectError(status.Error(codes.Internal, "user missing from response"))
+	}
+
+	resp := &usersv1.CreateUserResponse{User: createResp.User}
 	return connect.NewResponse(resp), nil
 }
 
