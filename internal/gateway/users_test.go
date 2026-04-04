@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
-	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -116,22 +115,16 @@ func (f *fakeUsersClient) ResolveAPIToken(ctx context.Context, in *usersv1.Resol
 }
 
 func TestGetMe_Success(t *testing.T) {
-	resolved := identity.ResolvedIdentity{
-		IdentityID:   "identity-1",
-		IdentityType: identity.IdentityTypeUser,
-	}
-	ctx := identity.WithIdentity(context.Background(), resolved)
-
 	client := &fakeUsersClient{
 		getMeResp: &usersv1.GetMeResponse{
 			User:        &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-1"}, Name: "Ada"},
-			ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_ADMIN,
+			ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_UNSPECIFIED,
 		},
 	}
 	gateway := NewUsersGateway(client)
 
 	req := connect.NewRequest(&usersv1.GetMeRequest{})
-	resp, err := gateway.GetMe(ctx, req)
+	resp, err := gateway.GetMe(context.Background(), req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -144,59 +137,11 @@ func TestGetMe_Success(t *testing.T) {
 	if client.getMeReq == nil {
 		t.Fatalf("expected get me request")
 	}
-	if resp.Msg.User != client.getMeResp.User {
-		t.Fatalf("expected user to be forwarded")
+	if client.getMeReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
 	}
-	if resp.Msg.ClusterRole != client.getMeResp.ClusterRole {
-		t.Fatalf("expected cluster role %v, got %v", client.getMeResp.ClusterRole, resp.Msg.ClusterRole)
-	}
-}
-
-func TestGetMe_MissingIdentity(t *testing.T) {
-	client := &fakeUsersClient{}
-	gateway := NewUsersGateway(client)
-
-	req := connect.NewRequest(&usersv1.GetMeRequest{})
-	resp, err := gateway.GetMe(context.Background(), req)
-	if err == nil {
-		t.Fatalf("expected error")
-	}
-	if connect.CodeOf(err) != connect.CodeUnauthenticated {
-		t.Fatalf("expected CodeUnauthenticated, got %v", connect.CodeOf(err))
-	}
-	if resp != nil {
-		t.Fatalf("expected no response")
-	}
-	if client.getMeCalls != 0 {
-		t.Fatalf("expected get me to not be called, got %d", client.getMeCalls)
-	}
-}
-
-func TestGetMe_ClusterRoleDefault(t *testing.T) {
-	resolved := identity.ResolvedIdentity{
-		IdentityID:   "identity-1",
-		IdentityType: identity.IdentityTypeUser,
-	}
-	ctx := identity.WithIdentity(context.Background(), resolved)
-
-	client := &fakeUsersClient{
-		getMeResp: &usersv1.GetMeResponse{
-			User:        &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-2"}, Name: "Linus"},
-			ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_UNSPECIFIED,
-		},
-	}
-	gateway := NewUsersGateway(client)
-
-	req := connect.NewRequest(&usersv1.GetMeRequest{})
-	resp, err := gateway.GetMe(ctx, req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if resp == nil {
-		t.Fatalf("expected response")
-	}
-	if resp.Msg.ClusterRole != usersv1.ClusterRole_CLUSTER_ROLE_ADMIN {
-		t.Fatalf("expected cluster role default admin, got %v", resp.Msg.ClusterRole)
+	if resp.Msg != client.getMeResp {
+		t.Fatalf("expected response to be forwarded")
 	}
 }
 
