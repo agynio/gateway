@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
-	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,24 +19,9 @@ func NewUsersGateway(users usersv1.UsersServiceClient) *UsersGateway {
 }
 
 func (g *UsersGateway) GetMe(ctx context.Context, req *connect.Request[usersv1.GetMeRequest]) (*connect.Response[usersv1.GetMeResponse], error) {
-	_, ok := identity.IdentityFromContext(ctx)
-	if !ok {
-		return nil, toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
-	}
-
-	userResp, err := g.users.GetMe(ctx, &usersv1.GetMeRequest{})
+	resp, err := g.users.GetMe(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
-	}
-
-	clusterRole := userResp.ClusterRole
-	if clusterRole == usersv1.ClusterRole_CLUSTER_ROLE_UNSPECIFIED {
-		clusterRole = usersv1.ClusterRole_CLUSTER_ROLE_ADMIN
-	}
-
-	resp := &usersv1.GetMeResponse{
-		User:        userResp.User,
-		ClusterRole: clusterRole,
 	}
 	return connect.NewResponse(resp), nil
 }
