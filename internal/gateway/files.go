@@ -2,6 +2,8 @@ package gateway
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"connectrpc.com/connect"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
@@ -43,4 +45,24 @@ func (g *Gateway) GetDownloadUrl(ctx context.Context, req *connect.Request[files
 		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetFileContent(ctx context.Context, req *connect.Request[filesv1.GetFileContentRequest], stream *connect.ServerStream[filesv1.GetFileContentResponse]) error {
+	grpcStream, err := g.files.GetFileContent(ctx, req.Msg)
+	if err != nil {
+		return toConnectError(err)
+	}
+
+	for {
+		msg, err := grpcStream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return toConnectError(err)
+		}
+		if err := stream.Send(msg); err != nil {
+			return err
+		}
+	}
 }
