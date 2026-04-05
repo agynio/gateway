@@ -97,9 +97,9 @@ func (h *AppProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxyReq.Host = resolved.serviceName
 	proxyReq.Header.Set(identity.MetadataKeyAppInstallationID, resolved.installationID)
 
-	if resolved, ok := identity.IdentityFromContext(r.Context()); ok {
-		proxyReq.Header.Set(identity.MetadataKeyIdentityID, resolved.IdentityID)
-		proxyReq.Header.Set(identity.MetadataKeyIdentityType, string(resolved.IdentityType))
+	if ident, ok := identity.IdentityFromContext(r.Context()); ok {
+		proxyReq.Header.Set(identity.MetadataKeyIdentityID, ident.IdentityID)
+		proxyReq.Header.Set(identity.MetadataKeyIdentityType, string(ident.IdentityType))
 	}
 
 	resp, err := h.client.Do(proxyReq)
@@ -132,10 +132,6 @@ func (h *AppProxyHandler) resolveInstallation(ctx context.Context, orgID, slug s
 	if err != nil {
 		return resolvedInstallation{}, err
 	}
-	if installationResponse == nil {
-		return resolvedInstallation{}, fmt.Errorf("installation response missing")
-	}
-
 	installation := installationResponse.GetInstallation()
 	if installation == nil {
 		return resolvedInstallation{}, fmt.Errorf("installation response missing")
@@ -155,10 +151,6 @@ func (h *AppProxyHandler) resolveInstallation(ctx context.Context, orgID, slug s
 	if err != nil {
 		return resolvedInstallation{}, err
 	}
-	if appResponse == nil {
-		return resolvedInstallation{}, fmt.Errorf("app response missing")
-	}
-
 	app := appResponse.GetApp()
 	if app == nil {
 		return resolvedInstallation{}, fmt.Errorf("app response missing")
