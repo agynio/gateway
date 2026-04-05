@@ -94,3 +94,51 @@ func (g *Gateway) ListSecrets(ctx context.Context, req *connect.Request[secretsv
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *Gateway) CreateImagePullSecret(ctx context.Context, req *connect.Request[secretsv1.CreateImagePullSecretRequest]) (*connect.Response[secretsv1.CreateImagePullSecretResponse], error) {
+	resp, err := g.secrets.CreateImagePullSecret(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetImagePullSecret(ctx context.Context, req *connect.Request[secretsv1.GetImagePullSecretRequest]) (*connect.Response[secretsv1.GetImagePullSecretResponse], error) {
+	resp, err := g.secrets.GetImagePullSecret(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) UpdateImagePullSecret(ctx context.Context, req *connect.Request[secretsv1.UpdateImagePullSecretRequest]) (*connect.Response[secretsv1.UpdateImagePullSecretResponse], error) {
+	resp, err := g.secrets.UpdateImagePullSecret(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteImagePullSecret(ctx context.Context, req *connect.Request[secretsv1.DeleteImagePullSecretRequest]) (*connect.Response[secretsv1.DeleteImagePullSecretResponse], error) {
+	resp, err := g.secrets.DeleteImagePullSecret(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListImagePullSecrets(ctx context.Context, req *connect.Request[secretsv1.ListImagePullSecretsRequest]) (*connect.Response[secretsv1.ListImagePullSecretsResponse], error) {
+	resp, err := g.secrets.ListImagePullSecrets(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ResolveImagePullSecret(ctx context.Context, req *connect.Request[secretsv1.ResolveImagePullSecretRequest]) (*connect.Response[secretsv1.ResolveImagePullSecretResponse], error) {
+	resp, err := g.secrets.ResolveImagePullSecret(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
