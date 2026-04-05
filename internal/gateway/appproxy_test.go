@@ -16,25 +16,26 @@ import (
 )
 
 type fakeAppsClient struct {
-	getAppBySlug func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error)
+	getApp                func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error)
+	getInstallationBySlug func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error)
 }
 
-func (f *fakeAppsClient) RegisterApp(ctx context.Context, req *appsv1.RegisterAppRequest, opts ...grpc.CallOption) (*appsv1.RegisterAppResponse, error) {
+func (f *fakeAppsClient) CreateApp(ctx context.Context, req *appsv1.CreateAppRequest, opts ...grpc.CallOption) (*appsv1.CreateAppResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
-func (f *fakeAppsClient) EnrollApp(ctx context.Context, req *appsv1.EnrollAppRequest, opts ...grpc.CallOption) (*appsv1.EnrollAppResponse, error) {
+func (f *fakeAppsClient) UpdateApp(ctx context.Context, req *appsv1.UpdateAppRequest, opts ...grpc.CallOption) (*appsv1.UpdateAppResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
 func (f *fakeAppsClient) GetApp(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
+	if f.getApp != nil {
+		return f.getApp(ctx, req, opts...)
+	}
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
 func (f *fakeAppsClient) GetAppBySlug(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
-	if f.getAppBySlug != nil {
-		return f.getAppBySlug(ctx, req, opts...)
-	}
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -51,6 +52,41 @@ func (f *fakeAppsClient) GetAppProfile(ctx context.Context, req *appsv1.GetAppPr
 }
 
 func (f *fakeAppsClient) ValidateServiceToken(ctx context.Context, req *appsv1.ValidateServiceTokenRequest, opts ...grpc.CallOption) (*appsv1.ValidateServiceTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) EnrollApp(ctx context.Context, req *appsv1.EnrollAppRequest, opts ...grpc.CallOption) (*appsv1.EnrollAppResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) InstallApp(ctx context.Context, req *appsv1.InstallAppRequest, opts ...grpc.CallOption) (*appsv1.InstallAppResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) GetInstallation(ctx context.Context, req *appsv1.GetInstallationRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) GetInstallationBySlug(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+	if f.getInstallationBySlug != nil {
+		return f.getInstallationBySlug(ctx, req, opts...)
+	}
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) ListInstallations(ctx context.Context, req *appsv1.ListInstallationsRequest, opts ...grpc.CallOption) (*appsv1.ListInstallationsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) UpdateInstallation(ctx context.Context, req *appsv1.UpdateInstallationRequest, opts ...grpc.CallOption) (*appsv1.UpdateInstallationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) UninstallApp(ctx context.Context, req *appsv1.UninstallAppRequest, opts ...grpc.CallOption) (*appsv1.UninstallAppResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) GetInstallationConfiguration(ctx context.Context, req *appsv1.GetInstallationConfigurationRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationConfigurationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -91,71 +127,127 @@ func TestParseAppProxyPath(t *testing.T) {
 	}
 }
 
-func TestResolveServiceNameCache(t *testing.T) {
-	var calls int
+func TestResolveInstallationCache(t *testing.T) {
+	var installationCalls int
+	var appCalls int
 	appsClient := &fakeAppsClient{
-		getAppBySlug: func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
-			calls++
-			return &appsv1.GetAppBySlugResponse{App: &appsv1.App{ZitiServiceId: "service-1"}}, nil
+		getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+			installationCalls++
+			return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
+				Meta:  &appsv1.EntityMeta{Id: "inst-" + req.OrganizationId},
+				AppId: "app-" + req.OrganizationId,
+			}}, nil
+		},
+		getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
+			appCalls++
+			return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: "service-" + req.Id}}, nil
 		},
 	}
 	handler := &AppProxyHandler{
 		apps:     appsClient,
-		cache:    make(map[string]cachedApp),
+		cache:    make(map[string]cachedInstallation),
 		cacheTTL: time.Minute,
 	}
 
 	ctx := context.Background()
-	serviceName, err := handler.resolveServiceName(ctx, "slug")
+	resolved, err := handler.resolveInstallation(ctx, "org-1", "slug")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if serviceName != "service-1" {
-		t.Fatalf("expected service name %q, got %q", "service-1", serviceName)
+	if resolved.serviceName != "service-app-org-1" {
+		t.Fatalf("expected service name %q, got %q", "service-app-org-1", resolved.serviceName)
+	}
+	if resolved.installationID != "inst-org-1" {
+		t.Fatalf("expected installation id %q, got %q", "inst-org-1", resolved.installationID)
 	}
 
-	serviceName, err = handler.resolveServiceName(ctx, "slug")
+	resolved, err = handler.resolveInstallation(ctx, "org-1", "slug")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if serviceName != "service-1" {
-		t.Fatalf("expected service name %q, got %q", "service-1", serviceName)
+	if resolved.serviceName != "service-app-org-1" {
+		t.Fatalf("expected service name %q, got %q", "service-app-org-1", resolved.serviceName)
 	}
-	if calls != 1 {
-		t.Fatalf("expected apps service to be called once, got %d", calls)
+	if installationCalls != 1 {
+		t.Fatalf("expected installation lookup once, got %d", installationCalls)
 	}
+	if appCalls != 1 {
+		t.Fatalf("expected app lookup once, got %d", appCalls)
+	}
+
+	t.Run("different organization", func(t *testing.T) {
+		resolved, err = handler.resolveInstallation(ctx, "org-2", "slug")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if resolved.serviceName != "service-app-org-2" {
+			t.Fatalf("expected service name %q, got %q", "service-app-org-2", resolved.serviceName)
+		}
+		if resolved.installationID != "inst-org-2" {
+			t.Fatalf("expected installation id %q, got %q", "inst-org-2", resolved.installationID)
+		}
+		if installationCalls != 2 {
+			t.Fatalf("expected installation lookup twice, got %d", installationCalls)
+		}
+		if appCalls != 2 {
+			t.Fatalf("expected app lookup twice, got %d", appCalls)
+		}
+	})
 }
 
-func TestResolveServiceNameErrors(t *testing.T) {
-	t.Run("app lookup error", func(t *testing.T) {
+func TestResolveInstallationErrors(t *testing.T) {
+	t.Run("installation lookup error", func(t *testing.T) {
 		handler := &AppProxyHandler{
 			apps: &fakeAppsClient{
-				getAppBySlug: func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
+				getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
 					return nil, status.Error(codes.NotFound, "missing")
 				},
 			},
-			cache:    make(map[string]cachedApp),
+			cache:    make(map[string]cachedInstallation),
 			cacheTTL: time.Minute,
 		}
 
-		_, err := handler.resolveServiceName(context.Background(), "slug")
+		_, err := handler.resolveInstallation(context.Background(), "org", "slug")
 		if err == nil {
 			t.Fatalf("expected error")
 		}
 	})
 
-	t.Run("missing app", func(t *testing.T) {
+	t.Run("missing installation", func(t *testing.T) {
 		handler := &AppProxyHandler{
 			apps: &fakeAppsClient{
-				getAppBySlug: func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
-					return &appsv1.GetAppBySlugResponse{}, nil
+				getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+					return &appsv1.GetInstallationBySlugResponse{}, nil
 				},
 			},
-			cache:    make(map[string]cachedApp),
+			cache:    make(map[string]cachedInstallation),
 			cacheTTL: time.Minute,
 		}
 
-		_, err := handler.resolveServiceName(context.Background(), "slug")
+		_, err := handler.resolveInstallation(context.Background(), "org", "slug")
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+	})
+
+	t.Run("get app error", func(t *testing.T) {
+		handler := &AppProxyHandler{
+			apps: &fakeAppsClient{
+				getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+					return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
+						Meta:  &appsv1.EntityMeta{Id: "inst"},
+						AppId: "app",
+					}}, nil
+				},
+				getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
+					return nil, status.Error(codes.Internal, "boom")
+				},
+			},
+			cache:    make(map[string]cachedInstallation),
+			cacheTTL: time.Minute,
+		}
+
+		_, err := handler.resolveInstallation(context.Background(), "org", "slug")
 		if err == nil {
 			t.Fatalf("expected error")
 		}
@@ -164,15 +256,21 @@ func TestResolveServiceNameErrors(t *testing.T) {
 	t.Run("missing service id", func(t *testing.T) {
 		handler := &AppProxyHandler{
 			apps: &fakeAppsClient{
-				getAppBySlug: func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
-					return &appsv1.GetAppBySlugResponse{App: &appsv1.App{ZitiServiceId: " "}}, nil
+				getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+					return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
+						Meta:  &appsv1.EntityMeta{Id: "inst"},
+						AppId: "app",
+					}}, nil
+				},
+				getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
+					return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: " "}}, nil
 				},
 			},
-			cache:    make(map[string]cachedApp),
+			cache:    make(map[string]cachedInstallation),
 			cacheTTL: time.Minute,
 		}
 
-		_, err := handler.resolveServiceName(context.Background(), "slug")
+		_, err := handler.resolveInstallation(context.Background(), "org", "slug")
 		if err == nil {
 			t.Fatalf("expected error")
 		}
@@ -182,11 +280,13 @@ func TestResolveServiceNameErrors(t *testing.T) {
 func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	var gotIdentityID string
 	var gotIdentityType string
+	var gotInstallationID string
 	var gotPath string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotIdentityID = r.Header.Get(identity.MetadataKeyIdentityID)
 		gotIdentityType = r.Header.Get(identity.MetadataKeyIdentityType)
+		gotInstallationID = r.Header.Get(identity.MetadataKeyAppInstallationID)
 		gotPath = r.URL.Path
 		w.Header().Set("X-Test", "ok")
 		w.WriteHeader(http.StatusOK)
@@ -203,14 +303,20 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 		},
 	}
 	appsClient := &fakeAppsClient{
-		getAppBySlug: func(ctx context.Context, req *appsv1.GetAppBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetAppBySlugResponse, error) {
-			return &appsv1.GetAppBySlugResponse{App: &appsv1.App{ZitiServiceId: "service"}}, nil
+		getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
+			return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
+				Meta:  &appsv1.EntityMeta{Id: "inst-1"},
+				AppId: "app-1",
+			}}, nil
+		},
+		getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
+			return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: "service"}}, nil
 		},
 	}
 	handler := &AppProxyHandler{
 		apps:     appsClient,
 		client:   &http.Client{Transport: transport},
-		cache:    make(map[string]cachedApp),
+		cache:    make(map[string]cachedInstallation),
 		cacheTTL: time.Minute,
 	}
 
@@ -218,6 +324,7 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
 	req = req.WithContext(identity.WithIdentity(req.Context(), resolved))
 	resp := httptest.NewRecorder()
+	req.Header.Set(identity.MetadataKeyOrganizationID, "org-1")
 
 	handler.ServeHTTP(resp, req)
 
@@ -236,8 +343,23 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	if gotIdentityType != string(resolved.IdentityType) {
 		t.Fatalf("expected identity type header %q, got %q", resolved.IdentityType, gotIdentityType)
 	}
+	if gotInstallationID != "inst-1" {
+		t.Fatalf("expected installation header %q, got %q", "inst-1", gotInstallationID)
+	}
 	if gotPath != "/health" {
 		t.Fatalf("expected proxied path %q, got %q", "/health", gotPath)
+	}
+}
+
+func TestAppProxyHandlerServeHTTPMissingOrgID(t *testing.T) {
+	handler := &AppProxyHandler{}
+	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
+	resp := httptest.NewRecorder()
+
+	handler.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, resp.Code)
 	}
 }
 

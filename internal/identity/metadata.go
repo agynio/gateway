@@ -9,8 +9,10 @@ import (
 )
 
 const (
-	MetadataKeyIdentityID   = "x-identity-id"
-	MetadataKeyIdentityType = "x-identity-type"
+	MetadataKeyIdentityID        = "x-identity-id"
+	MetadataKeyIdentityType      = "x-identity-type"
+	MetadataKeyOrganizationID    = "x-organization-id"
+	MetadataKeyAppInstallationID = "x-app-installation-id"
 )
 
 func AppendToOutgoingContext(ctx context.Context) context.Context {
