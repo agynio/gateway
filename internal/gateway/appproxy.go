@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -207,7 +208,7 @@ func (h *AppProxyHandler) dialContext(ctx context.Context, network, addr string)
 
 	zitiContext := h.zitiContextProvider.ZitiContext()
 	if zitiContext == nil {
-		return nil, fmt.Errorf("ziti context unavailable")
+		return nil, errors.New("ziti context unavailable")
 	}
 
 	return zitiContext.Dial(serviceName)

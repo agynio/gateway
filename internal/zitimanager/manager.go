@@ -3,6 +3,7 @@ package zitimanager
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -24,21 +25,24 @@ const (
 
 var (
 	leaseRetryBackoffs = []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second}
+	reEnrollBackoffs   = []time.Duration{1 * time.Second, 2 * time.Second, 4 * time.Second}
 	newZitiContext     = ziti.NewContext
+	errIdentityMissing = errors.New("ziti identity id missing")
 )
 
 type ListenerFactory func(zitiCtx ziti.Context) (net.Listener, error)
 type OnNewListener func(listener net.Listener)
 
 type Manager struct {
-	mu              sync.RWMutex
-	zitiCtx         ziti.Context
-	identityID      string
-	mgmtClient      *zitimgmtclient.Client
-	serviceType     zitimgmtv1.ServiceType
-	renewalInterval time.Duration
-	enrollTimeout   time.Duration
-	appCtx          context.Context
+	mu               sync.RWMutex
+	enrollMu         sync.Mutex
+	zitiCtx          ziti.Context
+	identityID       string
+	mgmtClient       *zitimgmtclient.Client
+	serviceType      zitimgmtv1.ServiceType
+	renewalInterval  time.Duration
+	enrollTimeout    time.Duration
+	reEnrollAttempts int
 
 	listenerFactory ListenerFactory
 	onNewListener   OnNewListener
@@ -54,25 +58,25 @@ func New(
 	onNewListener OnNewListener,
 ) (*Manager, error) {
 	if appCtx == nil {
-		return nil, fmt.Errorf("app context is required")
+		return nil, errors.New("app context is required")
 	}
 	if client == nil {
-		return nil, fmt.Errorf("ziti management client is required")
+		return nil, errors.New("ziti management client is required")
 	}
 	if serviceType == zitimgmtv1.ServiceType_SERVICE_TYPE_UNSPECIFIED {
-		return nil, fmt.Errorf("service type is required")
+		return nil, errors.New("service type is required")
 	}
 	if enrollTimeout <= 0 {
-		return nil, fmt.Errorf("enroll timeout must be positive")
+		return nil, errors.New("enroll timeout must be positive")
 	}
 	if renewalInterval <= 0 {
-		return nil, fmt.Errorf("renewal interval must be positive")
+		return nil, errors.New("renewal interval must be positive")
 	}
 	if listenerFactory == nil {
-		return nil, fmt.Errorf("listener factory is required")
+		return nil, errors.New("listener factory is required")
 	}
 	if onNewListener == nil {
-		return nil, fmt.Errorf("on new listener callback is required")
+		return nil, errors.New("on new listener callback is required")
 	}
 
 	mgr := &Manager{
@@ -80,12 +84,11 @@ func New(
 		serviceType:     serviceType,
 		renewalInterval: renewalInterval,
 		enrollTimeout:   enrollTimeout,
-		appCtx:          appCtx,
 		listenerFactory: listenerFactory,
 		onNewListener:   onNewListener,
 	}
 
-	if err := mgr.reEnroll(appCtx); err != nil {
+	if err := mgr.reEnrollWithBackoff(appCtx); err != nil {
 		return nil, err
 	}
 
@@ -113,8 +116,8 @@ func (m *Manager) RunLeaseRenewal(ctx context.Context) {
 			if err == nil {
 				continue
 			}
-			if status.Code(err) == codes.NotFound {
-				if reEnrollErr := m.reEnroll(ctx); reEnrollErr != nil {
+			if errors.Is(err, errIdentityMissing) || status.Code(err) == codes.NotFound {
+				if reEnrollErr := m.reEnrollWithBackoff(ctx); reEnrollErr != nil {
 					log.Printf("failed to re-enroll ziti identity: %v", reEnrollErr)
 				}
 				continue
@@ -124,13 +127,35 @@ func (m *Manager) RunLeaseRenewal(ctx context.Context) {
 	}
 }
 
-func (m *Manager) reEnroll(ctx context.Context) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (m *Manager) reEnrollWithBackoff(ctx context.Context) error {
+	m.enrollMu.Lock()
+	defer m.enrollMu.Unlock()
 
-	if m.zitiCtx != nil {
-		m.zitiCtx.Close()
-		m.zitiCtx = nil
+	if delay := m.reEnrollDelay(); delay > 0 {
+		if err := sleepWithContext(ctx, delay); err != nil {
+			return err
+		}
+	}
+
+	if err := m.reEnroll(ctx); err != nil {
+		m.reEnrollAttempts++
+		return err
+	}
+
+	m.reEnrollAttempts = 0
+	return nil
+}
+
+func (m *Manager) reEnroll(ctx context.Context) error {
+	var oldCtx ziti.Context
+	m.mu.Lock()
+	oldCtx = m.zitiCtx
+	m.zitiCtx = nil
+	m.identityID = ""
+	m.mu.Unlock()
+
+	if oldCtx != nil {
+		oldCtx.Close()
 	}
 
 	enrollmentCtx, cancel := context.WithTimeout(ctx, m.enrollTimeout)
@@ -162,8 +187,10 @@ func (m *Manager) reEnroll(ctx context.Context) error {
 		return err
 	}
 
+	m.mu.Lock()
 	m.zitiCtx = zitiCtx
 	m.identityID = identityID
+	m.mu.Unlock()
 	m.onNewListener(listener)
 
 	return nil
@@ -179,7 +206,7 @@ func (m *Manager) extendLeaseWithRetry(ctx context.Context) error {
 		}
 		identityID := m.identity()
 		if identityID == "" {
-			return fmt.Errorf("ziti identity id missing")
+			return errIdentityMissing
 		}
 		lastErr = m.mgmtClient.ExtendIdentityLease(ctx, identityID)
 		if lastErr == nil {
@@ -191,6 +218,9 @@ func (m *Manager) extendLeaseWithRetry(ctx context.Context) error {
 		if status.Code(lastErr) == codes.NotFound {
 			return lastErr
 		}
+		if !isRetryableGrpcError(lastErr) {
+			return lastErr
+		}
 	}
 
 	return lastErr
@@ -200,6 +230,17 @@ func (m *Manager) identity() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.identityID
+}
+
+func (m *Manager) reEnrollDelay() time.Duration {
+	if m.reEnrollAttempts <= 0 || len(reEnrollBackoffs) == 0 {
+		return 0
+	}
+	idx := m.reEnrollAttempts - 1
+	if idx >= len(reEnrollBackoffs) {
+		idx = len(reEnrollBackoffs) - 1
+	}
+	return reEnrollBackoffs[idx]
 }
 
 func retryWithBackoff(ctx context.Context, operationName string, fn func(context.Context) error) error {

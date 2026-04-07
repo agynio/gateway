@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -216,10 +217,13 @@ func main() {
 			return zitiCtx.ListenWithOptions(serviceName, ziti.DefaultListenOptions())
 		}
 
+		var zitiListenerMu sync.Mutex
 		var zitiListener net.Listener
 		onNewListener := func(listener net.Listener) {
+			zitiListenerMu.Lock()
 			oldListener := zitiListener
 			zitiListener = listener
+			zitiListenerMu.Unlock()
 			log.Printf("gateway listening on ziti service %s", serviceName)
 			go func() {
 				if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
