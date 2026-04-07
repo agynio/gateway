@@ -21,7 +21,7 @@ const (
 	defaultSecretsGRPCTarget        = "secrets:50051"
 	defaultTracingGRPCTarget        = "tracing:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
-	defaultZitiLeaseRenewalInterval = 1 * time.Minute
+	defaultZitiLeaseRenewalInterval = 2 * time.Minute
 	defaultZitiEnrollmentTimeout    = 2 * time.Minute
 	defaultUsersGRPCTarget          = "users:50051"
 	defaultOrganizationsGRPCTarget  = "organizations:50051"
