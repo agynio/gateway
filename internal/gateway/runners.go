@@ -71,6 +71,14 @@ func (g *RunnersGateway) ListWorkloadsByThread(ctx context.Context, req *connect
 	return connect.NewResponse(resp), nil
 }
 
+func (g *RunnersGateway) ListWorkloads(ctx context.Context, req *connect.Request[runnersv1.ListWorkloadsRequest]) (*connect.Response[runnersv1.ListWorkloadsResponse], error) {
+	resp, err := g.runners.ListWorkloads(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *RunnersGateway) GetWorkload(ctx context.Context, req *connect.Request[runnersv1.GetWorkloadRequest]) (*connect.Response[runnersv1.GetWorkloadResponse], error) {
 	resp, err := g.runners.GetWorkload(ctx, req.Msg)
 	if err != nil {
