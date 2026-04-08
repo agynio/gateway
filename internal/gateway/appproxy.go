@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,13 +18,13 @@ import (
 )
 
 type AppProxyHandler struct {
-	apps        appsv1.AppsServiceClient
-	zitiContext ziti.Context
-	transport   *http.Transport
-	client      *http.Client
-	cacheMu     sync.RWMutex
-	cache       map[string]cachedInstallation
-	cacheTTL    time.Duration
+	apps                appsv1.AppsServiceClient
+	zitiContextProvider ZitiContextProvider
+	transport           *http.Transport
+	client              *http.Client
+	cacheMu             sync.RWMutex
+	cache               map[string]cachedInstallation
+	cacheTTL            time.Duration
 }
 
 type resolvedInstallation struct {
@@ -36,22 +37,26 @@ type cachedInstallation struct {
 	expiresAt    time.Time
 }
 
-func NewAppProxyHandler(apps appsv1.AppsServiceClient, zitiContext ziti.Context, cacheTTL time.Duration) *AppProxyHandler {
+type ZitiContextProvider interface {
+	ZitiContext() ziti.Context
+}
+
+func NewAppProxyHandler(apps appsv1.AppsServiceClient, zitiContextProvider ZitiContextProvider, cacheTTL time.Duration) *AppProxyHandler {
 	if apps == nil {
 		panic("apps client is required")
 	}
-	if zitiContext == nil {
-		panic("ziti context is required")
+	if zitiContextProvider == nil {
+		panic("ziti context provider is required")
 	}
 	if cacheTTL <= 0 {
 		panic("cache ttl must be positive")
 	}
 
 	handler := &AppProxyHandler{
-		apps:        apps,
-		zitiContext: zitiContext,
-		cache:       make(map[string]cachedInstallation),
-		cacheTTL:    cacheTTL,
+		apps:                apps,
+		zitiContextProvider: zitiContextProvider,
+		cache:               make(map[string]cachedInstallation),
+		cacheTTL:            cacheTTL,
 	}
 	handler.transport = &http.Transport{
 		DialContext: handler.dialContext,
@@ -201,5 +206,10 @@ func (h *AppProxyHandler) dialContext(ctx context.Context, network, addr string)
 		return nil, fmt.Errorf("service address missing")
 	}
 
-	return h.zitiContext.Dial(serviceName)
+	zitiContext := h.zitiContextProvider.ZitiContext()
+	if zitiContext == nil {
+		return nil, errors.New("ziti context unavailable")
+	}
+
+	return zitiContext.Dial(serviceName)
 }

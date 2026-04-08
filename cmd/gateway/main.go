@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"connectrpc.com/connect"
@@ -17,8 +17,6 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
@@ -44,6 +42,7 @@ import (
 	"github.com/agynio/gateway/internal/oidcresolver"
 	"github.com/agynio/gateway/internal/platform"
 	"github.com/agynio/gateway/internal/ziticonn"
+	"github.com/agynio/gateway/internal/zitimanager"
 	"github.com/agynio/gateway/internal/zitimgmtclient"
 )
 
@@ -51,8 +50,6 @@ const (
 	defaultAddr             = ":8080"
 	defaultZitiServiceName  = "gateway"
 	defaultAppProxyCacheTTL = 30 * time.Second
-	retryInitialBackoff     = 1 * time.Second
-	retryMaxBackoff         = 15 * time.Second
 )
 
 func main() {
@@ -215,50 +212,56 @@ func main() {
 	}
 
 	if config.ZitiEnabled {
-		enrollmentCtx, cancel := context.WithTimeout(ctx, config.ZitiEnrollmentTimeout)
-		defer cancel()
-
-		var zitiIdentityID string
-		var identityJSON []byte
-		if err := retryWithBackoff(enrollmentCtx, "ziti enrollment", func(attemptCtx context.Context) error {
-			var requestErr error
-			zitiIdentityID, identityJSON, requestErr = zitiMgmtClient.RequestServiceIdentity(attemptCtx, zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY)
-			return requestErr
-		}); err != nil {
-			log.Fatalf("failed to request ziti service identity: %v", err)
+		serviceName := zitiServiceName()
+		listenerFactory := func(zitiCtx ziti.Context) (net.Listener, error) {
+			return zitiCtx.ListenWithOptions(serviceName, ziti.DefaultListenOptions())
 		}
 
-		zitiConfig := &ziti.Config{}
-		if err := json.Unmarshal(identityJSON, zitiConfig); err != nil {
-			log.Fatalf("failed to parse ziti identity: %v", err)
+		var zitiListenerMu sync.Mutex
+		var zitiListener net.Listener
+		onNewListener := func(listener net.Listener) {
+			zitiListenerMu.Lock()
+			oldListener := zitiListener
+			zitiListener = listener
+			zitiListenerMu.Unlock()
+			log.Printf("gateway listening on ziti service %s", serviceName)
+			go func() {
+				if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					log.Fatalf("ziti server stopped: %v", err)
+				}
+			}()
+			if oldListener != nil {
+				if err := oldListener.Close(); err != nil {
+					log.Printf("failed to close ziti listener: %v", err)
+				}
+			}
 		}
 
-		zitiContext, err := ziti.NewContext(zitiConfig)
+		mgr, err := zitimanager.New(
+			ctx,
+			zitiMgmtClient,
+			zitimgmtv1.ServiceType_SERVICE_TYPE_GATEWAY,
+			config.ZitiEnrollmentTimeout,
+			config.ZitiLeaseRenewalInterval,
+			listenerFactory,
+			onNewListener,
+		)
 		if err != nil {
-			log.Fatalf("failed to create ziti context: %v", err)
+			log.Fatalf("failed to initialize ziti manager: %v", err)
 		}
-		defer zitiContext.Close()
+		defer func() {
+			if zitiCtx := mgr.ZitiContext(); zitiCtx != nil {
+				zitiCtx.Close()
+			}
+		}()
 
-		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, zitiContext, defaultAppProxyCacheTTL))
+		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, mgr, defaultAppProxyCacheTTL))
 		if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
 			appProxyHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(appProxyHandler)
 		}
 		mux.Handle("/apps/", appProxyHandler)
 
-		go renewLease(ctx, zitiMgmtClient, zitiIdentityID, config.ZitiLeaseRenewalInterval)
-
-		serviceName := zitiServiceName()
-		listener, err := zitiContext.ListenWithOptions(serviceName, ziti.DefaultListenOptions())
-		if err != nil {
-			log.Fatalf("failed to listen on ziti service %s: %v", serviceName, err)
-		}
-
-		log.Printf("gateway listening on ziti service %s", serviceName)
-		go func() {
-			if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-				log.Fatalf("ziti server stopped: %v", err)
-			}
-		}()
+		go mgr.RunLeaseRenewal(ctx)
 	}
 
 	log.Printf("gateway listening on %s", addr)
@@ -267,77 +270,11 @@ func main() {
 	}
 }
 
-func renewLease(ctx context.Context, client *zitimgmtclient.Client, identityID string, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			if ctx.Err() != nil {
-				return
-			}
-			if err := client.ExtendIdentityLease(ctx, identityID); err != nil {
-				log.Printf("failed to extend ziti lease: %v", err)
-			}
-		}
-	}
-}
-
 func zitiServiceName() string {
 	if v := strings.TrimSpace(os.Getenv("ZITI_SERVICE_NAME")); v != "" {
 		return v
 	}
 	return defaultZitiServiceName
-}
-
-func retryWithBackoff(ctx context.Context, operationName string, fn func(context.Context) error) error {
-	backoff := retryInitialBackoff
-	attempt := 1
-	for {
-		err := fn(ctx)
-		if err == nil {
-			return nil
-		}
-
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		if !isRetryableGrpcError(err) {
-			return err
-		}
-
-		delay := backoff
-		if delay > retryMaxBackoff {
-			delay = retryMaxBackoff
-		}
-
-		log.Printf("%s failed (attempt %d), retrying in %s: %v", operationName, attempt, delay, err)
-
-		timer := time.NewTimer(delay)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-			return ctx.Err()
-		case <-timer.C:
-		}
-
-		backoff *= 2
-		if backoff > retryMaxBackoff {
-			backoff = retryMaxBackoff
-		}
-		attempt++
-	}
-}
-
-func isRetryableGrpcError(err error) bool {
-	statusErr, ok := status.FromError(err)
-	if !ok {
-		return false
-	}
-	return statusErr.Code() == codes.Unavailable || statusErr.Code() == codes.Unknown
 }
 
 func mustClient[T any](target, name string, factory func(grpc.ClientConnInterface) T, cleanup *[]func()) T {
