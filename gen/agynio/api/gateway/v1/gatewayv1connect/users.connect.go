@@ -58,6 +58,15 @@ const (
 	// UsersGatewayBatchGetUsersProcedure is the fully-qualified name of the UsersGateway's
 	// BatchGetUsers RPC.
 	UsersGatewayBatchGetUsersProcedure = "/agynio.api.gateway.v1.UsersGateway/BatchGetUsers"
+	// UsersGatewayCreateDeviceProcedure is the fully-qualified name of the UsersGateway's CreateDevice
+	// RPC.
+	UsersGatewayCreateDeviceProcedure = "/agynio.api.gateway.v1.UsersGateway/CreateDevice"
+	// UsersGatewayListDevicesProcedure is the fully-qualified name of the UsersGateway's ListDevices
+	// RPC.
+	UsersGatewayListDevicesProcedure = "/agynio.api.gateway.v1.UsersGateway/ListDevices"
+	// UsersGatewayDeleteDeviceProcedure is the fully-qualified name of the UsersGateway's DeleteDevice
+	// RPC.
+	UsersGatewayDeleteDeviceProcedure = "/agynio.api.gateway.v1.UsersGateway/DeleteDevice"
 )
 
 // UsersGatewayClient is a client for the agynio.api.gateway.v1.UsersGateway service.
@@ -75,6 +84,10 @@ type UsersGatewayClient interface {
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
 	RevokeAPIToken(context.Context, *connect.Request[v1.RevokeAPITokenRequest]) (*connect.Response[v1.RevokeAPITokenResponse], error)
 	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
+	// --- Devices ---
+	CreateDevice(context.Context, *connect.Request[v1.CreateDeviceRequest]) (*connect.Response[v1.CreateDeviceResponse], error)
+	ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error)
+	DeleteDevice(context.Context, *connect.Request[v1.DeleteDeviceRequest]) (*connect.Response[v1.DeleteDeviceResponse], error)
 }
 
 // NewUsersGatewayClient constructs a client for the agynio.api.gateway.v1.UsersGateway service. By
@@ -148,6 +161,24 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(usersGatewayMethods.ByName("BatchGetUsers")),
 			connect.WithClientOptions(opts...),
 		),
+		createDevice: connect.NewClient[v1.CreateDeviceRequest, v1.CreateDeviceResponse](
+			httpClient,
+			baseURL+UsersGatewayCreateDeviceProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("CreateDevice")),
+			connect.WithClientOptions(opts...),
+		),
+		listDevices: connect.NewClient[v1.ListDevicesRequest, v1.ListDevicesResponse](
+			httpClient,
+			baseURL+UsersGatewayListDevicesProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("ListDevices")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteDevice: connect.NewClient[v1.DeleteDeviceRequest, v1.DeleteDeviceResponse](
+			httpClient,
+			baseURL+UsersGatewayDeleteDeviceProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("DeleteDevice")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -163,6 +194,9 @@ type usersGatewayClient struct {
 	listAPITokens  *connect.Client[v1.ListAPITokensRequest, v1.ListAPITokensResponse]
 	revokeAPIToken *connect.Client[v1.RevokeAPITokenRequest, v1.RevokeAPITokenResponse]
 	batchGetUsers  *connect.Client[v1.BatchGetUsersRequest, v1.BatchGetUsersResponse]
+	createDevice   *connect.Client[v1.CreateDeviceRequest, v1.CreateDeviceResponse]
+	listDevices    *connect.Client[v1.ListDevicesRequest, v1.ListDevicesResponse]
+	deleteDevice   *connect.Client[v1.DeleteDeviceRequest, v1.DeleteDeviceResponse]
 }
 
 // GetMe calls agynio.api.gateway.v1.UsersGateway.GetMe.
@@ -215,6 +249,21 @@ func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, req *connect.Req
 	return c.batchGetUsers.CallUnary(ctx, req)
 }
 
+// CreateDevice calls agynio.api.gateway.v1.UsersGateway.CreateDevice.
+func (c *usersGatewayClient) CreateDevice(ctx context.Context, req *connect.Request[v1.CreateDeviceRequest]) (*connect.Response[v1.CreateDeviceResponse], error) {
+	return c.createDevice.CallUnary(ctx, req)
+}
+
+// ListDevices calls agynio.api.gateway.v1.UsersGateway.ListDevices.
+func (c *usersGatewayClient) ListDevices(ctx context.Context, req *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error) {
+	return c.listDevices.CallUnary(ctx, req)
+}
+
+// DeleteDevice calls agynio.api.gateway.v1.UsersGateway.DeleteDevice.
+func (c *usersGatewayClient) DeleteDevice(ctx context.Context, req *connect.Request[v1.DeleteDeviceRequest]) (*connect.Response[v1.DeleteDeviceResponse], error) {
+	return c.deleteDevice.CallUnary(ctx, req)
+}
+
 // UsersGatewayHandler is an implementation of the agynio.api.gateway.v1.UsersGateway service.
 type UsersGatewayHandler interface {
 	// --- Current User ---
@@ -230,6 +279,10 @@ type UsersGatewayHandler interface {
 	ListAPITokens(context.Context, *connect.Request[v1.ListAPITokensRequest]) (*connect.Response[v1.ListAPITokensResponse], error)
 	RevokeAPIToken(context.Context, *connect.Request[v1.RevokeAPITokenRequest]) (*connect.Response[v1.RevokeAPITokenResponse], error)
 	BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error)
+	// --- Devices ---
+	CreateDevice(context.Context, *connect.Request[v1.CreateDeviceRequest]) (*connect.Response[v1.CreateDeviceResponse], error)
+	ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error)
+	DeleteDevice(context.Context, *connect.Request[v1.DeleteDeviceRequest]) (*connect.Response[v1.DeleteDeviceResponse], error)
 }
 
 // NewUsersGatewayHandler builds an HTTP handler from the service implementation. It returns the
@@ -299,6 +352,24 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(usersGatewayMethods.ByName("BatchGetUsers")),
 		connect.WithHandlerOptions(opts...),
 	)
+	usersGatewayCreateDeviceHandler := connect.NewUnaryHandler(
+		UsersGatewayCreateDeviceProcedure,
+		svc.CreateDevice,
+		connect.WithSchema(usersGatewayMethods.ByName("CreateDevice")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayListDevicesHandler := connect.NewUnaryHandler(
+		UsersGatewayListDevicesProcedure,
+		svc.ListDevices,
+		connect.WithSchema(usersGatewayMethods.ByName("ListDevices")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayDeleteDeviceHandler := connect.NewUnaryHandler(
+		UsersGatewayDeleteDeviceProcedure,
+		svc.DeleteDevice,
+		connect.WithSchema(usersGatewayMethods.ByName("DeleteDevice")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/agynio.api.gateway.v1.UsersGateway/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UsersGatewayGetMeProcedure:
@@ -321,6 +392,12 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 			usersGatewayRevokeAPITokenHandler.ServeHTTP(w, r)
 		case UsersGatewayBatchGetUsersProcedure:
 			usersGatewayBatchGetUsersHandler.ServeHTTP(w, r)
+		case UsersGatewayCreateDeviceProcedure:
+			usersGatewayCreateDeviceHandler.ServeHTTP(w, r)
+		case UsersGatewayListDevicesProcedure:
+			usersGatewayListDevicesHandler.ServeHTTP(w, r)
+		case UsersGatewayDeleteDeviceProcedure:
+			usersGatewayDeleteDeviceHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -368,4 +445,16 @@ func (UnimplementedUsersGatewayHandler) RevokeAPIToken(context.Context, *connect
 
 func (UnimplementedUsersGatewayHandler) BatchGetUsers(context.Context, *connect.Request[v1.BatchGetUsersRequest]) (*connect.Response[v1.BatchGetUsersResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.BatchGetUsers is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) CreateDevice(context.Context, *connect.Request[v1.CreateDeviceRequest]) (*connect.Response[v1.CreateDeviceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.CreateDevice is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) ListDevices(context.Context, *connect.Request[v1.ListDevicesRequest]) (*connect.Response[v1.ListDevicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.ListDevices is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) DeleteDevice(context.Context, *connect.Request[v1.DeleteDeviceRequest]) (*connect.Response[v1.DeleteDeviceResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.DeleteDevice is not implemented"))
 }

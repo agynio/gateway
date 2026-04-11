@@ -30,6 +30,9 @@ const (
 	UsersGateway_ListAPITokens_FullMethodName  = "/agynio.api.gateway.v1.UsersGateway/ListAPITokens"
 	UsersGateway_RevokeAPIToken_FullMethodName = "/agynio.api.gateway.v1.UsersGateway/RevokeAPIToken"
 	UsersGateway_BatchGetUsers_FullMethodName  = "/agynio.api.gateway.v1.UsersGateway/BatchGetUsers"
+	UsersGateway_CreateDevice_FullMethodName   = "/agynio.api.gateway.v1.UsersGateway/CreateDevice"
+	UsersGateway_ListDevices_FullMethodName    = "/agynio.api.gateway.v1.UsersGateway/ListDevices"
+	UsersGateway_DeleteDevice_FullMethodName   = "/agynio.api.gateway.v1.UsersGateway/DeleteDevice"
 )
 
 // UsersGatewayClient is the client API for UsersGateway service.
@@ -49,6 +52,10 @@ type UsersGatewayClient interface {
 	ListAPITokens(ctx context.Context, in *v1.ListAPITokensRequest, opts ...grpc.CallOption) (*v1.ListAPITokensResponse, error)
 	RevokeAPIToken(ctx context.Context, in *v1.RevokeAPITokenRequest, opts ...grpc.CallOption) (*v1.RevokeAPITokenResponse, error)
 	BatchGetUsers(ctx context.Context, in *v1.BatchGetUsersRequest, opts ...grpc.CallOption) (*v1.BatchGetUsersResponse, error)
+	// --- Devices ---
+	CreateDevice(ctx context.Context, in *v1.CreateDeviceRequest, opts ...grpc.CallOption) (*v1.CreateDeviceResponse, error)
+	ListDevices(ctx context.Context, in *v1.ListDevicesRequest, opts ...grpc.CallOption) (*v1.ListDevicesResponse, error)
+	DeleteDevice(ctx context.Context, in *v1.DeleteDeviceRequest, opts ...grpc.CallOption) (*v1.DeleteDeviceResponse, error)
 }
 
 type usersGatewayClient struct {
@@ -159,6 +166,36 @@ func (c *usersGatewayClient) BatchGetUsers(ctx context.Context, in *v1.BatchGetU
 	return out, nil
 }
 
+func (c *usersGatewayClient) CreateDevice(ctx context.Context, in *v1.CreateDeviceRequest, opts ...grpc.CallOption) (*v1.CreateDeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.CreateDeviceResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_CreateDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) ListDevices(ctx context.Context, in *v1.ListDevicesRequest, opts ...grpc.CallOption) (*v1.ListDevicesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.ListDevicesResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_ListDevices_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) DeleteDevice(ctx context.Context, in *v1.DeleteDeviceRequest, opts ...grpc.CallOption) (*v1.DeleteDeviceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.DeleteDeviceResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_DeleteDevice_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UsersGatewayServer is the server API for UsersGateway service.
 // All implementations must embed UnimplementedUsersGatewayServer
 // for forward compatibility.
@@ -176,6 +213,10 @@ type UsersGatewayServer interface {
 	ListAPITokens(context.Context, *v1.ListAPITokensRequest) (*v1.ListAPITokensResponse, error)
 	RevokeAPIToken(context.Context, *v1.RevokeAPITokenRequest) (*v1.RevokeAPITokenResponse, error)
 	BatchGetUsers(context.Context, *v1.BatchGetUsersRequest) (*v1.BatchGetUsersResponse, error)
+	// --- Devices ---
+	CreateDevice(context.Context, *v1.CreateDeviceRequest) (*v1.CreateDeviceResponse, error)
+	ListDevices(context.Context, *v1.ListDevicesRequest) (*v1.ListDevicesResponse, error)
+	DeleteDevice(context.Context, *v1.DeleteDeviceRequest) (*v1.DeleteDeviceResponse, error)
 	mustEmbedUnimplementedUsersGatewayServer()
 }
 
@@ -215,6 +256,15 @@ func (UnimplementedUsersGatewayServer) RevokeAPIToken(context.Context, *v1.Revok
 }
 func (UnimplementedUsersGatewayServer) BatchGetUsers(context.Context, *v1.BatchGetUsersRequest) (*v1.BatchGetUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BatchGetUsers not implemented")
+}
+func (UnimplementedUsersGatewayServer) CreateDevice(context.Context, *v1.CreateDeviceRequest) (*v1.CreateDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateDevice not implemented")
+}
+func (UnimplementedUsersGatewayServer) ListDevices(context.Context, *v1.ListDevicesRequest) (*v1.ListDevicesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDevices not implemented")
+}
+func (UnimplementedUsersGatewayServer) DeleteDevice(context.Context, *v1.DeleteDeviceRequest) (*v1.DeleteDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteDevice not implemented")
 }
 func (UnimplementedUsersGatewayServer) mustEmbedUnimplementedUsersGatewayServer() {}
 func (UnimplementedUsersGatewayServer) testEmbeddedByValue()                      {}
@@ -417,6 +467,60 @@ func _UsersGateway_BatchGetUsers_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UsersGateway_CreateDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.CreateDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).CreateDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_CreateDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).CreateDevice(ctx, req.(*v1.CreateDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_ListDevices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.ListDevicesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).ListDevices(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_ListDevices_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).ListDevices(ctx, req.(*v1.ListDevicesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_DeleteDevice_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.DeleteDeviceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).DeleteDevice(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_DeleteDevice_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).DeleteDevice(ctx, req.(*v1.DeleteDeviceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UsersGateway_ServiceDesc is the grpc.ServiceDesc for UsersGateway service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -463,6 +567,18 @@ var UsersGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "BatchGetUsers",
 			Handler:    _UsersGateway_BatchGetUsers_Handler,
+		},
+		{
+			MethodName: "CreateDevice",
+			Handler:    _UsersGateway_CreateDevice_Handler,
+		},
+		{
+			MethodName: "ListDevices",
+			Handler:    _UsersGateway_ListDevices_Handler,
+		},
+		{
+			MethodName: "DeleteDevice",
+			Handler:    _UsersGateway_DeleteDevice_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

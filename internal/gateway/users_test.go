@@ -28,6 +28,18 @@ type fakeUsersClient struct {
 	batchGetUsersResp  *usersv1.BatchGetUsersResponse
 	batchGetUsersErr   error
 	batchGetUsersCalls int
+	createDeviceReq    *usersv1.CreateDeviceRequest
+	createDeviceResp   *usersv1.CreateDeviceResponse
+	createDeviceErr    error
+	createDeviceCalls  int
+	listDevicesReq     *usersv1.ListDevicesRequest
+	listDevicesResp    *usersv1.ListDevicesResponse
+	listDevicesErr     error
+	listDevicesCalls   int
+	deleteDeviceReq    *usersv1.DeleteDeviceRequest
+	deleteDeviceResp   *usersv1.DeleteDeviceResponse
+	deleteDeviceErr    error
+	deleteDeviceCalls  int
 }
 
 func (f *fakeUsersClient) ResolveOrCreateUser(ctx context.Context, in *usersv1.ResolveOrCreateUserRequest, opts ...grpc.CallOption) (*usersv1.ResolveOrCreateUserResponse, error) {
@@ -108,6 +120,42 @@ func (f *fakeUsersClient) ListAPITokens(ctx context.Context, in *usersv1.ListAPI
 
 func (f *fakeUsersClient) RevokeAPIToken(ctx context.Context, in *usersv1.RevokeAPITokenRequest, opts ...grpc.CallOption) (*usersv1.RevokeAPITokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "RevokeAPIToken not implemented")
+}
+
+func (f *fakeUsersClient) CreateDevice(ctx context.Context, in *usersv1.CreateDeviceRequest, opts ...grpc.CallOption) (*usersv1.CreateDeviceResponse, error) {
+	f.createDeviceCalls++
+	f.createDeviceReq = in
+	if f.createDeviceErr != nil {
+		return nil, f.createDeviceErr
+	}
+	if f.createDeviceResp == nil {
+		f.createDeviceResp = &usersv1.CreateDeviceResponse{}
+	}
+	return f.createDeviceResp, nil
+}
+
+func (f *fakeUsersClient) ListDevices(ctx context.Context, in *usersv1.ListDevicesRequest, opts ...grpc.CallOption) (*usersv1.ListDevicesResponse, error) {
+	f.listDevicesCalls++
+	f.listDevicesReq = in
+	if f.listDevicesErr != nil {
+		return nil, f.listDevicesErr
+	}
+	if f.listDevicesResp == nil {
+		f.listDevicesResp = &usersv1.ListDevicesResponse{}
+	}
+	return f.listDevicesResp, nil
+}
+
+func (f *fakeUsersClient) DeleteDevice(ctx context.Context, in *usersv1.DeleteDeviceRequest, opts ...grpc.CallOption) (*usersv1.DeleteDeviceResponse, error) {
+	f.deleteDeviceCalls++
+	f.deleteDeviceReq = in
+	if f.deleteDeviceErr != nil {
+		return nil, f.deleteDeviceErr
+	}
+	if f.deleteDeviceResp == nil {
+		f.deleteDeviceResp = &usersv1.DeleteDeviceResponse{}
+	}
+	return f.deleteDeviceResp, nil
 }
 
 func (f *fakeUsersClient) ResolveAPIToken(ctx context.Context, in *usersv1.ResolveAPITokenRequest, opts ...grpc.CallOption) (*usersv1.ResolveAPITokenResponse, error) {
@@ -293,6 +341,160 @@ func TestUsersGatewayBatchGetUsersError(t *testing.T) {
 		t.Fatalf("expected batch get users to be called once, got %d", client.batchGetUsersCalls)
 	}
 	if client.batchGetUsersReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+}
+
+func TestUsersGatewayCreateDeviceSuccess(t *testing.T) {
+	client := &fakeUsersClient{
+		createDeviceResp: &usersv1.CreateDeviceResponse{
+			Device: &usersv1.Device{Meta: &usersv1.EntityMeta{Id: "device-1"}, Name: "Laptop"},
+		},
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.CreateDeviceRequest{Name: "Laptop"})
+	resp, err := gateway.CreateDevice(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.createDeviceCalls != 1 {
+		t.Fatalf("expected create device to be called once, got %d", client.createDeviceCalls)
+	}
+	if client.createDeviceReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.createDeviceResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestUsersGatewayCreateDeviceError(t *testing.T) {
+	client := &fakeUsersClient{
+		createDeviceErr: status.Error(codes.NotFound, "missing"),
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.CreateDeviceRequest{Name: "Laptop"})
+	resp, err := gateway.CreateDevice(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("expected CodeNotFound, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.createDeviceCalls != 1 {
+		t.Fatalf("expected create device to be called once, got %d", client.createDeviceCalls)
+	}
+	if client.createDeviceReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+}
+
+func TestUsersGatewayListDevicesSuccess(t *testing.T) {
+	client := &fakeUsersClient{
+		listDevicesResp: &usersv1.ListDevicesResponse{
+			Devices: []*usersv1.Device{{Meta: &usersv1.EntityMeta{Id: "device-1"}, Name: "Laptop"}},
+		},
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.ListDevicesRequest{PageSize: 25})
+	resp, err := gateway.ListDevices(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.listDevicesCalls != 1 {
+		t.Fatalf("expected list devices to be called once, got %d", client.listDevicesCalls)
+	}
+	if client.listDevicesReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.listDevicesResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestUsersGatewayListDevicesError(t *testing.T) {
+	client := &fakeUsersClient{
+		listDevicesErr: status.Error(codes.PermissionDenied, "denied"),
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.ListDevicesRequest{PageToken: "next"})
+	resp, err := gateway.ListDevices(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.listDevicesCalls != 1 {
+		t.Fatalf("expected list devices to be called once, got %d", client.listDevicesCalls)
+	}
+	if client.listDevicesReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+}
+
+func TestUsersGatewayDeleteDeviceSuccess(t *testing.T) {
+	client := &fakeUsersClient{
+		deleteDeviceResp: &usersv1.DeleteDeviceResponse{},
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.DeleteDeviceRequest{Id: "device-1"})
+	resp, err := gateway.DeleteDevice(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.deleteDeviceCalls != 1 {
+		t.Fatalf("expected delete device to be called once, got %d", client.deleteDeviceCalls)
+	}
+	if client.deleteDeviceReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.deleteDeviceResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestUsersGatewayDeleteDeviceError(t *testing.T) {
+	client := &fakeUsersClient{
+		deleteDeviceErr: status.Error(codes.Internal, "boom"),
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.DeleteDeviceRequest{Id: "device-1"})
+	resp, err := gateway.DeleteDevice(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("expected CodeInternal, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.deleteDeviceCalls != 1 {
+		t.Fatalf("expected delete device to be called once, got %d", client.deleteDeviceCalls)
+	}
+	if client.deleteDeviceReq != req.Msg {
 		t.Fatalf("expected request to be forwarded")
 	}
 }
