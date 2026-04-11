@@ -106,6 +106,18 @@ func (f *fakeUsersClient) CreateUser(ctx context.Context, in *usersv1.CreateUser
 	return nil, status.Error(codes.Unimplemented, "CreateUser not implemented")
 }
 
+func (f *fakeUsersClient) CreateDevice(ctx context.Context, in *usersv1.CreateDeviceRequest, opts ...grpc.CallOption) (*usersv1.CreateDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "CreateDevice not implemented")
+}
+
+func (f *fakeUsersClient) ListDevices(ctx context.Context, in *usersv1.ListDevicesRequest, opts ...grpc.CallOption) (*usersv1.ListDevicesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListDevices not implemented")
+}
+
+func (f *fakeUsersClient) DeleteDevice(ctx context.Context, in *usersv1.DeleteDeviceRequest, opts ...grpc.CallOption) (*usersv1.DeleteDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "DeleteDevice not implemented")
+}
+
 func (f *fakeUsersClient) DeleteUser(ctx context.Context, in *usersv1.DeleteUserRequest, opts ...grpc.CallOption) (*usersv1.DeleteUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "DeleteUser not implemented")
 }

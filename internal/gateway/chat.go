@@ -23,6 +23,14 @@ func (g *Gateway) GetChats(ctx context.Context, req *connect.Request[chatv1.GetC
 	return connect.NewResponse(resp), nil
 }
 
+func (g *Gateway) UpdateChat(ctx context.Context, req *connect.Request[chatv1.UpdateChatRequest]) (*connect.Response[chatv1.UpdateChatResponse], error) {
+	resp, err := g.chat.UpdateChat(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *Gateway) GetMessages(ctx context.Context, req *connect.Request[chatv1.GetMessagesRequest]) (*connect.Response[chatv1.GetMessagesResponse], error) {
 	resp, err := g.chat.GetMessages(ctx, req.Msg)
 	if err != nil {
