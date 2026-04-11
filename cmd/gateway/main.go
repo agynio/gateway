@@ -22,6 +22,7 @@ import (
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
+	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
@@ -130,6 +131,7 @@ func main() {
 	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
 	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
 	tracingClient := mustClient(config.TracingGRPCTarget, "tracing", tracingv1.NewTracingServiceClient, &cleanup)
+	exposeClient := mustClient(config.ExposeGRPCTarget, "expose", exposev1.NewExposeServiceClient, &cleanup)
 
 	gatewayHandler := gateway.New(
 		agentsClient,
@@ -148,6 +150,7 @@ func main() {
 	usersGateway := gateway.NewUsersGateway(usersClient)
 	organizationsGateway := gateway.NewOrganizationsGateway(organizationsClient)
 	runnersGateway := gateway.NewRunnersGateway(runnersClient)
+	exposeGateway := gateway.NewExposeGateway(exposeClient)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),
@@ -184,6 +187,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewOrganizationsGatewayHandler(organizationsGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewRunnersGatewayHandler(runnersGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewExposeGatewayHandler(exposeGateway, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},

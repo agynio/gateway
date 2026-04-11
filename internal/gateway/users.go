@@ -116,3 +116,27 @@ func (g *UsersGateway) RevokeAPIToken(ctx context.Context, req *connect.Request[
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *UsersGateway) CreateDevice(ctx context.Context, req *connect.Request[usersv1.CreateDeviceRequest]) (*connect.Response[usersv1.CreateDeviceResponse], error) {
+	resp, err := g.users.CreateDevice(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *UsersGateway) ListDevices(ctx context.Context, req *connect.Request[usersv1.ListDevicesRequest]) (*connect.Response[usersv1.ListDevicesResponse], error) {
+	resp, err := g.users.ListDevices(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *UsersGateway) DeleteDevice(ctx context.Context, req *connect.Request[usersv1.DeleteDeviceRequest]) (*connect.Response[usersv1.DeleteDeviceResponse], error) {
+	resp, err := g.users.DeleteDevice(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
