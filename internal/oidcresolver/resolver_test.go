@@ -234,6 +234,18 @@ func (f *fakeUsersClient) CreateUser(ctx context.Context, in *usersv1.CreateUser
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeUsersClient) CreateDevice(ctx context.Context, in *usersv1.CreateDeviceRequest, opts ...grpc.CallOption) (*usersv1.CreateDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeUsersClient) ListDevices(ctx context.Context, in *usersv1.ListDevicesRequest, opts ...grpc.CallOption) (*usersv1.ListDevicesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeUsersClient) DeleteDevice(ctx context.Context, in *usersv1.DeleteDeviceRequest, opts ...grpc.CallOption) (*usersv1.DeleteDeviceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeUsersClient) DeleteUser(ctx context.Context, in *usersv1.DeleteUserRequest, opts ...grpc.CallOption) (*usersv1.DeleteUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
@@ -247,18 +259,6 @@ func (f *fakeUsersClient) ListAPITokens(ctx context.Context, in *usersv1.ListAPI
 }
 
 func (f *fakeUsersClient) RevokeAPIToken(ctx context.Context, in *usersv1.RevokeAPITokenRequest, opts ...grpc.CallOption) (*usersv1.RevokeAPITokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeUsersClient) CreateDevice(ctx context.Context, in *usersv1.CreateDeviceRequest, opts ...grpc.CallOption) (*usersv1.CreateDeviceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeUsersClient) ListDevices(ctx context.Context, in *usersv1.ListDevicesRequest, opts ...grpc.CallOption) (*usersv1.ListDevicesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeUsersClient) DeleteDevice(ctx context.Context, in *usersv1.DeleteDeviceRequest, opts ...grpc.CallOption) (*usersv1.DeleteDeviceResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
