@@ -16,10 +16,15 @@ import (
 )
 
 const (
-	testModelPrompt          = "Hello, world"
-	testModelTimeout         = 30 * time.Second
-	testModelAnthropicHeader = "2023-06-01"
+	testModelPrompt                     = "Hello, world"
+	testModelTimeout                    = 30 * time.Second
+	testModelAnthropicHeader            = "2023-06-01"
+	testModelAnthropicMaxTokens         = 256
+	testModelMaxResponseBodyBytes int64 = 64 * 1024
+	testModelMaxErrorBodyBytes          = 1024
 )
+
+var testModelHTTPClient = &http.Client{}
 
 type testModelError struct {
 	code    connect.Code
@@ -183,7 +188,7 @@ func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.Test
 
 func parseTestModelInput(resolved *llmv1.ResolveModelResponse) (testModelInput, error) {
 	if resolved == nil {
-		return testModelInput{}, newTestModelError(connect.CodeInternal, "model resolution missing")
+		panic("resolved model response is nil")
 	}
 
 	endpoint := strings.TrimSpace(resolved.GetEndpoint())
@@ -239,14 +244,13 @@ func testModel(ctx context.Context, input testModelInput) (string, error) {
 	}
 	request.Header = headers
 
-	client := &http.Client{Timeout: testModelTimeout}
-	response, err := client.Do(request)
+	response, err := testModelHTTPClient.Do(request)
 	if err != nil {
 		return "", newTestModelError(connect.CodeUnavailable, fmt.Sprintf("request failed: %v", err))
 	}
 	defer response.Body.Close()
 
-	responseBody, err := io.ReadAll(response.Body)
+	responseBody, err := io.ReadAll(io.LimitReader(response.Body, testModelMaxResponseBodyBytes))
 	if err != nil {
 		return "", newTestModelError(connect.CodeUnavailable, fmt.Sprintf("failed to read response: %v", err))
 	}
@@ -277,7 +281,7 @@ func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 	case llmv1.AuthMethod_AUTH_METHOD_X_API_KEY:
 		headers.Set("x-api-key", input.token)
 	default:
-		return nil, nil, newTestModelError(connect.CodeFailedPrecondition, "unsupported auth method")
+		panic("unreachable auth method")
 	}
 
 	var payload any
@@ -287,13 +291,13 @@ func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 	case llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES:
 		payload = anthropicRequest{
 			Model:     input.remoteName,
-			MaxTokens: 256,
+			MaxTokens: testModelAnthropicMaxTokens,
 			Messages: []anthropicMessage{
 				{Role: "user", Content: testModelPrompt},
 			},
 		}
 	default:
-		return nil, nil, newTestModelError(connect.CodeFailedPrecondition, "unsupported model protocol")
+		panic("unreachable model protocol")
 	}
 
 	body, err := json.Marshal(payload)
@@ -306,7 +310,7 @@ func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 
 func connectErrorForTestModel(err error) *connect.Error {
 	if err == nil {
-		return connect.NewError(connect.CodeInternal, errors.New("unknown test error"))
+		panic("test model error is nil")
 	}
 	var testErr *testModelError
 	if errors.As(err, &testErr) {
@@ -322,7 +326,7 @@ func parseTestModelOutput(protocol llmv1.Protocol, responseBody []byte) (string,
 	case llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES:
 		return parseAnthropicOutput(responseBody)
 	default:
-		return "", errors.New("unsupported model protocol")
+		panic("unreachable model protocol")
 	}
 }
 
@@ -364,6 +368,9 @@ func formatUpstreamError(statusCode int, responseBody []byte) string {
 	trimmed := strings.TrimSpace(string(responseBody))
 	if trimmed == "" {
 		return fmt.Sprintf("request failed with status %d", statusCode)
+	}
+	if len(trimmed) > testModelMaxErrorBodyBytes {
+		trimmed = trimmed[:testModelMaxErrorBodyBytes] + "..."
 	}
 	return fmt.Sprintf("request failed with status %d: %s", statusCode, trimmed)
 }
