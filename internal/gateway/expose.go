@@ -19,7 +19,31 @@ func NewExposeGateway(expose exposev1.ExposeServiceClient) *ExposeGateway {
 	return &ExposeGateway{expose: expose}
 }
 
-func (g *ExposeGateway) AddExposure(ctx context.Context, req *connect.Request[gatewayv1.AddExposureRequest]) (*connect.Response[exposev1.AddExposureResponse], error) {
+func (g *ExposeGateway) AddExposure(ctx context.Context, req *connect.Request[exposev1.AddExposureRequest]) (*connect.Response[exposev1.AddExposureResponse], error) {
+	resp, err := g.expose.AddExposure(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *ExposeGateway) RemoveExposure(ctx context.Context, req *connect.Request[exposev1.RemoveExposureRequest]) (*connect.Response[exposev1.RemoveExposureResponse], error) {
+	resp, err := g.expose.RemoveExposure(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *ExposeGateway) ListExposures(ctx context.Context, req *connect.Request[exposev1.ListExposuresRequest]) (*connect.Response[exposev1.ListExposuresResponse], error) {
+	resp, err := g.expose.ListExposures(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *ExposeGateway) AddExposureForCaller(ctx context.Context, req *connect.Request[gatewayv1.AddExposureForCallerRequest]) (*connect.Response[gatewayv1.AddExposureForCallerResponse], error) {
 	resolved, err := requireAgentIdentity(ctx)
 	if err != nil {
 		return nil, err
@@ -32,25 +56,25 @@ func (g *ExposeGateway) AddExposure(ctx context.Context, req *connect.Request[ga
 	if err != nil {
 		return nil, toConnectError(err)
 	}
-	return connect.NewResponse(resp), nil
+	return connect.NewResponse(&gatewayv1.AddExposureForCallerResponse{Exposure: resp.GetExposure()}), nil
 }
 
-func (g *ExposeGateway) RemoveExposure(ctx context.Context, req *connect.Request[gatewayv1.RemoveExposureRequest]) (*connect.Response[exposev1.RemoveExposureResponse], error) {
+func (g *ExposeGateway) RemoveExposureForCaller(ctx context.Context, req *connect.Request[gatewayv1.RemoveExposureForCallerRequest]) (*connect.Response[gatewayv1.RemoveExposureForCallerResponse], error) {
 	resolved, err := requireAgentIdentity(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := g.expose.RemoveExposure(ctx, &exposev1.RemoveExposureRequest{
+	_, err = g.expose.RemoveExposure(ctx, &exposev1.RemoveExposureRequest{
 		WorkloadId: resolved.WorkloadID,
 		Port:       req.Msg.GetPort(),
 	})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
-	return connect.NewResponse(resp), nil
+	return connect.NewResponse(&gatewayv1.RemoveExposureForCallerResponse{}), nil
 }
 
-func (g *ExposeGateway) ListExposures(ctx context.Context, req *connect.Request[gatewayv1.ListExposuresRequest]) (*connect.Response[exposev1.ListExposuresResponse], error) {
+func (g *ExposeGateway) ListExposuresForCaller(ctx context.Context, req *connect.Request[gatewayv1.ListExposuresForCallerRequest]) (*connect.Response[gatewayv1.ListExposuresForCallerResponse], error) {
 	resolved, err := requireAgentIdentity(ctx)
 	if err != nil {
 		return nil, err
@@ -63,7 +87,10 @@ func (g *ExposeGateway) ListExposures(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, toConnectError(err)
 	}
-	return connect.NewResponse(resp), nil
+	return connect.NewResponse(&gatewayv1.ListExposuresForCallerResponse{
+		Exposures:     resp.GetExposures(),
+		NextPageToken: resp.GetNextPageToken(),
+	}), nil
 }
 
 func requireAgentIdentity(ctx context.Context) (identity.ResolvedIdentity, error) {
