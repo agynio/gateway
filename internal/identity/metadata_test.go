@@ -11,6 +11,7 @@ func TestAppendToOutgoingContext(t *testing.T) {
 	input := ResolvedIdentity{
 		IdentityID:   "identity-123",
 		IdentityType: IdentityTypeAgent,
+		WorkloadID:   "workload-123",
 	}
 
 	ctx := WithIdentity(context.Background(), input)
@@ -23,6 +24,7 @@ func TestAppendToOutgoingContext(t *testing.T) {
 
 	assertMetadataValue(t, md, MetadataKeyIdentityID, input.IdentityID)
 	assertMetadataValue(t, md, MetadataKeyIdentityType, string(input.IdentityType))
+	assertMetadataValue(t, md, MetadataKeyWorkloadID, input.WorkloadID)
 }
 
 func TestAppendToOutgoingContextMissingIdentity(t *testing.T) {
@@ -42,6 +44,7 @@ func TestIdentityFromIncomingContext(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		MetadataKeyIdentityID, "identity-777",
 		MetadataKeyIdentityType, string(IdentityTypeUser),
+		MetadataKeyWorkloadID, "workload-777",
 	))
 
 	got, err := IdentityFromIncomingContext(ctx)
@@ -52,6 +55,7 @@ func TestIdentityFromIncomingContext(t *testing.T) {
 	expected := ResolvedIdentity{
 		IdentityID:   "identity-777",
 		IdentityType: IdentityTypeUser,
+		WorkloadID:   "workload-777",
 	}
 	if got != expected {
 		t.Fatalf("unexpected identity: %+v", got)

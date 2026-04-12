@@ -96,9 +96,15 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 		return identity.ResolvedIdentity{}, err
 	}
 
+	workloadID := strings.TrimSpace(response.GetWorkloadId())
+	if identityType == identity.IdentityTypeAgent && workloadID == "" {
+		return identity.ResolvedIdentity{}, fmt.Errorf("workload id missing")
+	}
+
 	return identity.ResolvedIdentity{
 		IdentityID:   identityID,
 		IdentityType: identityType,
+		WorkloadID:   workloadID,
 	}, nil
 }
 
