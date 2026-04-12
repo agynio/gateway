@@ -86,3 +86,11 @@ func (g *RunnersGateway) GetWorkload(ctx context.Context, req *connect.Request[r
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *RunnersGateway) TouchWorkload(ctx context.Context, req *connect.Request[runnersv1.TouchWorkloadRequest]) (*connect.Response[runnersv1.TouchWorkloadResponse], error) {
+	resp, err := g.runners.TouchWorkload(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
