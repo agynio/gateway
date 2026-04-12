@@ -6,6 +6,7 @@ import (
 
 	"connectrpc.com/connect"
 	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
+	gatewayv1 "github.com/agynio/gateway/gen/agynio/api/gateway/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -70,9 +71,14 @@ func TestExposeGatewayAddExposureSuccess(t *testing.T) {
 		},
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.AddExposureRequest{WorkloadId: "workload-1", Port: 8080})
-	resp, err := gateway.AddExposure(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.AddExposureRequest{Port: 8080})
+	resp, err := gateway.AddExposure(ctx, req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -82,8 +88,14 @@ func TestExposeGatewayAddExposureSuccess(t *testing.T) {
 	if client.addExposureCalls != 1 {
 		t.Fatalf("expected add exposure to be called once, got %d", client.addExposureCalls)
 	}
-	if client.addExposureReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.addExposureReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.addExposureReq.GetWorkloadId())
+	}
+	if client.addExposureReq.GetAgentId() != "agent-1" {
+		t.Fatalf("expected agent id %q, got %q", "agent-1", client.addExposureReq.GetAgentId())
+	}
+	if client.addExposureReq.GetPort() != 8080 {
+		t.Fatalf("expected port 8080, got %d", client.addExposureReq.GetPort())
 	}
 	if resp.Msg != client.addExposureResp {
 		t.Fatalf("expected response to be forwarded")
@@ -95,9 +107,14 @@ func TestExposeGatewayAddExposureError(t *testing.T) {
 		addExposureErr: status.Error(codes.InvalidArgument, "invalid"),
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.AddExposureRequest{WorkloadId: "workload-1"})
-	resp, err := gateway.AddExposure(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.AddExposureRequest{Port: 8080})
+	resp, err := gateway.AddExposure(ctx, req)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -110,8 +127,14 @@ func TestExposeGatewayAddExposureError(t *testing.T) {
 	if client.addExposureCalls != 1 {
 		t.Fatalf("expected add exposure to be called once, got %d", client.addExposureCalls)
 	}
-	if client.addExposureReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.addExposureReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.addExposureReq.GetWorkloadId())
+	}
+	if client.addExposureReq.GetAgentId() != "agent-1" {
+		t.Fatalf("expected agent id %q, got %q", "agent-1", client.addExposureReq.GetAgentId())
+	}
+	if client.addExposureReq.GetPort() != 8080 {
+		t.Fatalf("expected port 8080, got %d", client.addExposureReq.GetPort())
 	}
 }
 
@@ -120,9 +143,14 @@ func TestExposeGatewayRemoveExposureSuccess(t *testing.T) {
 		removeExposureResp: &exposev1.RemoveExposureResponse{},
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.RemoveExposureRequest{WorkloadId: "workload-1", Port: 8080})
-	resp, err := gateway.RemoveExposure(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.RemoveExposureRequest{Port: 8080})
+	resp, err := gateway.RemoveExposure(ctx, req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -132,8 +160,11 @@ func TestExposeGatewayRemoveExposureSuccess(t *testing.T) {
 	if client.removeExposureCalls != 1 {
 		t.Fatalf("expected remove exposure to be called once, got %d", client.removeExposureCalls)
 	}
-	if client.removeExposureReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.removeExposureReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.removeExposureReq.GetWorkloadId())
+	}
+	if client.removeExposureReq.GetPort() != 8080 {
+		t.Fatalf("expected port 8080, got %d", client.removeExposureReq.GetPort())
 	}
 	if resp.Msg != client.removeExposureResp {
 		t.Fatalf("expected response to be forwarded")
@@ -145,9 +176,14 @@ func TestExposeGatewayRemoveExposureError(t *testing.T) {
 		removeExposureErr: status.Error(codes.NotFound, "missing"),
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.RemoveExposureRequest{WorkloadId: "workload-1"})
-	resp, err := gateway.RemoveExposure(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.RemoveExposureRequest{Port: 8080})
+	resp, err := gateway.RemoveExposure(ctx, req)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -160,8 +196,11 @@ func TestExposeGatewayRemoveExposureError(t *testing.T) {
 	if client.removeExposureCalls != 1 {
 		t.Fatalf("expected remove exposure to be called once, got %d", client.removeExposureCalls)
 	}
-	if client.removeExposureReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.removeExposureReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.removeExposureReq.GetWorkloadId())
+	}
+	if client.removeExposureReq.GetPort() != 8080 {
+		t.Fatalf("expected port 8080, got %d", client.removeExposureReq.GetPort())
 	}
 }
 
@@ -172,9 +211,14 @@ func TestExposeGatewayListExposuresSuccess(t *testing.T) {
 		},
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.ListExposuresRequest{WorkloadId: "workload-1", PageSize: 10})
-	resp, err := gateway.ListExposures(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.ListExposuresRequest{PageSize: 10, PageToken: "token-1"})
+	resp, err := gateway.ListExposures(ctx, req)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -184,8 +228,14 @@ func TestExposeGatewayListExposuresSuccess(t *testing.T) {
 	if client.listExposuresCalls != 1 {
 		t.Fatalf("expected list exposures to be called once, got %d", client.listExposuresCalls)
 	}
-	if client.listExposuresReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.listExposuresReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.listExposuresReq.GetWorkloadId())
+	}
+	if client.listExposuresReq.GetPageSize() != 10 {
+		t.Fatalf("expected page size 10, got %d", client.listExposuresReq.GetPageSize())
+	}
+	if client.listExposuresReq.GetPageToken() != "token-1" {
+		t.Fatalf("expected page token %q, got %q", "token-1", client.listExposuresReq.GetPageToken())
 	}
 	if resp.Msg != client.listExposuresResp {
 		t.Fatalf("expected response to be forwarded")
@@ -197,9 +247,14 @@ func TestExposeGatewayListExposuresError(t *testing.T) {
 		listExposuresErr: status.Error(codes.PermissionDenied, "denied"),
 	}
 	gateway := NewExposeGateway(client)
+	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	})
 
-	req := connect.NewRequest(&exposev1.ListExposuresRequest{WorkloadId: "workload-1"})
-	resp, err := gateway.ListExposures(context.Background(), req)
+	req := connect.NewRequest(&gatewayv1.ListExposuresRequest{PageSize: 10})
+	resp, err := gateway.ListExposures(ctx, req)
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -212,43 +267,44 @@ func TestExposeGatewayListExposuresError(t *testing.T) {
 	if client.listExposuresCalls != 1 {
 		t.Fatalf("expected list exposures to be called once, got %d", client.listExposuresCalls)
 	}
-	if client.listExposuresReq != req.Msg {
-		t.Fatalf("expected request to be forwarded")
+	if client.listExposuresReq.GetWorkloadId() != "workload-1" {
+		t.Fatalf("expected workload id %q, got %q", "workload-1", client.listExposuresReq.GetWorkloadId())
+	}
+	if client.listExposuresReq.GetPageSize() != 10 {
+		t.Fatalf("expected page size 10, got %d", client.listExposuresReq.GetPageSize())
 	}
 }
 
-func TestExposeGatewayAddExposureInjectsWorkloadID(t *testing.T) {
+func TestExposeGatewayAddExposureRequiresIdentity(t *testing.T) {
 	client := &fakeExposeClient{}
 	gateway := NewExposeGateway(client)
-	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
-		IdentityID:   "agent-1",
-		IdentityType: identity.IdentityTypeAgent,
-		WorkloadID:   "workload-1",
-	})
 
-	req := connect.NewRequest(&exposev1.AddExposureRequest{Port: 8080})
-	_, err := gateway.AddExposure(ctx, req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	req := connect.NewRequest(&gatewayv1.AddExposureRequest{Port: 8080})
+	resp, err := gateway.AddExposure(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
 	}
-	if client.addExposureCalls != 1 {
-		t.Fatalf("expected add exposure to be called once, got %d", client.addExposureCalls)
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("expected CodeUnauthenticated, got %v", connect.CodeOf(err))
 	}
-	if client.addExposureReq.GetWorkloadId() != "workload-1" {
-		t.Fatalf("expected workload id to be injected, got %q", client.addExposureReq.GetWorkloadId())
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.addExposureCalls != 0 {
+		t.Fatalf("expected no add exposure calls, got %d", client.addExposureCalls)
 	}
 }
 
-func TestExposeGatewayAddExposureWorkloadMismatch(t *testing.T) {
+func TestExposeGatewayAddExposureRejectsNonAgent(t *testing.T) {
 	client := &fakeExposeClient{}
 	gateway := NewExposeGateway(client)
 	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
-		IdentityID:   "agent-1",
-		IdentityType: identity.IdentityTypeAgent,
+		IdentityID:   "user-1",
+		IdentityType: identity.IdentityTypeUser,
 		WorkloadID:   "workload-1",
 	})
 
-	req := connect.NewRequest(&exposev1.AddExposureRequest{WorkloadId: "workload-2"})
+	req := connect.NewRequest(&gatewayv1.AddExposureRequest{Port: 8080})
 	resp, err := gateway.AddExposure(ctx, req)
 	if err == nil {
 		t.Fatalf("expected error")
@@ -264,46 +320,52 @@ func TestExposeGatewayAddExposureWorkloadMismatch(t *testing.T) {
 	}
 }
 
-func TestExposeGatewayRemoveExposureInjectsWorkloadID(t *testing.T) {
+func TestExposeGatewayAddExposureRejectsMissingWorkloadID(t *testing.T) {
 	client := &fakeExposeClient{}
 	gateway := NewExposeGateway(client)
 	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
 		IdentityID:   "agent-1",
 		IdentityType: identity.IdentityTypeAgent,
-		WorkloadID:   "workload-3",
+		WorkloadID:   "",
 	})
 
-	req := connect.NewRequest(&exposev1.RemoveExposureRequest{Port: 8080})
-	_, err := gateway.RemoveExposure(ctx, req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	req := connect.NewRequest(&gatewayv1.AddExposureRequest{Port: 8080})
+	resp, err := gateway.AddExposure(ctx, req)
+	if err == nil {
+		t.Fatalf("expected error")
 	}
-	if client.removeExposureCalls != 1 {
-		t.Fatalf("expected remove exposure to be called once, got %d", client.removeExposureCalls)
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("expected CodeInternal, got %v", connect.CodeOf(err))
 	}
-	if client.removeExposureReq.GetWorkloadId() != "workload-3" {
-		t.Fatalf("expected workload id to be injected, got %q", client.removeExposureReq.GetWorkloadId())
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.addExposureCalls != 0 {
+		t.Fatalf("expected no add exposure calls, got %d", client.addExposureCalls)
 	}
 }
 
-func TestExposeGatewayListExposuresInjectsWorkloadID(t *testing.T) {
+func TestExposeGatewayListExposuresRejectsMissingAgentID(t *testing.T) {
 	client := &fakeExposeClient{}
 	gateway := NewExposeGateway(client)
 	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
-		IdentityID:   "agent-1",
+		IdentityID:   "",
 		IdentityType: identity.IdentityTypeAgent,
 		WorkloadID:   "workload-4",
 	})
 
-	req := connect.NewRequest(&exposev1.ListExposuresRequest{PageSize: 10})
-	_, err := gateway.ListExposures(ctx, req)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+	req := connect.NewRequest(&gatewayv1.ListExposuresRequest{PageSize: 10})
+	resp, err := gateway.ListExposures(ctx, req)
+	if err == nil {
+		t.Fatalf("expected error")
 	}
-	if client.listExposuresCalls != 1 {
-		t.Fatalf("expected list exposures to be called once, got %d", client.listExposuresCalls)
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("expected CodeInternal, got %v", connect.CodeOf(err))
 	}
-	if client.listExposuresReq.GetWorkloadId() != "workload-4" {
-		t.Fatalf("expected workload id to be injected, got %q", client.listExposuresReq.GetWorkloadId())
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.listExposuresCalls != 0 {
+		t.Fatalf("expected no list exposures calls, got %d", client.listExposuresCalls)
 	}
 }

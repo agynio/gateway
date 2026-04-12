@@ -2,11 +2,12 @@ package gateway
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 
 	"connectrpc.com/connect"
 	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
+	gatewayv1 "github.com/agynio/gateway/gen/agynio/api/gateway/v1"
 	"github.com/agynio/gateway/internal/identity"
 )
 
@@ -18,58 +19,70 @@ func NewExposeGateway(expose exposev1.ExposeServiceClient) *ExposeGateway {
 	return &ExposeGateway{expose: expose}
 }
 
-func (g *ExposeGateway) AddExposure(ctx context.Context, req *connect.Request[exposev1.AddExposureRequest]) (*connect.Response[exposev1.AddExposureResponse], error) {
-	if err := applyWorkloadID(ctx, &req.Msg.WorkloadId); err != nil {
+func (g *ExposeGateway) AddExposure(ctx context.Context, req *connect.Request[gatewayv1.AddExposureRequest]) (*connect.Response[exposev1.AddExposureResponse], error) {
+	resolved, err := requireAgentIdentity(ctx)
+	if err != nil {
 		return nil, err
 	}
-	resp, err := g.expose.AddExposure(ctx, req.Msg)
+	resp, err := g.expose.AddExposure(ctx, &exposev1.AddExposureRequest{
+		WorkloadId: resolved.WorkloadID,
+		AgentId:    resolved.IdentityID,
+		Port:       req.Msg.GetPort(),
+	})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(resp), nil
 }
 
-func (g *ExposeGateway) RemoveExposure(ctx context.Context, req *connect.Request[exposev1.RemoveExposureRequest]) (*connect.Response[exposev1.RemoveExposureResponse], error) {
-	if err := applyWorkloadID(ctx, &req.Msg.WorkloadId); err != nil {
+func (g *ExposeGateway) RemoveExposure(ctx context.Context, req *connect.Request[gatewayv1.RemoveExposureRequest]) (*connect.Response[exposev1.RemoveExposureResponse], error) {
+	resolved, err := requireAgentIdentity(ctx)
+	if err != nil {
 		return nil, err
 	}
-	resp, err := g.expose.RemoveExposure(ctx, req.Msg)
+	resp, err := g.expose.RemoveExposure(ctx, &exposev1.RemoveExposureRequest{
+		WorkloadId: resolved.WorkloadID,
+		Port:       req.Msg.GetPort(),
+	})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(resp), nil
 }
 
-func (g *ExposeGateway) ListExposures(ctx context.Context, req *connect.Request[exposev1.ListExposuresRequest]) (*connect.Response[exposev1.ListExposuresResponse], error) {
-	if err := applyWorkloadID(ctx, &req.Msg.WorkloadId); err != nil {
+func (g *ExposeGateway) ListExposures(ctx context.Context, req *connect.Request[gatewayv1.ListExposuresRequest]) (*connect.Response[exposev1.ListExposuresResponse], error) {
+	resolved, err := requireAgentIdentity(ctx)
+	if err != nil {
 		return nil, err
 	}
-	resp, err := g.expose.ListExposures(ctx, req.Msg)
+	resp, err := g.expose.ListExposures(ctx, &exposev1.ListExposuresRequest{
+		WorkloadId: resolved.WorkloadID,
+		PageSize:   req.Msg.GetPageSize(),
+		PageToken:  req.Msg.GetPageToken(),
+	})
 	if err != nil {
 		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(resp), nil
 }
 
-func applyWorkloadID(ctx context.Context, workloadID *string) error {
+func requireAgentIdentity(ctx context.Context) (identity.ResolvedIdentity, error) {
 	resolved, ok := identity.IdentityFromContext(ctx)
-	if !ok || resolved.IdentityType != identity.IdentityTypeAgent {
-		return nil
+	if !ok {
+		return identity.ResolvedIdentity{}, connect.NewError(connect.CodeUnauthenticated, errors.New("identity not available"))
 	}
-
-	identityWorkloadID := strings.TrimSpace(resolved.WorkloadID)
-	if identityWorkloadID == "" {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("workload id missing for agent identity"))
+	if resolved.IdentityType != identity.IdentityTypeAgent {
+		return identity.ResolvedIdentity{}, connect.NewError(connect.CodePermissionDenied, errors.New("identity is not an agent"))
 	}
-
-	requestedWorkloadID := strings.TrimSpace(*workloadID)
-	if requestedWorkloadID == "" {
-		*workloadID = identityWorkloadID
-		return nil
+	identityID := strings.TrimSpace(resolved.IdentityID)
+	if identityID == "" {
+		return identity.ResolvedIdentity{}, connect.NewError(connect.CodeInternal, errors.New("agent id missing for agent identity"))
 	}
-	if requestedWorkloadID != identityWorkloadID {
-		return connect.NewError(connect.CodePermissionDenied, fmt.Errorf("workload id does not match identity"))
+	workloadID := strings.TrimSpace(resolved.WorkloadID)
+	if workloadID == "" {
+		return identity.ResolvedIdentity{}, connect.NewError(connect.CodeInternal, errors.New("workload id missing for agent identity"))
 	}
-	*workloadID = requestedWorkloadID
-	return nil
+	resolved.IdentityID = identityID
+	resolved.WorkloadID = workloadID
+	return resolved, nil
 }
