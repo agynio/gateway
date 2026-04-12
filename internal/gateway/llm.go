@@ -21,6 +21,19 @@ const (
 	testModelAnthropicHeader = "2023-06-01"
 )
 
+type testModelError struct {
+	code    connect.Code
+	message string
+}
+
+func (e *testModelError) Error() string {
+	return e.message
+}
+
+func newTestModelError(code connect.Code, message string) *testModelError {
+	return &testModelError{code: code, message: message}
+}
+
 type testModelInput struct {
 	endpoint   string
 	token      string
@@ -153,50 +166,53 @@ func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.Test
 
 	resolved, err := g.llm.ResolveModel(ctx, &llmv1.ResolveModelRequest{ModelId: modelID})
 	if err != nil {
-		return connect.NewResponse(&llmv1.TestModelResponse{ErrorMessage: toConnectError(err).Message()}), nil
+		return nil, toConnectError(err)
 	}
 
 	input, err := parseTestModelInput(resolved)
 	if err != nil {
-		return connect.NewResponse(&llmv1.TestModelResponse{ErrorMessage: err.Error()}), nil
+		return nil, connectErrorForTestModel(err)
 	}
 
-	outputText, errorMessage := testModel(ctx, input)
-	return connect.NewResponse(&llmv1.TestModelResponse{OutputText: outputText, ErrorMessage: errorMessage}), nil
+	outputText, err := testModel(ctx, input)
+	if err != nil {
+		return nil, connectErrorForTestModel(err)
+	}
+	return connect.NewResponse(&llmv1.TestModelResponse{OutputText: outputText}), nil
 }
 
 func parseTestModelInput(resolved *llmv1.ResolveModelResponse) (testModelInput, error) {
 	if resolved == nil {
-		return testModelInput{}, errors.New("model resolution missing")
+		return testModelInput{}, newTestModelError(connect.CodeInternal, "model resolution missing")
 	}
 
 	endpoint := strings.TrimSpace(resolved.GetEndpoint())
 	if endpoint == "" {
-		return testModelInput{}, errors.New("model endpoint missing")
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model endpoint missing")
 	}
 
 	remoteName := strings.TrimSpace(resolved.GetRemoteName())
 	if remoteName == "" {
-		return testModelInput{}, errors.New("model remote name missing")
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model remote name missing")
 	}
 
 	protocol := resolved.GetProtocol()
 	switch protocol {
 	case llmv1.Protocol_PROTOCOL_RESPONSES, llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES:
 	default:
-		return testModelInput{}, errors.New("unsupported model protocol")
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "unsupported model protocol")
 	}
 
 	authMethod := resolved.GetAuthMethod()
 	switch authMethod {
 	case llmv1.AuthMethod_AUTH_METHOD_BEARER, llmv1.AuthMethod_AUTH_METHOD_X_API_KEY:
 	default:
-		return testModelInput{}, errors.New("unsupported auth method")
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "unsupported auth method")
 	}
 
 	token := strings.TrimSpace(resolved.GetToken())
 	if token == "" {
-		return testModelInput{}, errors.New("model token missing")
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model token missing")
 	}
 
 	return testModelInput{
@@ -208,10 +224,10 @@ func parseTestModelInput(resolved *llmv1.ResolveModelResponse) (testModelInput, 
 	}, nil
 }
 
-func testModel(ctx context.Context, input testModelInput) (string, string) {
+func testModel(ctx context.Context, input testModelInput) (string, error) {
 	body, headers, err := buildTestModelRequest(input)
 	if err != nil {
-		return "", err.Error()
+		return "", err
 	}
 
 	requestCtx, cancel := context.WithTimeout(ctx, testModelTimeout)
@@ -219,32 +235,32 @@ func testModel(ctx context.Context, input testModelInput) (string, string) {
 
 	request, err := http.NewRequestWithContext(requestCtx, http.MethodPost, input.endpoint, bytes.NewReader(body))
 	if err != nil {
-		return "", fmt.Sprintf("invalid request: %v", err)
+		return "", newTestModelError(connect.CodeFailedPrecondition, fmt.Sprintf("invalid request: %v", err))
 	}
 	request.Header = headers
 
 	client := &http.Client{Timeout: testModelTimeout}
 	response, err := client.Do(request)
 	if err != nil {
-		return "", fmt.Sprintf("request failed: %v", err)
+		return "", newTestModelError(connect.CodeUnavailable, fmt.Sprintf("request failed: %v", err))
 	}
 	defer response.Body.Close()
 
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
-		return "", fmt.Sprintf("failed to read response: %v", err)
+		return "", newTestModelError(connect.CodeUnavailable, fmt.Sprintf("failed to read response: %v", err))
 	}
 
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return "", formatUpstreamError(response.StatusCode, responseBody)
+		return "", newTestModelError(connect.CodeUnavailable, formatUpstreamError(response.StatusCode, responseBody))
 	}
 
 	outputText, err := parseTestModelOutput(input.protocol, responseBody)
 	if err != nil {
-		return "", err.Error()
+		return "", newTestModelError(connect.CodeUnavailable, err.Error())
 	}
 
-	return outputText, ""
+	return outputText, nil
 }
 
 func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
@@ -261,7 +277,7 @@ func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 	case llmv1.AuthMethod_AUTH_METHOD_X_API_KEY:
 		headers.Set("x-api-key", input.token)
 	default:
-		return nil, nil, errors.New("unsupported auth method")
+		return nil, nil, newTestModelError(connect.CodeFailedPrecondition, "unsupported auth method")
 	}
 
 	var payload any
@@ -277,15 +293,26 @@ func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 			},
 		}
 	default:
-		return nil, nil, errors.New("unsupported model protocol")
+		return nil, nil, newTestModelError(connect.CodeFailedPrecondition, "unsupported model protocol")
 	}
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to encode request: %w", err)
+		return nil, nil, newTestModelError(connect.CodeInternal, fmt.Sprintf("failed to encode request: %v", err))
 	}
 
 	return body, headers, nil
+}
+
+func connectErrorForTestModel(err error) *connect.Error {
+	if err == nil {
+		return connect.NewError(connect.CodeInternal, errors.New("unknown test error"))
+	}
+	var testErr *testModelError
+	if errors.As(err, &testErr) {
+		return connect.NewError(testErr.code, errors.New(testErr.message))
+	}
+	return connect.NewError(connect.CodeInternal, err)
 }
 
 func parseTestModelOutput(protocol llmv1.Protocol, responseBody []byte) (string, error) {
