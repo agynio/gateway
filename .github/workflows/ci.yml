@@ -27,7 +27,8 @@ jobs:
         uses: bufbuild/buf-setup-action@v1
         with:
           version: '1.66.1'
-          buf_token: ${{ secrets.BUF_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          buf_api_token: ${{ secrets.BUF_TOKEN }}
 
       - name: Generate gRPC stubs
         env:
