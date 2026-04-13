@@ -150,7 +150,7 @@ func main() {
 	usersGateway := gateway.NewUsersGateway(usersClient)
 	organizationsGateway := gateway.NewOrganizationsGateway(organizationsClient)
 	runnersGateway := gateway.NewRunnersGateway(runnersClient)
-	exposeGateway := gateway.NewExposeGateway(exposeClient, clusterAdminResolver)
+	exposeGateway := gateway.NewExposeGateway(exposeClient)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),

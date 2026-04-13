@@ -86,3 +86,11 @@ func (g *Gateway) ListModels(ctx context.Context, req *connect.Request[llmv1.Lis
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.TestModelRequest]) (*connect.Response[llmv1.TestModelResponse], error) {
+	resp, err := g.llm.TestModel(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
