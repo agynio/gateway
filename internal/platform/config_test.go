@@ -15,8 +15,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("AGENT_STATE_GRPC_TARGET", "agent-state:50056")
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "token-counting:50057")
 	t.Setenv("LLM_GRPC_TARGET", "llm:50058")
-	t.Setenv("LLM_PROXY_URL", "http://llm-proxy.example.com")
-	t.Setenv("LLM_PROXY_TOKEN", "agyn_test_token")
 	t.Setenv("SECRETS_GRPC_TARGET", "secrets:50059")
 	t.Setenv("USERS_GRPC_TARGET", "users:50060")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "organizations:50062")
@@ -69,14 +67,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.LLMGRPCTarget; got != "llm:50058" {
 		t.Fatalf("unexpected llm grpc target: %s", got)
-	}
-
-	if got := cfg.LLMProxyURL; got != "http://llm-proxy.example.com" {
-		t.Fatalf("unexpected llm proxy url: %s", got)
-	}
-
-	if got := cfg.LLMProxyToken; got != "agyn_test_token" {
-		t.Fatalf("unexpected llm proxy token: %s", got)
 	}
 
 	if got := cfg.SecretsGRPCTarget; got != "secrets:50059" {
@@ -152,8 +142,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("AGENT_STATE_GRPC_TARGET", "")
 	t.Setenv("TOKEN_COUNTING_GRPC_TARGET", "")
 	t.Setenv("LLM_GRPC_TARGET", "")
-	t.Setenv("LLM_PROXY_URL", "")
-	t.Setenv("LLM_PROXY_TOKEN", "")
 	t.Setenv("SECRETS_GRPC_TARGET", "")
 	t.Setenv("USERS_GRPC_TARGET", "")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "")
@@ -198,12 +186,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.LLMGRPCTarget != defaultLLMGRPCTarget {
 		t.Fatalf("unexpected llm grpc target: %s", cfg.LLMGRPCTarget)
-	}
-	if cfg.LLMProxyURL != defaultLLMProxyURL {
-		t.Fatalf("unexpected llm proxy url: %s", cfg.LLMProxyURL)
-	}
-	if cfg.LLMProxyToken != "" {
-		t.Fatalf("unexpected llm proxy token: %s", cfg.LLMProxyToken)
 	}
 	if cfg.SecretsGRPCTarget != defaultSecretsGRPCTarget {
 		t.Fatalf("unexpected secrets grpc target: %s", cfg.SecretsGRPCTarget)

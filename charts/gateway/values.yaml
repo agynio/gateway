@@ -162,8 +162,6 @@ gateway:
   secretsGrpcTarget: "secrets:50051"
   usersGrpcTarget: "users:50051"
   organizationsGrpcTarget: "organizations:50051"
-  llmProxyUrl: "http://llm-proxy-llm-proxy:8080"
-  llmProxyToken: ""
   oidcIssuerUrl: ""
   oidcClientId: ""
   clusterAdminToken: ""
