@@ -143,6 +143,8 @@ func main() {
 		agentStateClient,
 		tokenCountingClient,
 		llmClient,
+		config.LLMProxyURL,
+		config.LLMProxyToken,
 		secretsClient,
 		tracingClient,
 	)

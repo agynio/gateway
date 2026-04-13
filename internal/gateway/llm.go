@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -22,6 +23,8 @@ const (
 	testModelAnthropicMaxTokens         = 256
 	testModelMaxResponseBodyBytes int64 = 64 * 1024
 	testModelMaxErrorBodyBytes          = 1024
+	testModelResponsesPath              = "v1/responses"
+	testModelAnthropicPath              = "v1/messages"
 )
 
 var testModelHTTPClient = &http.Client{}
@@ -40,11 +43,10 @@ func newTestModelError(code connect.Code, message string) *testModelError {
 }
 
 type testModelInput struct {
-	endpoint   string
-	token      string
-	remoteName string
-	protocol   llmv1.Protocol
-	authMethod llmv1.AuthMethod
+	endpoint  string
+	modelID   string
+	protocol  llmv1.Protocol
+	authToken string
 }
 
 type responsesRequest struct {
@@ -174,7 +176,7 @@ func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.Test
 		return nil, toConnectError(err)
 	}
 
-	input, err := parseTestModelInput(resolved)
+	input, err := parseTestModelInput(resolved, modelID, g.llmProxyURL, g.llmProxyToken)
 	if err != nil {
 		return nil, connectErrorForTestModel(err)
 	}
@@ -186,19 +188,13 @@ func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.Test
 	return connect.NewResponse(&llmv1.TestModelResponse{OutputText: outputText}), nil
 }
 
-func parseTestModelInput(resolved *llmv1.ResolveModelResponse) (testModelInput, error) {
+func parseTestModelInput(resolved *llmv1.ResolveModelResponse, modelID string, llmProxyURL string, llmProxyToken string) (testModelInput, error) {
 	if resolved == nil {
 		panic("resolved model response is nil")
 	}
-
-	endpoint := strings.TrimSpace(resolved.GetEndpoint())
-	if endpoint == "" {
-		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model endpoint missing")
-	}
-
-	remoteName := strings.TrimSpace(resolved.GetRemoteName())
-	if remoteName == "" {
-		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model remote name missing")
+	trimmedModelID := strings.TrimSpace(modelID)
+	if trimmedModelID == "" {
+		return testModelInput{}, newTestModelError(connect.CodeInvalidArgument, "model_id is required")
 	}
 
 	protocol := resolved.GetProtocol()
@@ -208,25 +204,51 @@ func parseTestModelInput(resolved *llmv1.ResolveModelResponse) (testModelInput, 
 		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "unsupported model protocol")
 	}
 
-	authMethod := resolved.GetAuthMethod()
-	switch authMethod {
-	case llmv1.AuthMethod_AUTH_METHOD_BEARER, llmv1.AuthMethod_AUTH_METHOD_X_API_KEY:
-	default:
-		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "unsupported auth method")
+	endpoint, err := buildTestModelEndpoint(llmProxyURL, protocol)
+	if err != nil {
+		return testModelInput{}, err
 	}
 
-	token := strings.TrimSpace(resolved.GetToken())
-	if token == "" {
-		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "model token missing")
+	proxyToken := strings.TrimSpace(llmProxyToken)
+	if proxyToken == "" {
+		return testModelInput{}, newTestModelError(connect.CodeFailedPrecondition, "llm proxy token missing")
 	}
 
 	return testModelInput{
-		endpoint:   endpoint,
-		remoteName: remoteName,
-		protocol:   protocol,
-		authMethod: authMethod,
-		token:      token,
+		endpoint:  endpoint,
+		modelID:   trimmedModelID,
+		protocol:  protocol,
+		authToken: proxyToken,
 	}, nil
+}
+
+func buildTestModelEndpoint(llmProxyURL string, protocol llmv1.Protocol) (string, error) {
+	trimmedURL := strings.TrimSpace(llmProxyURL)
+	if trimmedURL == "" {
+		return "", newTestModelError(connect.CodeFailedPrecondition, "llm proxy url missing")
+	}
+
+	parsedURL, err := url.Parse(trimmedURL)
+	if err != nil || parsedURL.Scheme == "" || parsedURL.Host == "" {
+		return "", newTestModelError(connect.CodeFailedPrecondition, "invalid llm proxy url")
+	}
+
+	path := testModelResponsesPath
+	switch protocol {
+	case llmv1.Protocol_PROTOCOL_RESPONSES:
+		path = testModelResponsesPath
+	case llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES:
+		path = testModelAnthropicPath
+	default:
+		panic("unreachable model protocol")
+	}
+
+	endpoint, err := url.JoinPath(parsedURL.String(), path)
+	if err != nil {
+		return "", newTestModelError(connect.CodeFailedPrecondition, "invalid llm proxy url")
+	}
+
+	return endpoint, nil
 }
 
 func testModel(ctx context.Context, input testModelInput) (string, error) {
@@ -270,27 +292,19 @@ func testModel(ctx context.Context, input testModelInput) (string, error) {
 func buildTestModelRequest(input testModelInput) ([]byte, http.Header, error) {
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
+	headers.Set("Authorization", fmt.Sprintf("Bearer %s", input.authToken))
 
 	if input.protocol == llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES {
 		headers.Set("anthropic-version", testModelAnthropicHeader)
 	}
 
-	switch input.authMethod {
-	case llmv1.AuthMethod_AUTH_METHOD_BEARER:
-		headers.Set("Authorization", fmt.Sprintf("Bearer %s", input.token))
-	case llmv1.AuthMethod_AUTH_METHOD_X_API_KEY:
-		headers.Set("x-api-key", input.token)
-	default:
-		panic("unreachable auth method")
-	}
-
 	var payload any
 	switch input.protocol {
 	case llmv1.Protocol_PROTOCOL_RESPONSES:
-		payload = responsesRequest{Model: input.remoteName, Input: testModelPrompt}
+		payload = responsesRequest{Model: input.modelID, Input: testModelPrompt}
 	case llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES:
 		payload = anthropicRequest{
-			Model:     input.remoteName,
+			Model:     input.modelID,
 			MaxTokens: testModelAnthropicMaxTokens,
 			Messages: []anthropicMessage{
 				{Role: "user", Content: testModelPrompt},

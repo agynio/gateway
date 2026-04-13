@@ -25,6 +25,8 @@ type Gateway struct {
 	agentState    agentstatev1.AgentStateServiceClient
 	tokenCounting tokencountingv1.TokenCountingServiceClient
 	llm           llmv1.LLMServiceClient
+	llmProxyURL   string
+	llmProxyToken string
 	secrets       secretsv1.SecretsServiceClient
 	tracing       tracingv1.TracingServiceClient
 }
@@ -39,6 +41,8 @@ func New(
 	agentState agentstatev1.AgentStateServiceClient,
 	tokenCounting tokencountingv1.TokenCountingServiceClient,
 	llm llmv1.LLMServiceClient,
+	llmProxyURL string,
+	llmProxyToken string,
 	secrets secretsv1.SecretsServiceClient,
 	tracing tracingv1.TracingServiceClient,
 ) *Gateway {
@@ -52,6 +56,8 @@ func New(
 		agentState:    agentState,
 		tokenCounting: tokenCounting,
 		llm:           llm,
+		llmProxyURL:   llmProxyURL,
+		llmProxyToken: llmProxyToken,
 		secrets:       secrets,
 		tracing:       tracing,
 	}

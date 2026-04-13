@@ -18,93 +18,82 @@ import (
 
 func TestParseTestModelInputSuccess(t *testing.T) {
 	input, err := parseTestModelInput(&llmv1.ResolveModelResponse{
-		Endpoint:   "https://example.com",
-		RemoteName: "remote-model",
-		Protocol:   llmv1.Protocol_PROTOCOL_RESPONSES,
-		AuthMethod: llmv1.AuthMethod_AUTH_METHOD_BEARER,
-		Token:      "token",
-	})
+		Protocol: llmv1.Protocol_PROTOCOL_RESPONSES,
+	}, "model-id", "https://proxy.example.com", "agyn_proxy_token")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if input.endpoint != "https://example.com" {
+	if input.endpoint != "https://proxy.example.com/v1/responses" {
 		t.Fatalf("expected endpoint to be set")
 	}
-	if input.remoteName != "remote-model" {
-		t.Fatalf("expected remote name to be set")
+	if input.modelID != "model-id" {
+		t.Fatalf("expected model id to be set")
 	}
 	if input.protocol != llmv1.Protocol_PROTOCOL_RESPONSES {
 		t.Fatalf("expected protocol to be set")
 	}
-	if input.authMethod != llmv1.AuthMethod_AUTH_METHOD_BEARER {
-		t.Fatalf("expected auth method to be set")
-	}
-	if input.token != "token" {
-		t.Fatalf("expected token to be set")
+	if input.authToken != "agyn_proxy_token" {
+		t.Fatalf("expected auth token to be set")
 	}
 }
 
 func TestParseTestModelInputErrors(t *testing.T) {
-	base := func() *llmv1.ResolveModelResponse {
+	base := func() (*llmv1.ResolveModelResponse, string, string, string) {
 		return &llmv1.ResolveModelResponse{
-			Endpoint:   "https://example.com",
-			RemoteName: "remote-model",
-			Protocol:   llmv1.Protocol_PROTOCOL_RESPONSES,
-			AuthMethod: llmv1.AuthMethod_AUTH_METHOD_BEARER,
-			Token:      "token",
-		}
+			Protocol: llmv1.Protocol_PROTOCOL_RESPONSES,
+		}, "model-id", "https://proxy.example.com", "agyn_proxy_token"
 	}
 	for _, tt := range []struct {
 		name    string
-		mutate  func(*llmv1.ResolveModelResponse)
+		mutate  func(*llmv1.ResolveModelResponse, *string, *string, *string)
 		code    connect.Code
 		message string
 	}{
 		{
-			name: "missing endpoint",
-			mutate: func(resp *llmv1.ResolveModelResponse) {
-				resp.Endpoint = ""
+			name: "missing model id",
+			mutate: func(_ *llmv1.ResolveModelResponse, modelID *string, _ *string, _ *string) {
+				*modelID = ""
 			},
-			code:    connect.CodeFailedPrecondition,
-			message: "model endpoint missing",
-		},
-		{
-			name: "missing remote name",
-			mutate: func(resp *llmv1.ResolveModelResponse) {
-				resp.RemoteName = ""
-			},
-			code:    connect.CodeFailedPrecondition,
-			message: "model remote name missing",
+			code:    connect.CodeInvalidArgument,
+			message: "model_id is required",
 		},
 		{
 			name: "unsupported protocol",
-			mutate: func(resp *llmv1.ResolveModelResponse) {
+			mutate: func(resp *llmv1.ResolveModelResponse, _ *string, _ *string, _ *string) {
 				resp.Protocol = llmv1.Protocol_PROTOCOL_UNSPECIFIED
 			},
 			code:    connect.CodeFailedPrecondition,
 			message: "unsupported model protocol",
 		},
 		{
-			name: "unsupported auth method",
-			mutate: func(resp *llmv1.ResolveModelResponse) {
-				resp.AuthMethod = llmv1.AuthMethod_AUTH_METHOD_UNSPECIFIED
+			name: "missing proxy url",
+			mutate: func(_ *llmv1.ResolveModelResponse, _ *string, proxyURL *string, _ *string) {
+				*proxyURL = ""
 			},
 			code:    connect.CodeFailedPrecondition,
-			message: "unsupported auth method",
+			message: "llm proxy url missing",
+		},
+		{
+			name: "invalid proxy url",
+			mutate: func(_ *llmv1.ResolveModelResponse, _ *string, proxyURL *string, _ *string) {
+				*proxyURL = "http://"
+			},
+			code:    connect.CodeFailedPrecondition,
+			message: "invalid llm proxy url",
 		},
 		{
 			name: "missing token",
-			mutate: func(resp *llmv1.ResolveModelResponse) {
-				resp.Token = ""
+			mutate: func(_ *llmv1.ResolveModelResponse, _ *string, _ *string, token *string) {
+				*token = ""
 			},
 			code:    connect.CodeFailedPrecondition,
-			message: "model token missing",
+			message: "llm proxy token missing",
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			resolved := base()
-			tt.mutate(resolved)
-			_, err := parseTestModelInput(resolved)
+			resolved, modelID, proxyURL, token := base()
+			tt.mutate(resolved, &modelID, &proxyURL, &token)
+			_, err := parseTestModelInput(resolved, modelID, proxyURL, token)
 			if err == nil {
 				t.Fatalf("expected error")
 			}
@@ -124,20 +113,22 @@ func TestParseTestModelInputErrors(t *testing.T) {
 
 func TestBuildTestModelRequestResponses(t *testing.T) {
 	body, headers, err := buildTestModelRequest(testModelInput{
-		endpoint:   "https://example.com",
-		remoteName: "remote",
-		token:      "token",
-		protocol:   llmv1.Protocol_PROTOCOL_RESPONSES,
-		authMethod: llmv1.AuthMethod_AUTH_METHOD_BEARER,
+		endpoint:  "https://example.com",
+		modelID:   "model-id",
+		authToken: "agyn_proxy_token",
+		protocol:  llmv1.Protocol_PROTOCOL_RESPONSES,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if got := headers.Get("Authorization"); got != "Bearer token" {
+	if got := headers.Get("Authorization"); got != "Bearer agyn_proxy_token" {
 		t.Fatalf("expected bearer auth header, got %q", got)
 	}
 	if got := headers.Get("Content-Type"); got != "application/json" {
 		t.Fatalf("expected content type header, got %q", got)
+	}
+	if got := headers.Get("x-api-key"); got != "" {
+		t.Fatalf("unexpected x-api-key header: %q", got)
 	}
 	if got := headers.Get("anthropic-version"); got != "" {
 		t.Fatalf("unexpected anthropic header: %q", got)
@@ -146,7 +137,7 @@ func TestBuildTestModelRequestResponses(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("failed to parse payload: %v", err)
 	}
-	if payload.Model != "remote" {
+	if payload.Model != "model-id" {
 		t.Fatalf("expected model name to match")
 	}
 	if payload.Input != testModelPrompt {
@@ -156,17 +147,19 @@ func TestBuildTestModelRequestResponses(t *testing.T) {
 
 func TestBuildTestModelRequestAnthropic(t *testing.T) {
 	body, headers, err := buildTestModelRequest(testModelInput{
-		endpoint:   "https://example.com",
-		remoteName: "remote",
-		token:      "token",
-		protocol:   llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES,
-		authMethod: llmv1.AuthMethod_AUTH_METHOD_X_API_KEY,
+		endpoint:  "https://example.com",
+		modelID:   "model-id",
+		authToken: "agyn_proxy_token",
+		protocol:  llmv1.Protocol_PROTOCOL_ANTHROPIC_MESSAGES,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if got := headers.Get("x-api-key"); got != "token" {
-		t.Fatalf("expected x-api-key header, got %q", got)
+	if got := headers.Get("Authorization"); got != "Bearer agyn_proxy_token" {
+		t.Fatalf("expected bearer auth header, got %q", got)
+	}
+	if got := headers.Get("x-api-key"); got != "" {
+		t.Fatalf("unexpected x-api-key header, got %q", got)
 	}
 	if got := headers.Get("anthropic-version"); got != testModelAnthropicHeader {
 		t.Fatalf("expected anthropic version header, got %q", got)
@@ -175,7 +168,7 @@ func TestBuildTestModelRequestAnthropic(t *testing.T) {
 	if err := json.Unmarshal(body, &payload); err != nil {
 		t.Fatalf("failed to parse payload: %v", err)
 	}
-	if payload.Model != "remote" {
+	if payload.Model != "model-id" {
 		t.Fatalf("expected model name to match")
 	}
 	if payload.MaxTokens != testModelAnthropicMaxTokens {
@@ -254,7 +247,15 @@ func TestTestModelSuccessResponses(t *testing.T) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
-		if got := r.Header.Get("Authorization"); got != "Bearer token" {
+		if r.URL.Path != "/v1/responses" {
+			select {
+			case errCh <- fmt.Errorf("expected path /v1/responses, got %s", r.URL.Path):
+			default:
+			}
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		if got := r.Header.Get("Authorization"); got != "Bearer agyn_proxy_token" {
 			select {
 			case errCh <- fmt.Errorf("expected bearer auth, got %q", got):
 			default:
@@ -288,7 +289,7 @@ func TestTestModelSuccessResponses(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		if payload.Model != "remote" || payload.Input != testModelPrompt {
+		if payload.Model != "model-id" || payload.Input != testModelPrompt {
 			select {
 			case errCh <- fmt.Errorf("unexpected payload: %#v", payload):
 			default:
@@ -311,11 +312,10 @@ func TestTestModelSuccessResponses(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	output, err := testModel(ctx, testModelInput{
-		endpoint:   server.URL,
-		remoteName: "remote",
-		token:      "token",
-		protocol:   llmv1.Protocol_PROTOCOL_RESPONSES,
-		authMethod: llmv1.AuthMethod_AUTH_METHOD_BEARER,
+		endpoint:  server.URL + "/v1/responses",
+		modelID:   "model-id",
+		authToken: "agyn_proxy_token",
+		protocol:  llmv1.Protocol_PROTOCOL_RESPONSES,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

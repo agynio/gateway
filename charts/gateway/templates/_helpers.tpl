@@ -25,6 +25,14 @@
 {{- $tokenCountingGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.tokenCountingGrpcTarget) -}}
 {{- $env = append $env (dict "name" "TOKEN_COUNTING_GRPC_TARGET" "value" $tokenCountingGrpcTarget) -}}
 
+{{- $llmProxyUrl := trimAll " \n\t" (default "" .Values.gateway.llmProxyUrl) -}}
+{{- $env = append $env (dict "name" "LLM_PROXY_URL" "value" $llmProxyUrl) -}}
+
+{{- $llmProxyToken := trimAll " \n\t" (default "" .Values.gateway.llmProxyToken) -}}
+{{- if $llmProxyToken -}}
+{{- $env = append $env (dict "name" "LLM_PROXY_TOKEN" "value" $llmProxyToken) -}}
+{{- end -}}
+
 {{- $secretsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.secretsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "SECRETS_GRPC_TARGET" "value" $secretsGrpcTarget) -}}
 

@@ -18,6 +18,7 @@ const (
 	defaultAgentStateGRPCTarget     = "agent-state:50051"
 	defaultTokenCountingGRPCTarget  = "token-counting:50051"
 	defaultLLMGRPCTarget            = "llm:50051"
+	defaultLLMProxyURL              = "http://llm-proxy-llm-proxy:8080"
 	defaultSecretsGRPCTarget        = "secrets:50051"
 	defaultTracingGRPCTarget        = "tracing:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
@@ -40,6 +41,8 @@ type Config struct {
 	AgentStateGRPCTarget     string
 	TokenCountingGRPCTarget  string
 	LLMGRPCTarget            string
+	LLMProxyURL              string
+	LLMProxyToken            string
 	SecretsGRPCTarget        string
 	TracingGRPCTarget        string
 	ZitiEnabled              bool
@@ -95,6 +98,8 @@ func LoadConfigFromEnv() (*Config, error) {
 		AgentStateGRPCTarget:     envOrDefault("AGENT_STATE_GRPC_TARGET", defaultAgentStateGRPCTarget),
 		TokenCountingGRPCTarget:  envOrDefault("TOKEN_COUNTING_GRPC_TARGET", defaultTokenCountingGRPCTarget),
 		LLMGRPCTarget:            envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
+		LLMProxyURL:              envOrDefault("LLM_PROXY_URL", defaultLLMProxyURL),
+		LLMProxyToken:            strings.TrimSpace(os.Getenv("LLM_PROXY_TOKEN")),
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
 		TracingGRPCTarget:        envOrDefault("TRACING_GRPC_TARGET", defaultTracingGRPCTarget),
 		ZitiEnabled:              zitiEnabled,
