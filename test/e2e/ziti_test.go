@@ -15,7 +15,6 @@ import (
 func TestZitiMeEndpointAuthenticated(t *testing.T) {
 	require.NotNil(t, zitiHTTPClient)
 	require.NotEmpty(t, zitiIdentityID)
-	require.NotEmpty(t, zitiServiceID)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

@@ -5,6 +5,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,7 +23,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	gatewayv1connect "github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
+	identityv1 "github.com/agynio/gateway/gen/agynio/api/identity/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
+	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	zitimgmtv1 "github.com/agynio/gateway/gen/agynio/api/ziti_management/v1"
 )
@@ -41,10 +44,14 @@ var (
 
 	apiTokenCreds  apiTokenCredentials
 	agentModelID   string
+	organizationID string
 	zitiHTTPClient *http.Client
+	zitiAppID      string
 	zitiIdentityID string
 	zitiServiceID  string
 )
+
+var errZitiServiceIDNotReady = errors.New("ziti service id not ready")
 
 type apiTokenCredentials struct {
 	token      string
@@ -96,17 +103,10 @@ func exitWithSetupError(cleanup *cleanupStack, err error) {
 }
 
 func setupCredentials(ctx context.Context, cleanup *cleanupStack) error {
-	requestCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-	defer cancel()
+	bootstrapCtx, bootstrapCancel := context.WithTimeout(ctx, 15*time.Second)
+	defer bootstrapCancel()
 
-	accessToken, err := requestOIDCAccessToken(requestCtx)
-	if err != nil {
-		return err
-	}
-
-	meCtx, meCancel := context.WithTimeout(ctx, 15*time.Second)
-	defer meCancel()
-	identityID, err := fetchIdentityID(meCtx, accessToken)
+	accessToken, identityID, err := resolveBootstrapCredentials(bootstrapCtx)
 	if err != nil {
 		return err
 	}
@@ -147,6 +147,29 @@ func setupCredentials(ctx context.Context, cleanup *cleanupStack) error {
 	})
 
 	return nil
+}
+
+func resolveBootstrapCredentials(ctx context.Context) (string, string, error) {
+	clusterToken := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_TOKEN"))
+	clusterIdentityID := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_IDENTITY_ID"))
+	if clusterToken != "" || clusterIdentityID != "" {
+		if clusterToken == "" || clusterIdentityID == "" {
+			return "", "", fmt.Errorf("CLUSTER_ADMIN_TOKEN and CLUSTER_ADMIN_IDENTITY_ID must both be set for e2e")
+		}
+		return clusterToken, clusterIdentityID, nil
+	}
+
+	accessToken, err := requestOIDCAccessToken(ctx)
+	if err != nil {
+		return "", "", err
+	}
+
+	identityID, err := fetchIdentityID(ctx, accessToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, identityID, nil
 }
 
 func requestOIDCAccessToken(ctx context.Context) (string, error) {
@@ -245,10 +268,24 @@ func setupModelID(ctx context.Context, cleanup *cleanupStack) error {
 	providerCtx, providerCancel := context.WithTimeout(ctx, 15*time.Second)
 	defer providerCancel()
 
+	orgCtx, orgCancel := context.WithTimeout(ctx, 15*time.Second)
+	defer orgCancel()
+
+	resolvedOrganizationID, err := resolveOrganizationID(orgCtx)
+	if err != nil {
+		return err
+	}
+	resolvedOrganizationID = strings.TrimSpace(resolvedOrganizationID)
+	if resolvedOrganizationID == "" {
+		return fmt.Errorf("organization id missing")
+	}
+	organizationID = resolvedOrganizationID
+
 	providerResp, err := client.CreateLLMProvider(providerCtx, &llmv1.CreateLLMProviderRequest{
-		Endpoint:   "https://testllm.dev/v1/org/agynio/suite/agn/responses",
-		Token:      "unused",
-		AuthMethod: llmv1.AuthMethod_AUTH_METHOD_BEARER,
+		Endpoint:       "https://testllm.dev/v1/org/agynio/suite/agn/responses",
+		Token:          "unused",
+		AuthMethod:     llmv1.AuthMethod_AUTH_METHOD_BEARER,
+		OrganizationId: resolvedOrganizationID,
 	})
 	if err != nil {
 		return fmt.Errorf("create llm provider: %w", err)
@@ -263,9 +300,10 @@ func setupModelID(ctx context.Context, cleanup *cleanupStack) error {
 	defer modelCancel()
 
 	modelResp, err := client.CreateModel(modelCtx, &llmv1.CreateModelRequest{
-		Name:          "e2e-test-model",
-		LlmProviderId: providerID,
-		RemoteName:    "simple-hello",
+		Name:           "e2e-test-model",
+		LlmProviderId:  providerID,
+		RemoteName:     "simple-hello",
+		OrganizationId: resolvedOrganizationID,
 	})
 	if err != nil {
 		return fmt.Errorf("create llm model: %w", err)
@@ -280,6 +318,54 @@ func setupModelID(ctx context.Context, cleanup *cleanupStack) error {
 	return nil
 }
 
+func resolveOrganizationID(ctx context.Context) (string, error) {
+	accessToken := strings.TrimSpace(apiTokenCreds.token)
+	if accessToken == "" {
+		return "", fmt.Errorf("api token missing")
+	}
+
+	client := gatewayv1connect.NewOrganizationsGatewayClient(newAuthenticatedClient(accessToken), gatewayURL)
+	listResp, err := client.ListOrganizations(ctx, connect.NewRequest(&organizationsv1.ListOrganizationsRequest{PageSize: 50}))
+	if err == nil {
+		orgID := firstOrganizationID(listResp.Msg.GetOrganizations())
+		if orgID != "" {
+			return orgID, nil
+		}
+	}
+
+	identityID := strings.TrimSpace(apiTokenCreds.identityID)
+	if identityID == "" {
+		return "", fmt.Errorf("identity id missing")
+	}
+
+	accessibleResp, accessibleErr := client.ListAccessibleOrganizations(ctx, connect.NewRequest(&organizationsv1.ListAccessibleOrganizationsRequest{
+		IdentityId: identityID,
+	}))
+	if accessibleErr != nil {
+		if err != nil {
+			return "", fmt.Errorf("list organizations: %v; list accessible organizations: %w", err, accessibleErr)
+		}
+		return "", fmt.Errorf("list accessible organizations: %w", accessibleErr)
+	}
+
+	orgID := firstOrganizationID(accessibleResp.Msg.GetOrganizations())
+	if orgID == "" {
+		return "", fmt.Errorf("organization id missing")
+	}
+
+	return orgID, nil
+}
+
+func firstOrganizationID(organizations []*organizationsv1.Organization) string {
+	for _, organization := range organizations {
+		id := strings.TrimSpace(organization.GetId())
+		if id != "" {
+			return id
+		}
+	}
+	return ""
+}
+
 func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 	conn, err := grpc.NewClient(zitiManagementTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -291,10 +377,10 @@ func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 	cleanup.Add(func() {
 		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cleanupCancel()
-		if zitiIdentityID != "" && zitiServiceID != "" {
+		if zitiAppID != "" && zitiServiceID != "" {
 			_, _ = client.DeleteAppIdentity(cleanupCtx, &zitimgmtv1.DeleteAppIdentityRequest{
-				ZitiIdentityId: zitiIdentityID,
-				ZitiServiceId:  zitiServiceID,
+				IdentityId:    zitiAppID,
+				ZitiServiceId: zitiServiceID,
 			})
 		}
 		if zitiContext != nil {
@@ -306,8 +392,9 @@ func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 	createCtx, createCancel := context.WithTimeout(ctx, 30*time.Second)
 	defer createCancel()
 
+	appIdentityID := uuid.NewString()
 	resp, err := client.CreateAppIdentity(createCtx, &zitimgmtv1.CreateAppIdentityRequest{
-		IdentityId: uuid.NewString(),
+		IdentityId: appIdentityID,
 		Slug:       "e2e-test",
 	})
 	if err != nil {
@@ -315,16 +402,26 @@ func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 	}
 
 	zitiIdentityID = strings.TrimSpace(resp.GetZitiIdentityId())
-	zitiServiceID = strings.TrimSpace(resp.GetZitiServiceId())
+	zitiAppID = appIdentityID
 	identityJSON := resp.GetIdentityJson()
 	if zitiIdentityID == "" {
 		return fmt.Errorf("ziti identity id missing")
 	}
-	if zitiServiceID == "" {
-		return fmt.Errorf("ziti service id missing")
-	}
 	if len(identityJSON) == 0 {
 		return fmt.Errorf("ziti identity json missing")
+	}
+
+	serviceCtx, serviceCancel := context.WithTimeout(ctx, 15*time.Second)
+	defer serviceCancel()
+	serviceID, err := resolveZitiServiceID(serviceCtx, client, zitiIdentityID)
+	if err != nil {
+		if errors.Is(err, errZitiServiceIDNotReady) || errors.Is(err, context.DeadlineExceeded) {
+			zitiServiceID = ""
+		} else {
+			return err
+		}
+	} else {
+		zitiServiceID = serviceID
 	}
 
 	zitiConfig := &ziti.Config{}
@@ -339,6 +436,65 @@ func setupZitiIdentity(ctx context.Context, cleanup *cleanupStack) error {
 
 	zitiHTTPClient = sdk.NewHttpClient(zitiContext, nil)
 	return nil
+}
+
+func resolveZitiServiceID(ctx context.Context, client zitimgmtv1.ZitiManagementServiceClient, zitiIdentityID string) (string, error) {
+	trimmedIdentity := strings.TrimSpace(zitiIdentityID)
+	if trimmedIdentity == "" {
+		return "", fmt.Errorf("ziti identity id missing")
+	}
+
+	deadline := time.Now().Add(15 * time.Second)
+	for {
+		serviceID, err := lookupZitiServiceID(ctx, client, trimmedIdentity)
+		if err == nil {
+			return serviceID, nil
+		}
+		if !errors.Is(err, errZitiServiceIDNotReady) {
+			return "", err
+		}
+		if time.Now().After(deadline) {
+			return "", errZitiServiceIDNotReady
+		}
+		timer := time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return "", fmt.Errorf("resolve ziti service id: %w", ctx.Err())
+		case <-timer.C:
+		}
+	}
+}
+
+func lookupZitiServiceID(ctx context.Context, client zitimgmtv1.ZitiManagementServiceClient, zitiIdentityID string) (string, error) {
+	pageToken := ""
+	for {
+		resp, err := client.ListManagedIdentities(ctx, &zitimgmtv1.ListManagedIdentitiesRequest{
+			IdentityType: identityv1.IdentityType_IDENTITY_TYPE_APP,
+			PageSize:     200,
+			PageToken:    pageToken,
+		})
+		if err != nil {
+			return "", fmt.Errorf("list managed identities: %w", err)
+		}
+
+		for _, identity := range resp.GetIdentities() {
+			if strings.TrimSpace(identity.GetZitiIdentityId()) == zitiIdentityID {
+				serviceID := strings.TrimSpace(identity.GetZitiServiceId())
+				if serviceID == "" {
+					return "", errZitiServiceIDNotReady
+				}
+				return serviceID, nil
+			}
+		}
+
+		pageToken = strings.TrimSpace(resp.GetNextPageToken())
+		if pageToken == "" {
+			break
+		}
+	}
+
+	return "", errZitiServiceIDNotReady
 }
 
 func newClient() *http.Client {

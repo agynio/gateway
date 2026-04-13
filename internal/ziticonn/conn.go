@@ -2,6 +2,7 @@ package ziticonn
 
 import (
 	"context"
+	"log"
 	"net"
 	"strings"
 )
@@ -26,11 +27,17 @@ func SourceIdentityFromContext(ctx context.Context) (string, bool) {
 }
 
 func SourceIdentityFromConn(conn net.Conn) (string, bool) {
+	log.Printf("[DIAG] SourceIdentityFromConn called, conn type: %T", conn)
 	if dialer, ok := conn.(DialerIdentifiable); ok {
-		identity := strings.TrimSpace(dialer.GetDialerIdentityId())
+		id := dialer.GetDialerIdentityId()
+		log.Printf("[DIAG] GetDialerIdentityId() returned: %q", id)
+		identity := strings.TrimSpace(id)
 		if identity != "" {
 			return identity, true
 		}
+	} else {
+		log.Printf("[DIAG] conn does NOT implement DialerIdentifiable")
 	}
+	log.Printf("[DIAG] no identity found, returning false")
 	return "", false
 }

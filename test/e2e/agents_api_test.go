@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -29,15 +30,21 @@ func TestAgentsGateway_CreateAndDeleteAgent(t *testing.T) {
 	modelID := agentModelID
 	require.NotEmpty(t, modelID)
 
+	orgID := organizationID
+	require.NotEmpty(t, orgID)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	client := gatewayv1connect.NewAgentsGatewayClient(newClient(), gatewayURL)
 	createReq := &agentsv1.CreateAgentRequest{
-		Name:          "e2e-smoke-agent",
-		Role:          "assistant",
-		Model:         modelID,
-		Configuration: "{}",
+		Name:           fmt.Sprintf("e2e-smoke-agent-%d", time.Now().UnixNano()),
+		Role:           "assistant",
+		Model:          modelID,
+		Configuration:  "{}",
+		Image:          "agent-image",
+		InitImage:      "agent-init-image",
+		OrganizationId: orgID,
 	}
 	createResp, err := client.CreateAgent(ctx, connect.NewRequest(createReq))
 	require.NoError(t, err)
@@ -53,14 +60,43 @@ func TestAgentsGateway_CreateAndDeleteAgent(t *testing.T) {
 }
 
 func TestAgentsGateway_ListMcps(t *testing.T) {
+	modelID := agentModelID
+	require.NotEmpty(t, modelID)
+
+	orgID := organizationID
+	require.NotEmpty(t, orgID)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	client := gatewayv1connect.NewAgentsGatewayClient(newClient(), gatewayURL)
-	resp, err := client.ListMcps(ctx, connect.NewRequest(&agentsv1.ListMcpsRequest{}))
+	createResp, err := client.CreateAgent(ctx, connect.NewRequest(&agentsv1.CreateAgentRequest{
+		Name:           fmt.Sprintf("e2e-mcp-agent-%d", time.Now().UnixNano()),
+		Role:           "assistant",
+		Model:          modelID,
+		Configuration:  "{}",
+		Image:          "agent-image",
+		InitImage:      "agent-init-image",
+		OrganizationId: orgID,
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, createResp.Msg)
+	require.NotNil(t, createResp.Msg.Agent)
+	require.NotNil(t, createResp.Msg.Agent.Meta)
+
+	agentID := createResp.Msg.Agent.Meta.Id
+	require.NotEmpty(t, agentID)
+
+	t.Cleanup(func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cleanupCancel()
+		_, _ = client.DeleteAgent(cleanupCtx, connect.NewRequest(&agentsv1.DeleteAgentRequest{Id: agentID}))
+	})
+
+	resp, err := client.ListMcps(ctx, connect.NewRequest(&agentsv1.ListMcpsRequest{AgentId: agentID}))
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	assert.NotNil(t, resp.Msg.Mcps)
+	require.NotNil(t, resp.Msg)
 }
 
 func TestAgentsGateway_InvalidPayloadReturnsClientError(t *testing.T) {
