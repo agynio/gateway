@@ -12,6 +12,7 @@ buf generate buf.build/agynio/api \
   --path agynio/api/files/v1 \
   --path agynio/api/agent_state/v1 \
   --path agynio/api/token_counting/v1 \
+  --path agynio/api/metering/v1 \
   --path agynio/api/llm/v1 \
   --path agynio/api/secrets/v1 \
   --path agynio/api/identity/v1 \

@@ -25,6 +25,9 @@
 {{- $tokenCountingGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.tokenCountingGrpcTarget) -}}
 {{- $env = append $env (dict "name" "TOKEN_COUNTING_GRPC_TARGET" "value" $tokenCountingGrpcTarget) -}}
 
+{{- $meteringGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.meteringGrpcTarget) -}}
+{{- $env = append $env (dict "name" "METERING_GRPC_TARGET" "value" $meteringGrpcTarget) -}}
+
 {{- $secretsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.secretsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "SECRETS_GRPC_TARGET" "value" $secretsGrpcTarget) -}}
 
