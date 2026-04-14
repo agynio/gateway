@@ -22,7 +22,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/root/go/pkg/mod \
     go mod download && go mod verify
 
-COPY buf.gen.yaml buf.yaml ./
+COPY buf.gen.yaml buf.yaml buf.lock ./
 
 # Generate protobuf stubs
 RUN buf generate buf.build/agynio/api \
