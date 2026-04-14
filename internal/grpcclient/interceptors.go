@@ -2,6 +2,7 @@ package grpcclient
 
 import (
 	"context"
+	"strings"
 
 	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
@@ -11,6 +12,7 @@ import (
 const (
 	identityIDMetadataKey   = "x-identity-id"
 	identityTypeMetadataKey = "x-identity-type"
+	workloadIDMetadataKey   = "x-workload-id"
 )
 
 func identityUnaryClientInterceptor() grpc.UnaryClientInterceptor {
@@ -33,11 +35,15 @@ func appendIdentityMetadata(ctx context.Context) context.Context {
 		return ctx
 	}
 
-	return metadata.AppendToOutgoingContext(
-		ctx,
+	entries := []string{
 		identityIDMetadataKey,
 		resolved.IdentityID,
 		identityTypeMetadataKey,
 		string(resolved.IdentityType),
-	)
+	}
+	if strings.TrimSpace(resolved.WorkloadID) != "" {
+		entries = append(entries, workloadIDMetadataKey, resolved.WorkloadID)
+	}
+
+	return metadata.AppendToOutgoingContext(ctx, entries...)
 }

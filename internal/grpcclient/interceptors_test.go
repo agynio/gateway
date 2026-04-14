@@ -12,6 +12,7 @@ func TestAppendIdentityMetadataWithIdentity(t *testing.T) {
 	ctx := identity.WithIdentity(context.Background(), identity.ResolvedIdentity{
 		IdentityID:   "identity-123",
 		IdentityType: identity.IdentityTypeUser,
+		WorkloadID:   "workload-123",
 	})
 
 	ctx = appendIdentityMetadata(ctx)
@@ -29,6 +30,11 @@ func TestAppendIdentityMetadataWithIdentity(t *testing.T) {
 	if len(identityTypes) != 1 || identityTypes[0] != string(identity.IdentityTypeUser) {
 		t.Fatalf("expected identity type metadata, got %v", identityTypes)
 	}
+
+	workloadIDs := md.Get(workloadIDMetadataKey)
+	if len(workloadIDs) != 1 || workloadIDs[0] != "workload-123" {
+		t.Fatalf("expected workload id metadata, got %v", workloadIDs)
+	}
 }
 
 func TestAppendIdentityMetadataWithoutIdentity(t *testing.T) {
@@ -43,6 +49,7 @@ func TestAppendIdentityMetadataPreservesExisting(t *testing.T) {
 	ctx = identity.WithIdentity(ctx, identity.ResolvedIdentity{
 		IdentityID:   "identity-456",
 		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-456",
 	})
 
 	ctx = appendIdentityMetadata(ctx)
@@ -64,5 +71,10 @@ func TestAppendIdentityMetadataPreservesExisting(t *testing.T) {
 	identityTypes := md.Get(identityTypeMetadataKey)
 	if len(identityTypes) != 1 || identityTypes[0] != string(identity.IdentityTypeAgent) {
 		t.Fatalf("expected identity type metadata, got %v", identityTypes)
+	}
+
+	workloadIDs := md.Get(workloadIDMetadataKey)
+	if len(workloadIDs) != 1 || workloadIDs[0] != "workload-456" {
+		t.Fatalf("expected workload id metadata, got %v", workloadIDs)
 	}
 }

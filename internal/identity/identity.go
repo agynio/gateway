@@ -9,15 +9,16 @@ import (
 type IdentityType string
 
 const (
-	IdentityTypeUser    IdentityType = "user"
-	IdentityTypeAgent   IdentityType = "agent"
-	IdentityTypeApp     IdentityType = "app"
-	IdentityTypeRunner  IdentityType = "runner"
+	IdentityTypeUser   IdentityType = "user"
+	IdentityTypeAgent  IdentityType = "agent"
+	IdentityTypeApp    IdentityType = "app"
+	IdentityTypeRunner IdentityType = "runner"
 )
 
 type ResolvedIdentity struct {
 	IdentityID   string
 	IdentityType IdentityType
+	WorkloadID   string
 }
 
 func ParseIdentityType(value string) (IdentityType, error) {

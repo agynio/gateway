@@ -13,6 +13,7 @@ func TestIdentityUnaryInterceptorAppendsMetadata(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-42",
 		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-42",
 	}
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
@@ -31,6 +32,7 @@ func TestIdentityStreamInterceptorAppendsMetadata(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-99",
 		IdentityType: identity.IdentityTypeUser,
+		WorkloadID:   "workload-99",
 	}
 	ctx := identity.WithIdentity(context.Background(), resolved)
 
@@ -56,6 +58,9 @@ func assertOutgoingIdentity(t *testing.T, ctx context.Context, resolved identity
 	}
 	assertMetadataValue(t, md, identity.MetadataKeyIdentityID, resolved.IdentityID)
 	assertMetadataValue(t, md, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
+	if resolved.WorkloadID != "" {
+		assertMetadataValue(t, md, identity.MetadataKeyWorkloadID, resolved.WorkloadID)
+	}
 }
 
 func assertMetadataValue(t *testing.T, md metadata.MD, key, expected string) {
