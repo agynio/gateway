@@ -56,8 +56,8 @@ func (g *ThreadsGateway) GetThreads(ctx context.Context, req *connect.Request[th
 	return connect.NewResponse(resp), nil
 }
 
-func (g *ThreadsGateway) ListOrganizationThreads(ctx context.Context, req *connect.Request[threadsv1.ListOrganizationThreadsRequest]) (*connect.Response[threadsv1.ListOrganizationThreadsResponse], error) {
-	resp, err := g.threads.ListOrganizationThreads(ctx, req.Msg)
+func (g *ThreadsGateway) GetOrganizationThreads(ctx context.Context, req *connect.Request[threadsv1.GetOrganizationThreadsRequest]) (*connect.Response[threadsv1.GetOrganizationThreadsResponse], error) {
+	resp, err := g.threads.GetOrganizationThreads(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}
