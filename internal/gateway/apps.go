@@ -31,6 +31,14 @@ func (g *Gateway) GetApp(ctx context.Context, req *connect.Request[appsv1.GetApp
 	return connect.NewResponse(resp), nil
 }
 
+func (g *Gateway) GetAppProfile(ctx context.Context, req *connect.Request[appsv1.GetAppProfileRequest]) (*connect.Response[appsv1.GetAppProfileResponse], error) {
+	resp, err := g.apps.GetAppProfile(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *Gateway) GetAppBySlug(ctx context.Context, req *connect.Request[appsv1.GetAppBySlugRequest]) (*connect.Response[appsv1.GetAppBySlugResponse], error) {
 	resp, err := g.apps.GetAppBySlug(ctx, req.Msg)
 	if err != nil {
