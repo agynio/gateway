@@ -74,6 +74,10 @@ func (f *fakeAppsClient) GetInstallationBySlug(ctx context.Context, req *appsv1.
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeAppsClient) GetInstallationByIdentityId(ctx context.Context, req *appsv1.GetInstallationByIdentityIdRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationByIdentityIdResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeAppsClient) ListInstallations(ctx context.Context, req *appsv1.ListInstallationsRequest, opts ...grpc.CallOption) (*appsv1.ListInstallationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
@@ -87,6 +91,18 @@ func (f *fakeAppsClient) UninstallApp(ctx context.Context, req *appsv1.Uninstall
 }
 
 func (f *fakeAppsClient) GetInstallationConfiguration(ctx context.Context, req *appsv1.GetInstallationConfigurationRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationConfigurationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) ReportInstallationStatus(ctx context.Context, req *appsv1.ReportInstallationStatusRequest, opts ...grpc.CallOption) (*appsv1.ReportInstallationStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) AppendInstallationAuditLogEntry(ctx context.Context, req *appsv1.AppendInstallationAuditLogEntryRequest, opts ...grpc.CallOption) (*appsv1.AppendInstallationAuditLogEntryResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAppsClient) ListInstallationAuditLogEntries(ctx context.Context, req *appsv1.ListInstallationAuditLogEntriesRequest, opts ...grpc.CallOption) (*appsv1.ListInstallationAuditLogEntriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
