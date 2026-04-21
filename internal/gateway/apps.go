@@ -118,3 +118,27 @@ func (g *Gateway) UninstallApp(ctx context.Context, req *connect.Request[appsv1.
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *Gateway) ReportInstallationStatus(ctx context.Context, req *connect.Request[appsv1.ReportInstallationStatusRequest]) (*connect.Response[appsv1.ReportInstallationStatusResponse], error) {
+	resp, err := g.apps.ReportInstallationStatus(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) AppendInstallationAuditLogEntry(ctx context.Context, req *connect.Request[appsv1.AppendInstallationAuditLogEntryRequest]) (*connect.Response[appsv1.AppendInstallationAuditLogEntryResponse], error) {
+	resp, err := g.apps.AppendInstallationAuditLogEntry(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListInstallationAuditLogEntries(ctx context.Context, req *connect.Request[appsv1.ListInstallationAuditLogEntriesRequest]) (*connect.Response[appsv1.ListInstallationAuditLogEntriesResponse], error) {
+	resp, err := g.apps.ListInstallationAuditLogEntries(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
