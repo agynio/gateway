@@ -94,3 +94,27 @@ func (g *RunnersGateway) TouchWorkload(ctx context.Context, req *connect.Request
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *RunnersGateway) GetVolume(ctx context.Context, req *connect.Request[runnersv1.GetVolumeRequest]) (*connect.Response[runnersv1.GetVolumeResponse], error) {
+	resp, err := g.runners.GetVolume(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) ListVolumes(ctx context.Context, req *connect.Request[runnersv1.ListVolumesRequest]) (*connect.Response[runnersv1.ListVolumesResponse], error) {
+	resp, err := g.runners.ListVolumes(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) ListVolumesByThread(ctx context.Context, req *connect.Request[runnersv1.ListVolumesByThreadRequest]) (*connect.Response[runnersv1.ListVolumesByThreadResponse], error) {
+	resp, err := g.runners.ListVolumesByThread(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
