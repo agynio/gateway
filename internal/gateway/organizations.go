@@ -133,6 +133,9 @@ func (g *OrganizationsGateway) ListMyMemberships(ctx context.Context, req *conne
 }
 
 func (g *OrganizationsGateway) SetMyOrgNickname(ctx context.Context, req *connect.Request[organizationsv1.SetMyOrgNicknameRequest]) (*connect.Response[organizationsv1.SetMyOrgNicknameResponse], error) {
+	if _, ok := identity.IdentityFromContext(ctx); !ok {
+		return nil, toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
+	}
 	resp, err := g.organizations.SetMyOrgNickname(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
