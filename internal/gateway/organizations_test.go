@@ -91,6 +91,10 @@ func (f *fakeOrganizationsClient) ListMyMemberships(ctx context.Context, in *org
 	return f.listMyMembershipsResp, nil
 }
 
+func (f *fakeOrganizationsClient) SetMyOrgNickname(ctx context.Context, in *organizationsv1.SetMyOrgNicknameRequest, opts ...grpc.CallOption) (*organizationsv1.SetMyOrgNicknameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "SetMyOrgNickname not implemented")
+}
+
 func TestOrganizationsGatewayListAccessibleOrganizations(t *testing.T) {
 	resolved := identity.ResolvedIdentity{
 		IdentityID:   "identity-1",

@@ -2,8 +2,11 @@ package gateway
 
 import (
 	"context"
+	"errors"
+	"io"
 
 	"connectrpc.com/connect"
+	runnerv1 "github.com/agynio/gateway/gen/agynio/api/runner/v1"
 	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
 )
 
@@ -93,6 +96,26 @@ func (g *RunnersGateway) TouchWorkload(ctx context.Context, req *connect.Request
 		return nil, toConnectError(err)
 	}
 	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) StreamWorkloadLogs(ctx context.Context, req *connect.Request[runnerv1.StreamWorkloadLogsRequest], stream *connect.ServerStream[runnerv1.StreamWorkloadLogsResponse]) error {
+	grpcStream, err := g.runners.StreamWorkloadLogs(ctx, req.Msg)
+	if err != nil {
+		return toConnectError(err)
+	}
+
+	for {
+		msg, err := grpcStream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return toConnectError(err)
+		}
+		if err := stream.Send(msg); err != nil {
+			return err
+		}
+	}
 }
 
 func (g *RunnersGateway) GetVolume(ctx context.Context, req *connect.Request[runnersv1.GetVolumeRequest]) (*connect.Response[runnersv1.GetVolumeResponse], error) {

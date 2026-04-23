@@ -82,6 +82,10 @@ func (f *fakeUsersClient) GetMe(ctx context.Context, in *usersv1.GetMeRequest, o
 	return f.getMeResp, nil
 }
 
+func (f *fakeUsersClient) UpdateMe(ctx context.Context, in *usersv1.UpdateMeRequest, opts ...grpc.CallOption) (*usersv1.UpdateMeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "UpdateMe not implemented")
+}
+
 func (f *fakeUsersClient) BatchGetUsers(ctx context.Context, in *usersv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*usersv1.BatchGetUsersResponse, error) {
 	f.batchGetUsersCalls++
 	f.batchGetUsersReq = in
@@ -100,6 +104,10 @@ func (f *fakeUsersClient) UpdateUser(ctx context.Context, in *usersv1.UpdateUser
 
 func (f *fakeUsersClient) ListUsers(ctx context.Context, in *usersv1.ListUsersRequest, opts ...grpc.CallOption) (*usersv1.ListUsersResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ListUsers not implemented")
+}
+
+func (f *fakeUsersClient) SearchUsers(ctx context.Context, in *usersv1.SearchUsersRequest, opts ...grpc.CallOption) (*usersv1.SearchUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "SearchUsers not implemented")
 }
 
 func (f *fakeUsersClient) CreateUser(ctx context.Context, in *usersv1.CreateUserRequest, opts ...grpc.CallOption) (*usersv1.CreateUserResponse, error) {

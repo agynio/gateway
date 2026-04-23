@@ -26,6 +26,22 @@ func (g *UsersGateway) GetMe(ctx context.Context, req *connect.Request[usersv1.G
 	return connect.NewResponse(resp), nil
 }
 
+func (g *UsersGateway) UpdateMe(ctx context.Context, req *connect.Request[usersv1.UpdateMeRequest]) (*connect.Response[usersv1.UpdateMeResponse], error) {
+	resp, err := g.users.UpdateMe(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *UsersGateway) SearchUsers(ctx context.Context, req *connect.Request[usersv1.SearchUsersRequest]) (*connect.Response[usersv1.SearchUsersResponse], error) {
+	resp, err := g.users.SearchUsers(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *UsersGateway) CreateUser(ctx context.Context, req *connect.Request[usersv1.CreateUserRequest]) (*connect.Response[usersv1.CreateUserResponse], error) {
 	oidcSubject := strings.TrimSpace(req.Msg.GetOidcSubject())
 	if oidcSubject == "" {
