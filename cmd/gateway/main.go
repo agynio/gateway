@@ -29,7 +29,6 @@ import (
 	meteringv1 "github.com/agynio/gateway/gen/agynio/api/metering/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
 	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
-	runnerv1 "github.com/agynio/gateway/gen/agynio/api/runner/v1"
 	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
@@ -127,7 +126,6 @@ func main() {
 	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
 	organizationsClient := mustClient(config.OrganizationsGRPCTarget, "organizations", organizationsv1.NewOrganizationsServiceClient, &cleanup)
 	runnersClient := mustClient(config.RunnersGRPCTarget, "runners", runnersv1.NewRunnersServiceClient, &cleanup)
-	runnerClient := mustClient(config.RunnersGRPCTarget, "runner", runnerv1.NewRunnerServiceClient, &cleanup)
 	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
 	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
 	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
@@ -153,7 +151,7 @@ func main() {
 	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
 	usersGateway := gateway.NewUsersGateway(usersClient)
 	organizationsGateway := gateway.NewOrganizationsGateway(organizationsClient)
-	runnersGateway := gateway.NewRunnersGateway(runnersClient, runnerClient)
+	runnersGateway := gateway.NewRunnersGateway(runnersClient)
 	meteringGateway := gateway.NewMeteringGateway(meteringClient)
 	exposeGateway := gateway.NewExposeGateway(exposeClient)
 

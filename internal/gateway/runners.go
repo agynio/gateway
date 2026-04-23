@@ -12,11 +12,10 @@ import (
 
 type RunnersGateway struct {
 	runners runnersv1.RunnersServiceClient
-	runner  runnerv1.RunnerServiceClient
 }
 
-func NewRunnersGateway(runners runnersv1.RunnersServiceClient, runner runnerv1.RunnerServiceClient) *RunnersGateway {
-	return &RunnersGateway{runners: runners, runner: runner}
+func NewRunnersGateway(runners runnersv1.RunnersServiceClient) *RunnersGateway {
+	return &RunnersGateway{runners: runners}
 }
 
 func (g *RunnersGateway) RegisterRunner(ctx context.Context, req *connect.Request[runnersv1.RegisterRunnerRequest]) (*connect.Response[runnersv1.RegisterRunnerResponse], error) {
