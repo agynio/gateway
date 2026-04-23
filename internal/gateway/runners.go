@@ -12,10 +12,11 @@ import (
 
 type RunnersGateway struct {
 	runners runnersv1.RunnersServiceClient
+	runner  runnerv1.RunnerServiceClient
 }
 
-func NewRunnersGateway(runners runnersv1.RunnersServiceClient) *RunnersGateway {
-	return &RunnersGateway{runners: runners}
+func NewRunnersGateway(runners runnersv1.RunnersServiceClient, runner runnerv1.RunnerServiceClient) *RunnersGateway {
+	return &RunnersGateway{runners: runners, runner: runner}
 }
 
 func (g *RunnersGateway) RegisterRunner(ctx context.Context, req *connect.Request[runnersv1.RegisterRunnerRequest]) (*connect.Response[runnersv1.RegisterRunnerResponse], error) {
@@ -60,6 +61,30 @@ func (g *RunnersGateway) UpdateRunner(ctx context.Context, req *connect.Request[
 
 func (g *RunnersGateway) DeleteRunner(ctx context.Context, req *connect.Request[runnersv1.DeleteRunnerRequest]) (*connect.Response[runnersv1.DeleteRunnerResponse], error) {
 	resp, err := g.runners.DeleteRunner(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) GetVolume(ctx context.Context, req *connect.Request[runnersv1.GetVolumeRequest]) (*connect.Response[runnersv1.GetVolumeResponse], error) {
+	resp, err := g.runners.GetVolume(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) ListVolumes(ctx context.Context, req *connect.Request[runnersv1.ListVolumesRequest]) (*connect.Response[runnersv1.ListVolumesResponse], error) {
+	resp, err := g.runners.ListVolumes(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) ListVolumesByThread(ctx context.Context, req *connect.Request[runnersv1.ListVolumesByThreadRequest]) (*connect.Response[runnersv1.ListVolumesByThreadResponse], error) {
+	resp, err := g.runners.ListVolumesByThread(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}
@@ -116,28 +141,4 @@ func (g *RunnersGateway) StreamWorkloadLogs(ctx context.Context, req *connect.Re
 			return err
 		}
 	}
-}
-
-func (g *RunnersGateway) GetVolume(ctx context.Context, req *connect.Request[runnersv1.GetVolumeRequest]) (*connect.Response[runnersv1.GetVolumeResponse], error) {
-	resp, err := g.runners.GetVolume(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *RunnersGateway) ListVolumes(ctx context.Context, req *connect.Request[runnersv1.ListVolumesRequest]) (*connect.Response[runnersv1.ListVolumesResponse], error) {
-	resp, err := g.runners.ListVolumes(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *RunnersGateway) ListVolumesByThread(ctx context.Context, req *connect.Request[runnersv1.ListVolumesByThreadRequest]) (*connect.Response[runnersv1.ListVolumesByThreadResponse], error) {
-	resp, err := g.runners.ListVolumesByThread(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
 }

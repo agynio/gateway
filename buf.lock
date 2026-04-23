@@ -2,8 +2,8 @@
 version: v2
 deps:
   - name: buf.build/agynio/api
-    commit: 0294a1d83c944622abc5a9ea4ddbfac9
-    digest: b5:9704a81fd9038e9432107a7d6814ed737836dcd95eac2f96ad05b74b6cedc8748eb92ef043c3d447999a4e568a56c5ebeb08cdfa323c8d72a0087e138f70df8a
+    commit: 0c3439c9954c41edbb633c6a0df915ca
+    digest: b5:bebb02a768a1b303a253e267d4f6ee197f864fd2ceb5f2ba94442166d37df429e7dc4d00a5b4c71c5d45836d3d6e9f721b70fc594e8975be6314455494e7d0fb
   - name: buf.build/opentelemetry/opentelemetry
     commit: 5f2c7d4f740541589805e0816dad4bb0
     digest: b5:935626c896cfe0f5efda467869c65df49843190c1d16ad24957d62ae840aef5f5da2474ec5c766e730b2727c6a24b39b5a2a073da70cf3f2611ce7d3934def86
