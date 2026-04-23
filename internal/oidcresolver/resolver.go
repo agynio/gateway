@@ -67,11 +67,18 @@ func (r *Resolver) ResolveFromToken(ctx context.Context, accessToken string) (id
 		return identity.ResolvedIdentity{}, status.Errorf(codes.Internal, "failed to fetch user info: %v", err)
 	}
 
+	preferredUsername := userInfo.PreferredUsername
+	var preferredUsernamePtr *string
+	if preferredUsername != "" {
+		preferredUsernamePtr = &preferredUsername
+	}
+
 	createResponse, err := r.usersClient.ResolveOrCreateUser(ctx, &usersv1.ResolveOrCreateUserRequest{
-		OidcSubject: userInfo.Subject,
-		Name:        userInfo.Name,
-		Email:       userInfo.Email,
-		PhotoUrl:    userInfo.Picture,
+		OidcSubject:       userInfo.Subject,
+		Name:              userInfo.Name,
+		Email:             userInfo.Email,
+		PhotoUrl:          userInfo.Picture,
+		PreferredUsername: preferredUsernamePtr,
 	})
 	if err != nil {
 		return identity.ResolvedIdentity{}, err
@@ -120,6 +127,7 @@ func (r *Resolver) fetchUserInfo(ctx context.Context, accessToken, expectedSub s
 	userInfo.Name = strings.TrimSpace(userInfo.Name)
 	userInfo.Email = strings.TrimSpace(userInfo.Email)
 	userInfo.Picture = strings.TrimSpace(userInfo.Picture)
+	userInfo.PreferredUsername = strings.TrimSpace(userInfo.PreferredUsername)
 
 	return &userInfo, nil
 }
