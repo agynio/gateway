@@ -25,9 +25,11 @@ var File_agynio_api_gateway_v1_users_proto protoreflect.FileDescriptor
 
 const file_agynio_api_gateway_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"!agynio/api/gateway/v1/users.proto\x12\x15agynio.api.gateway.v1\x1a\x1fagynio/api/users/v1/users.proto2\xff\t\n" +
+	"!agynio/api/gateway/v1/users.proto\x12\x15agynio.api.gateway.v1\x1a\x1fagynio/api/users/v1/users.proto2\xba\v\n" +
 	"\fUsersGateway\x12N\n" +
-	"\x05GetMe\x12!.agynio.api.users.v1.GetMeRequest\x1a\".agynio.api.users.v1.GetMeResponse\x12]\n" +
+	"\x05GetMe\x12!.agynio.api.users.v1.GetMeRequest\x1a\".agynio.api.users.v1.GetMeResponse\x12W\n" +
+	"\bUpdateMe\x12$.agynio.api.users.v1.UpdateMeRequest\x1a%.agynio.api.users.v1.UpdateMeResponse\x12`\n" +
+	"\vSearchUsers\x12'.agynio.api.users.v1.SearchUsersRequest\x1a(.agynio.api.users.v1.SearchUsersResponse\x12]\n" +
 	"\n" +
 	"CreateUser\x12&.agynio.api.users.v1.CreateUserRequest\x1a'.agynio.api.users.v1.CreateUserResponse\x12T\n" +
 	"\aGetUser\x12#.agynio.api.users.v1.GetUserRequest\x1a$.agynio.api.users.v1.GetUserResponse\x12Z\n" +
@@ -48,61 +50,69 @@ const file_agynio_api_gateway_v1_users_proto_rawDesc = "" +
 
 var file_agynio_api_gateway_v1_users_proto_goTypes = []any{
 	(*v1.GetMeRequest)(nil),           // 0: agynio.api.users.v1.GetMeRequest
-	(*v1.CreateUserRequest)(nil),      // 1: agynio.api.users.v1.CreateUserRequest
-	(*v1.GetUserRequest)(nil),         // 2: agynio.api.users.v1.GetUserRequest
-	(*v1.ListUsersRequest)(nil),       // 3: agynio.api.users.v1.ListUsersRequest
-	(*v1.UpdateUserRequest)(nil),      // 4: agynio.api.users.v1.UpdateUserRequest
-	(*v1.DeleteUserRequest)(nil),      // 5: agynio.api.users.v1.DeleteUserRequest
-	(*v1.CreateAPITokenRequest)(nil),  // 6: agynio.api.users.v1.CreateAPITokenRequest
-	(*v1.ListAPITokensRequest)(nil),   // 7: agynio.api.users.v1.ListAPITokensRequest
-	(*v1.RevokeAPITokenRequest)(nil),  // 8: agynio.api.users.v1.RevokeAPITokenRequest
-	(*v1.BatchGetUsersRequest)(nil),   // 9: agynio.api.users.v1.BatchGetUsersRequest
-	(*v1.CreateDeviceRequest)(nil),    // 10: agynio.api.users.v1.CreateDeviceRequest
-	(*v1.ListDevicesRequest)(nil),     // 11: agynio.api.users.v1.ListDevicesRequest
-	(*v1.DeleteDeviceRequest)(nil),    // 12: agynio.api.users.v1.DeleteDeviceRequest
-	(*v1.GetMeResponse)(nil),          // 13: agynio.api.users.v1.GetMeResponse
-	(*v1.CreateUserResponse)(nil),     // 14: agynio.api.users.v1.CreateUserResponse
-	(*v1.GetUserResponse)(nil),        // 15: agynio.api.users.v1.GetUserResponse
-	(*v1.ListUsersResponse)(nil),      // 16: agynio.api.users.v1.ListUsersResponse
-	(*v1.UpdateUserResponse)(nil),     // 17: agynio.api.users.v1.UpdateUserResponse
-	(*v1.DeleteUserResponse)(nil),     // 18: agynio.api.users.v1.DeleteUserResponse
-	(*v1.CreateAPITokenResponse)(nil), // 19: agynio.api.users.v1.CreateAPITokenResponse
-	(*v1.ListAPITokensResponse)(nil),  // 20: agynio.api.users.v1.ListAPITokensResponse
-	(*v1.RevokeAPITokenResponse)(nil), // 21: agynio.api.users.v1.RevokeAPITokenResponse
-	(*v1.BatchGetUsersResponse)(nil),  // 22: agynio.api.users.v1.BatchGetUsersResponse
-	(*v1.CreateDeviceResponse)(nil),   // 23: agynio.api.users.v1.CreateDeviceResponse
-	(*v1.ListDevicesResponse)(nil),    // 24: agynio.api.users.v1.ListDevicesResponse
-	(*v1.DeleteDeviceResponse)(nil),   // 25: agynio.api.users.v1.DeleteDeviceResponse
+	(*v1.UpdateMeRequest)(nil),        // 1: agynio.api.users.v1.UpdateMeRequest
+	(*v1.SearchUsersRequest)(nil),     // 2: agynio.api.users.v1.SearchUsersRequest
+	(*v1.CreateUserRequest)(nil),      // 3: agynio.api.users.v1.CreateUserRequest
+	(*v1.GetUserRequest)(nil),         // 4: agynio.api.users.v1.GetUserRequest
+	(*v1.ListUsersRequest)(nil),       // 5: agynio.api.users.v1.ListUsersRequest
+	(*v1.UpdateUserRequest)(nil),      // 6: agynio.api.users.v1.UpdateUserRequest
+	(*v1.DeleteUserRequest)(nil),      // 7: agynio.api.users.v1.DeleteUserRequest
+	(*v1.CreateAPITokenRequest)(nil),  // 8: agynio.api.users.v1.CreateAPITokenRequest
+	(*v1.ListAPITokensRequest)(nil),   // 9: agynio.api.users.v1.ListAPITokensRequest
+	(*v1.RevokeAPITokenRequest)(nil),  // 10: agynio.api.users.v1.RevokeAPITokenRequest
+	(*v1.BatchGetUsersRequest)(nil),   // 11: agynio.api.users.v1.BatchGetUsersRequest
+	(*v1.CreateDeviceRequest)(nil),    // 12: agynio.api.users.v1.CreateDeviceRequest
+	(*v1.ListDevicesRequest)(nil),     // 13: agynio.api.users.v1.ListDevicesRequest
+	(*v1.DeleteDeviceRequest)(nil),    // 14: agynio.api.users.v1.DeleteDeviceRequest
+	(*v1.GetMeResponse)(nil),          // 15: agynio.api.users.v1.GetMeResponse
+	(*v1.UpdateMeResponse)(nil),       // 16: agynio.api.users.v1.UpdateMeResponse
+	(*v1.SearchUsersResponse)(nil),    // 17: agynio.api.users.v1.SearchUsersResponse
+	(*v1.CreateUserResponse)(nil),     // 18: agynio.api.users.v1.CreateUserResponse
+	(*v1.GetUserResponse)(nil),        // 19: agynio.api.users.v1.GetUserResponse
+	(*v1.ListUsersResponse)(nil),      // 20: agynio.api.users.v1.ListUsersResponse
+	(*v1.UpdateUserResponse)(nil),     // 21: agynio.api.users.v1.UpdateUserResponse
+	(*v1.DeleteUserResponse)(nil),     // 22: agynio.api.users.v1.DeleteUserResponse
+	(*v1.CreateAPITokenResponse)(nil), // 23: agynio.api.users.v1.CreateAPITokenResponse
+	(*v1.ListAPITokensResponse)(nil),  // 24: agynio.api.users.v1.ListAPITokensResponse
+	(*v1.RevokeAPITokenResponse)(nil), // 25: agynio.api.users.v1.RevokeAPITokenResponse
+	(*v1.BatchGetUsersResponse)(nil),  // 26: agynio.api.users.v1.BatchGetUsersResponse
+	(*v1.CreateDeviceResponse)(nil),   // 27: agynio.api.users.v1.CreateDeviceResponse
+	(*v1.ListDevicesResponse)(nil),    // 28: agynio.api.users.v1.ListDevicesResponse
+	(*v1.DeleteDeviceResponse)(nil),   // 29: agynio.api.users.v1.DeleteDeviceResponse
 }
 var file_agynio_api_gateway_v1_users_proto_depIdxs = []int32{
 	0,  // 0: agynio.api.gateway.v1.UsersGateway.GetMe:input_type -> agynio.api.users.v1.GetMeRequest
-	1,  // 1: agynio.api.gateway.v1.UsersGateway.CreateUser:input_type -> agynio.api.users.v1.CreateUserRequest
-	2,  // 2: agynio.api.gateway.v1.UsersGateway.GetUser:input_type -> agynio.api.users.v1.GetUserRequest
-	3,  // 3: agynio.api.gateway.v1.UsersGateway.ListUsers:input_type -> agynio.api.users.v1.ListUsersRequest
-	4,  // 4: agynio.api.gateway.v1.UsersGateway.UpdateUser:input_type -> agynio.api.users.v1.UpdateUserRequest
-	5,  // 5: agynio.api.gateway.v1.UsersGateway.DeleteUser:input_type -> agynio.api.users.v1.DeleteUserRequest
-	6,  // 6: agynio.api.gateway.v1.UsersGateway.CreateAPIToken:input_type -> agynio.api.users.v1.CreateAPITokenRequest
-	7,  // 7: agynio.api.gateway.v1.UsersGateway.ListAPITokens:input_type -> agynio.api.users.v1.ListAPITokensRequest
-	8,  // 8: agynio.api.gateway.v1.UsersGateway.RevokeAPIToken:input_type -> agynio.api.users.v1.RevokeAPITokenRequest
-	9,  // 9: agynio.api.gateway.v1.UsersGateway.BatchGetUsers:input_type -> agynio.api.users.v1.BatchGetUsersRequest
-	10, // 10: agynio.api.gateway.v1.UsersGateway.CreateDevice:input_type -> agynio.api.users.v1.CreateDeviceRequest
-	11, // 11: agynio.api.gateway.v1.UsersGateway.ListDevices:input_type -> agynio.api.users.v1.ListDevicesRequest
-	12, // 12: agynio.api.gateway.v1.UsersGateway.DeleteDevice:input_type -> agynio.api.users.v1.DeleteDeviceRequest
-	13, // 13: agynio.api.gateway.v1.UsersGateway.GetMe:output_type -> agynio.api.users.v1.GetMeResponse
-	14, // 14: agynio.api.gateway.v1.UsersGateway.CreateUser:output_type -> agynio.api.users.v1.CreateUserResponse
-	15, // 15: agynio.api.gateway.v1.UsersGateway.GetUser:output_type -> agynio.api.users.v1.GetUserResponse
-	16, // 16: agynio.api.gateway.v1.UsersGateway.ListUsers:output_type -> agynio.api.users.v1.ListUsersResponse
-	17, // 17: agynio.api.gateway.v1.UsersGateway.UpdateUser:output_type -> agynio.api.users.v1.UpdateUserResponse
-	18, // 18: agynio.api.gateway.v1.UsersGateway.DeleteUser:output_type -> agynio.api.users.v1.DeleteUserResponse
-	19, // 19: agynio.api.gateway.v1.UsersGateway.CreateAPIToken:output_type -> agynio.api.users.v1.CreateAPITokenResponse
-	20, // 20: agynio.api.gateway.v1.UsersGateway.ListAPITokens:output_type -> agynio.api.users.v1.ListAPITokensResponse
-	21, // 21: agynio.api.gateway.v1.UsersGateway.RevokeAPIToken:output_type -> agynio.api.users.v1.RevokeAPITokenResponse
-	22, // 22: agynio.api.gateway.v1.UsersGateway.BatchGetUsers:output_type -> agynio.api.users.v1.BatchGetUsersResponse
-	23, // 23: agynio.api.gateway.v1.UsersGateway.CreateDevice:output_type -> agynio.api.users.v1.CreateDeviceResponse
-	24, // 24: agynio.api.gateway.v1.UsersGateway.ListDevices:output_type -> agynio.api.users.v1.ListDevicesResponse
-	25, // 25: agynio.api.gateway.v1.UsersGateway.DeleteDevice:output_type -> agynio.api.users.v1.DeleteDeviceResponse
-	13, // [13:26] is the sub-list for method output_type
-	0,  // [0:13] is the sub-list for method input_type
+	1,  // 1: agynio.api.gateway.v1.UsersGateway.UpdateMe:input_type -> agynio.api.users.v1.UpdateMeRequest
+	2,  // 2: agynio.api.gateway.v1.UsersGateway.SearchUsers:input_type -> agynio.api.users.v1.SearchUsersRequest
+	3,  // 3: agynio.api.gateway.v1.UsersGateway.CreateUser:input_type -> agynio.api.users.v1.CreateUserRequest
+	4,  // 4: agynio.api.gateway.v1.UsersGateway.GetUser:input_type -> agynio.api.users.v1.GetUserRequest
+	5,  // 5: agynio.api.gateway.v1.UsersGateway.ListUsers:input_type -> agynio.api.users.v1.ListUsersRequest
+	6,  // 6: agynio.api.gateway.v1.UsersGateway.UpdateUser:input_type -> agynio.api.users.v1.UpdateUserRequest
+	7,  // 7: agynio.api.gateway.v1.UsersGateway.DeleteUser:input_type -> agynio.api.users.v1.DeleteUserRequest
+	8,  // 8: agynio.api.gateway.v1.UsersGateway.CreateAPIToken:input_type -> agynio.api.users.v1.CreateAPITokenRequest
+	9,  // 9: agynio.api.gateway.v1.UsersGateway.ListAPITokens:input_type -> agynio.api.users.v1.ListAPITokensRequest
+	10, // 10: agynio.api.gateway.v1.UsersGateway.RevokeAPIToken:input_type -> agynio.api.users.v1.RevokeAPITokenRequest
+	11, // 11: agynio.api.gateway.v1.UsersGateway.BatchGetUsers:input_type -> agynio.api.users.v1.BatchGetUsersRequest
+	12, // 12: agynio.api.gateway.v1.UsersGateway.CreateDevice:input_type -> agynio.api.users.v1.CreateDeviceRequest
+	13, // 13: agynio.api.gateway.v1.UsersGateway.ListDevices:input_type -> agynio.api.users.v1.ListDevicesRequest
+	14, // 14: agynio.api.gateway.v1.UsersGateway.DeleteDevice:input_type -> agynio.api.users.v1.DeleteDeviceRequest
+	15, // 15: agynio.api.gateway.v1.UsersGateway.GetMe:output_type -> agynio.api.users.v1.GetMeResponse
+	16, // 16: agynio.api.gateway.v1.UsersGateway.UpdateMe:output_type -> agynio.api.users.v1.UpdateMeResponse
+	17, // 17: agynio.api.gateway.v1.UsersGateway.SearchUsers:output_type -> agynio.api.users.v1.SearchUsersResponse
+	18, // 18: agynio.api.gateway.v1.UsersGateway.CreateUser:output_type -> agynio.api.users.v1.CreateUserResponse
+	19, // 19: agynio.api.gateway.v1.UsersGateway.GetUser:output_type -> agynio.api.users.v1.GetUserResponse
+	20, // 20: agynio.api.gateway.v1.UsersGateway.ListUsers:output_type -> agynio.api.users.v1.ListUsersResponse
+	21, // 21: agynio.api.gateway.v1.UsersGateway.UpdateUser:output_type -> agynio.api.users.v1.UpdateUserResponse
+	22, // 22: agynio.api.gateway.v1.UsersGateway.DeleteUser:output_type -> agynio.api.users.v1.DeleteUserResponse
+	23, // 23: agynio.api.gateway.v1.UsersGateway.CreateAPIToken:output_type -> agynio.api.users.v1.CreateAPITokenResponse
+	24, // 24: agynio.api.gateway.v1.UsersGateway.ListAPITokens:output_type -> agynio.api.users.v1.ListAPITokensResponse
+	25, // 25: agynio.api.gateway.v1.UsersGateway.RevokeAPIToken:output_type -> agynio.api.users.v1.RevokeAPITokenResponse
+	26, // 26: agynio.api.gateway.v1.UsersGateway.BatchGetUsers:output_type -> agynio.api.users.v1.BatchGetUsersResponse
+	27, // 27: agynio.api.gateway.v1.UsersGateway.CreateDevice:output_type -> agynio.api.users.v1.CreateDeviceResponse
+	28, // 28: agynio.api.gateway.v1.UsersGateway.ListDevices:output_type -> agynio.api.users.v1.ListDevicesResponse
+	29, // 29: agynio.api.gateway.v1.UsersGateway.DeleteDevice:output_type -> agynio.api.users.v1.DeleteDeviceResponse
+	15, // [15:30] is the sub-list for method output_type
+	0,  // [0:15] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

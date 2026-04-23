@@ -36,6 +36,11 @@ const (
 const (
 	// UsersGatewayGetMeProcedure is the fully-qualified name of the UsersGateway's GetMe RPC.
 	UsersGatewayGetMeProcedure = "/agynio.api.gateway.v1.UsersGateway/GetMe"
+	// UsersGatewayUpdateMeProcedure is the fully-qualified name of the UsersGateway's UpdateMe RPC.
+	UsersGatewayUpdateMeProcedure = "/agynio.api.gateway.v1.UsersGateway/UpdateMe"
+	// UsersGatewaySearchUsersProcedure is the fully-qualified name of the UsersGateway's SearchUsers
+	// RPC.
+	UsersGatewaySearchUsersProcedure = "/agynio.api.gateway.v1.UsersGateway/SearchUsers"
 	// UsersGatewayCreateUserProcedure is the fully-qualified name of the UsersGateway's CreateUser RPC.
 	UsersGatewayCreateUserProcedure = "/agynio.api.gateway.v1.UsersGateway/CreateUser"
 	// UsersGatewayGetUserProcedure is the fully-qualified name of the UsersGateway's GetUser RPC.
@@ -73,6 +78,9 @@ const (
 type UsersGatewayClient interface {
 	// --- Current User ---
 	GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error)
+	UpdateMe(context.Context, *connect.Request[v1.UpdateMeRequest]) (*connect.Response[v1.UpdateMeResponse], error)
+	// --- User Directory ---
+	SearchUsers(context.Context, *connect.Request[v1.SearchUsersRequest]) (*connect.Response[v1.SearchUsersResponse], error)
 	// --- Admin User Management ---
 	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
 	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
@@ -105,6 +113,18 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 			httpClient,
 			baseURL+UsersGatewayGetMeProcedure,
 			connect.WithSchema(usersGatewayMethods.ByName("GetMe")),
+			connect.WithClientOptions(opts...),
+		),
+		updateMe: connect.NewClient[v1.UpdateMeRequest, v1.UpdateMeResponse](
+			httpClient,
+			baseURL+UsersGatewayUpdateMeProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("UpdateMe")),
+			connect.WithClientOptions(opts...),
+		),
+		searchUsers: connect.NewClient[v1.SearchUsersRequest, v1.SearchUsersResponse](
+			httpClient,
+			baseURL+UsersGatewaySearchUsersProcedure,
+			connect.WithSchema(usersGatewayMethods.ByName("SearchUsers")),
 			connect.WithClientOptions(opts...),
 		),
 		createUser: connect.NewClient[v1.CreateUserRequest, v1.CreateUserResponse](
@@ -185,6 +205,8 @@ func NewUsersGatewayClient(httpClient connect.HTTPClient, baseURL string, opts .
 // usersGatewayClient implements UsersGatewayClient.
 type usersGatewayClient struct {
 	getMe          *connect.Client[v1.GetMeRequest, v1.GetMeResponse]
+	updateMe       *connect.Client[v1.UpdateMeRequest, v1.UpdateMeResponse]
+	searchUsers    *connect.Client[v1.SearchUsersRequest, v1.SearchUsersResponse]
 	createUser     *connect.Client[v1.CreateUserRequest, v1.CreateUserResponse]
 	getUser        *connect.Client[v1.GetUserRequest, v1.GetUserResponse]
 	listUsers      *connect.Client[v1.ListUsersRequest, v1.ListUsersResponse]
@@ -202,6 +224,16 @@ type usersGatewayClient struct {
 // GetMe calls agynio.api.gateway.v1.UsersGateway.GetMe.
 func (c *usersGatewayClient) GetMe(ctx context.Context, req *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error) {
 	return c.getMe.CallUnary(ctx, req)
+}
+
+// UpdateMe calls agynio.api.gateway.v1.UsersGateway.UpdateMe.
+func (c *usersGatewayClient) UpdateMe(ctx context.Context, req *connect.Request[v1.UpdateMeRequest]) (*connect.Response[v1.UpdateMeResponse], error) {
+	return c.updateMe.CallUnary(ctx, req)
+}
+
+// SearchUsers calls agynio.api.gateway.v1.UsersGateway.SearchUsers.
+func (c *usersGatewayClient) SearchUsers(ctx context.Context, req *connect.Request[v1.SearchUsersRequest]) (*connect.Response[v1.SearchUsersResponse], error) {
+	return c.searchUsers.CallUnary(ctx, req)
 }
 
 // CreateUser calls agynio.api.gateway.v1.UsersGateway.CreateUser.
@@ -268,6 +300,9 @@ func (c *usersGatewayClient) DeleteDevice(ctx context.Context, req *connect.Requ
 type UsersGatewayHandler interface {
 	// --- Current User ---
 	GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error)
+	UpdateMe(context.Context, *connect.Request[v1.UpdateMeRequest]) (*connect.Response[v1.UpdateMeResponse], error)
+	// --- User Directory ---
+	SearchUsers(context.Context, *connect.Request[v1.SearchUsersRequest]) (*connect.Response[v1.SearchUsersResponse], error)
 	// --- Admin User Management ---
 	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
 	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
@@ -296,6 +331,18 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 		UsersGatewayGetMeProcedure,
 		svc.GetMe,
 		connect.WithSchema(usersGatewayMethods.ByName("GetMe")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewayUpdateMeHandler := connect.NewUnaryHandler(
+		UsersGatewayUpdateMeProcedure,
+		svc.UpdateMe,
+		connect.WithSchema(usersGatewayMethods.ByName("UpdateMe")),
+		connect.WithHandlerOptions(opts...),
+	)
+	usersGatewaySearchUsersHandler := connect.NewUnaryHandler(
+		UsersGatewaySearchUsersProcedure,
+		svc.SearchUsers,
+		connect.WithSchema(usersGatewayMethods.ByName("SearchUsers")),
 		connect.WithHandlerOptions(opts...),
 	)
 	usersGatewayCreateUserHandler := connect.NewUnaryHandler(
@@ -374,6 +421,10 @@ func NewUsersGatewayHandler(svc UsersGatewayHandler, opts ...connect.HandlerOpti
 		switch r.URL.Path {
 		case UsersGatewayGetMeProcedure:
 			usersGatewayGetMeHandler.ServeHTTP(w, r)
+		case UsersGatewayUpdateMeProcedure:
+			usersGatewayUpdateMeHandler.ServeHTTP(w, r)
+		case UsersGatewaySearchUsersProcedure:
+			usersGatewaySearchUsersHandler.ServeHTTP(w, r)
 		case UsersGatewayCreateUserProcedure:
 			usersGatewayCreateUserHandler.ServeHTTP(w, r)
 		case UsersGatewayGetUserProcedure:
@@ -409,6 +460,14 @@ type UnimplementedUsersGatewayHandler struct{}
 
 func (UnimplementedUsersGatewayHandler) GetMe(context.Context, *connect.Request[v1.GetMeRequest]) (*connect.Response[v1.GetMeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.GetMe is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) UpdateMe(context.Context, *connect.Request[v1.UpdateMeRequest]) (*connect.Response[v1.UpdateMeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.UpdateMe is not implemented"))
+}
+
+func (UnimplementedUsersGatewayHandler) SearchUsers(context.Context, *connect.Request[v1.SearchUsersRequest]) (*connect.Response[v1.SearchUsersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("agynio.api.gateway.v1.UsersGateway.SearchUsers is not implemented"))
 }
 
 func (UnimplementedUsersGatewayHandler) CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error) {

@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	UsersGateway_GetMe_FullMethodName          = "/agynio.api.gateway.v1.UsersGateway/GetMe"
+	UsersGateway_UpdateMe_FullMethodName       = "/agynio.api.gateway.v1.UsersGateway/UpdateMe"
+	UsersGateway_SearchUsers_FullMethodName    = "/agynio.api.gateway.v1.UsersGateway/SearchUsers"
 	UsersGateway_CreateUser_FullMethodName     = "/agynio.api.gateway.v1.UsersGateway/CreateUser"
 	UsersGateway_GetUser_FullMethodName        = "/agynio.api.gateway.v1.UsersGateway/GetUser"
 	UsersGateway_ListUsers_FullMethodName      = "/agynio.api.gateway.v1.UsersGateway/ListUsers"
@@ -41,6 +43,9 @@ const (
 type UsersGatewayClient interface {
 	// --- Current User ---
 	GetMe(ctx context.Context, in *v1.GetMeRequest, opts ...grpc.CallOption) (*v1.GetMeResponse, error)
+	UpdateMe(ctx context.Context, in *v1.UpdateMeRequest, opts ...grpc.CallOption) (*v1.UpdateMeResponse, error)
+	// --- User Directory ---
+	SearchUsers(ctx context.Context, in *v1.SearchUsersRequest, opts ...grpc.CallOption) (*v1.SearchUsersResponse, error)
 	// --- Admin User Management ---
 	CreateUser(ctx context.Context, in *v1.CreateUserRequest, opts ...grpc.CallOption) (*v1.CreateUserResponse, error)
 	GetUser(ctx context.Context, in *v1.GetUserRequest, opts ...grpc.CallOption) (*v1.GetUserResponse, error)
@@ -70,6 +75,26 @@ func (c *usersGatewayClient) GetMe(ctx context.Context, in *v1.GetMeRequest, opt
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(v1.GetMeResponse)
 	err := c.cc.Invoke(ctx, UsersGateway_GetMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) UpdateMe(ctx context.Context, in *v1.UpdateMeRequest, opts ...grpc.CallOption) (*v1.UpdateMeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.UpdateMeResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_UpdateMe_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *usersGatewayClient) SearchUsers(ctx context.Context, in *v1.SearchUsersRequest, opts ...grpc.CallOption) (*v1.SearchUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v1.SearchUsersResponse)
+	err := c.cc.Invoke(ctx, UsersGateway_SearchUsers_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +227,9 @@ func (c *usersGatewayClient) DeleteDevice(ctx context.Context, in *v1.DeleteDevi
 type UsersGatewayServer interface {
 	// --- Current User ---
 	GetMe(context.Context, *v1.GetMeRequest) (*v1.GetMeResponse, error)
+	UpdateMe(context.Context, *v1.UpdateMeRequest) (*v1.UpdateMeResponse, error)
+	// --- User Directory ---
+	SearchUsers(context.Context, *v1.SearchUsersRequest) (*v1.SearchUsersResponse, error)
 	// --- Admin User Management ---
 	CreateUser(context.Context, *v1.CreateUserRequest) (*v1.CreateUserResponse, error)
 	GetUser(context.Context, *v1.GetUserRequest) (*v1.GetUserResponse, error)
@@ -229,6 +257,12 @@ type UnimplementedUsersGatewayServer struct{}
 
 func (UnimplementedUsersGatewayServer) GetMe(context.Context, *v1.GetMeRequest) (*v1.GetMeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMe not implemented")
+}
+func (UnimplementedUsersGatewayServer) UpdateMe(context.Context, *v1.UpdateMeRequest) (*v1.UpdateMeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateMe not implemented")
+}
+func (UnimplementedUsersGatewayServer) SearchUsers(context.Context, *v1.SearchUsersRequest) (*v1.SearchUsersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SearchUsers not implemented")
 }
 func (UnimplementedUsersGatewayServer) CreateUser(context.Context, *v1.CreateUserRequest) (*v1.CreateUserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
@@ -301,6 +335,42 @@ func _UsersGateway_GetMe_Handler(srv interface{}, ctx context.Context, dec func(
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(UsersGatewayServer).GetMe(ctx, req.(*v1.GetMeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_UpdateMe_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.UpdateMeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).UpdateMe(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_UpdateMe_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).UpdateMe(ctx, req.(*v1.UpdateMeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UsersGateway_SearchUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v1.SearchUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UsersGatewayServer).SearchUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UsersGateway_SearchUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UsersGatewayServer).SearchUsers(ctx, req.(*v1.SearchUsersRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -531,6 +601,14 @@ var UsersGateway_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMe",
 			Handler:    _UsersGateway_GetMe_Handler,
+		},
+		{
+			MethodName: "UpdateMe",
+			Handler:    _UsersGateway_UpdateMe_Handler,
+		},
+		{
+			MethodName: "SearchUsers",
+			Handler:    _UsersGateway_SearchUsers_Handler,
 		},
 		{
 			MethodName: "CreateUser",

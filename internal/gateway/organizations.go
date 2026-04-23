@@ -131,3 +131,11 @@ func (g *OrganizationsGateway) ListMyMemberships(ctx context.Context, req *conne
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *OrganizationsGateway) SetMyOrgNickname(ctx context.Context, req *connect.Request[organizationsv1.SetMyOrgNicknameRequest]) (*connect.Response[organizationsv1.SetMyOrgNicknameResponse], error) {
+	resp, err := g.organizations.SetMyOrgNickname(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
