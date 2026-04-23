@@ -257,7 +257,6 @@ func main() {
 		if err != nil {
 			log.Fatalf("failed to initialize ziti manager: %v", err)
 		}
-		runnersGateway.SetZitiContextProvider(mgr)
 		defer func() {
 			if zitiCtx := mgr.ZitiContext(); zitiCtx != nil {
 				zitiCtx.Close()

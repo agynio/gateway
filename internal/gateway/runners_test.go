@@ -2,7 +2,7 @@ package gateway
 
 import (
 	"context"
-	"net"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -14,19 +14,61 @@ import (
 	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
+type fakeStream struct {
+	ctx       context.Context
+	responses []*runnerv1.StreamWorkloadLogsResponse
+	err       error
+	idx       int
+}
+
+func (f *fakeStream) Recv() (*runnerv1.StreamWorkloadLogsResponse, error) {
+	if f.idx < len(f.responses) {
+		resp := f.responses[f.idx]
+		f.idx++
+		return resp, nil
+	}
+	if f.err != nil {
+		return nil, f.err
+	}
+	return nil, io.EOF
+}
+
+func (f *fakeStream) Header() (metadata.MD, error) {
+	return nil, nil
+}
+
+func (f *fakeStream) Trailer() metadata.MD {
+	return nil
+}
+
+func (f *fakeStream) CloseSend() error {
+	return nil
+}
+
+func (f *fakeStream) Context() context.Context {
+	if f.ctx != nil {
+		return f.ctx
+	}
+	return context.Background()
+}
+
+func (f *fakeStream) SendMsg(any) error {
+	return nil
+}
+
+func (f *fakeStream) RecvMsg(any) error {
+	return nil
+}
+
 type fakeRunnersClient struct {
-	getWorkloadReq   *runnersv1.GetWorkloadRequest
-	getWorkloadResp  *runnersv1.GetWorkloadResponse
-	getWorkloadErr   error
-	getWorkloadCalls int
-	getRunnerReq     *runnersv1.GetRunnerRequest
-	getRunnerResp    *runnersv1.GetRunnerResponse
-	getRunnerErr     error
-	getRunnerCalls   int
+	streamWorkloadLogs      func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
+	streamWorkloadLogsReq   *runnerv1.StreamWorkloadLogsRequest
+	streamWorkloadLogsCalls int
 }
 
 func (f *fakeRunnersClient) RegisterRunner(ctx context.Context, in *runnersv1.RegisterRunnerRequest, opts ...grpc.CallOption) (*runnersv1.RegisterRunnerResponse, error) {
@@ -34,15 +76,7 @@ func (f *fakeRunnersClient) RegisterRunner(ctx context.Context, in *runnersv1.Re
 }
 
 func (f *fakeRunnersClient) GetRunner(ctx context.Context, in *runnersv1.GetRunnerRequest, opts ...grpc.CallOption) (*runnersv1.GetRunnerResponse, error) {
-	f.getRunnerCalls++
-	f.getRunnerReq = in
-	if f.getRunnerErr != nil {
-		return nil, f.getRunnerErr
-	}
-	if f.getRunnerResp == nil {
-		f.getRunnerResp = &runnersv1.GetRunnerResponse{}
-	}
-	return f.getRunnerResp, nil
+	return nil, status.Error(codes.Unimplemented, "GetRunner not implemented")
 }
 
 func (f *fakeRunnersClient) ListRunners(ctx context.Context, in *runnersv1.ListRunnersRequest, opts ...grpc.CallOption) (*runnersv1.ListRunnersResponse, error) {
@@ -86,15 +120,7 @@ func (f *fakeRunnersClient) DeleteWorkload(ctx context.Context, in *runnersv1.De
 }
 
 func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.GetWorkloadResponse, error) {
-	f.getWorkloadCalls++
-	f.getWorkloadReq = in
-	if f.getWorkloadErr != nil {
-		return nil, f.getWorkloadErr
-	}
-	if f.getWorkloadResp == nil {
-		f.getWorkloadResp = &runnersv1.GetWorkloadResponse{}
-	}
-	return f.getWorkloadResp, nil
+	return nil, status.Error(codes.Unimplemented, "GetWorkload not implemented")
 }
 
 func (f *fakeRunnersClient) ListWorkloadsByThread(ctx context.Context, in *runnersv1.ListWorkloadsByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByThreadResponse, error) {
@@ -107,6 +133,15 @@ func (f *fakeRunnersClient) ListWorkloads(ctx context.Context, in *runnersv1.Lis
 
 func (f *fakeRunnersClient) BatchUpdateWorkloadSampledAt(ctx context.Context, in *runnersv1.BatchUpdateWorkloadSampledAtRequest, opts ...grpc.CallOption) (*runnersv1.BatchUpdateWorkloadSampledAtResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "BatchUpdateWorkloadSampledAt not implemented")
+}
+
+func (f *fakeRunnersClient) StreamWorkloadLogs(ctx context.Context, in *runnerv1.StreamWorkloadLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
+	f.streamWorkloadLogsCalls++
+	f.streamWorkloadLogsReq = in
+	if f.streamWorkloadLogs == nil {
+		return nil, status.Error(codes.Unimplemented, "StreamWorkloadLogs not implemented")
+	}
+	return f.streamWorkloadLogs(ctx, in)
 }
 
 func (f *fakeRunnersClient) CreateVolume(ctx context.Context, in *runnersv1.CreateVolumeRequest, opts ...grpc.CallOption) (*runnersv1.CreateVolumeResponse, error) {
@@ -133,18 +168,6 @@ func (f *fakeRunnersClient) BatchUpdateVolumeSampledAt(ctx context.Context, in *
 	return nil, status.Error(codes.Unimplemented, "BatchUpdateVolumeSampledAt not implemented")
 }
 
-type fakeRunnerServer struct {
-	runnerv1.UnimplementedRunnerServiceServer
-	streamWorkloadLogs func(*runnerv1.StreamWorkloadLogsRequest, grpc.ServerStreamingServer[runnerv1.StreamWorkloadLogsResponse]) error
-}
-
-func (f *fakeRunnerServer) StreamWorkloadLogs(req *runnerv1.StreamWorkloadLogsRequest, stream grpc.ServerStreamingServer[runnerv1.StreamWorkloadLogsResponse]) error {
-	if f.streamWorkloadLogs == nil {
-		return status.Error(codes.Unimplemented, "StreamWorkloadLogs not implemented")
-	}
-	return f.streamWorkloadLogs(req, stream)
-}
-
 func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway) gatewayv1connect.RunnersGatewayClient {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -155,70 +178,25 @@ func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway) gatewayv1con
 	return gatewayv1connect.NewRunnersGatewayClient(server.Client(), server.URL)
 }
 
-func startRunnerServer(t *testing.T, streamWorkloadLogs func(*runnerv1.StreamWorkloadLogsRequest, grpc.ServerStreamingServer[runnerv1.StreamWorkloadLogsResponse]) error) string {
-	t.Helper()
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatalf("failed to listen: %v", err)
-	}
-
-	server := grpc.NewServer()
-	runnerv1.RegisterRunnerServiceServer(server, &fakeRunnerServer{streamWorkloadLogs: streamWorkloadLogs})
-	go func() {
-		_ = server.Serve(listener)
-	}()
-
-	t.Cleanup(func() {
-		server.Stop()
-		_ = listener.Close()
-	})
-
-	return listener.Addr().String()
-}
-
-func TestStreamWorkloadLogs_Success(t *testing.T) {
-	workloadID := "workload-1"
-	instanceID := "instance-1"
-	runnerID := "runner-1"
-	serviceName := "runner-service"
-	containerName := "container-1"
+func TestStreamWorkloadLogs_PassThrough(t *testing.T) {
+	requestWorkloadID := " workload-1 "
+	requestContainerName := " container-1 "
 	sinceTime := timestamppb.New(time.Unix(1723123123, 0))
-	requestChan := make(chan *runnerv1.StreamWorkloadLogsRequest, 1)
-
-	addr := startRunnerServer(t, func(req *runnerv1.StreamWorkloadLogsRequest, stream grpc.ServerStreamingServer[runnerv1.StreamWorkloadLogsResponse]) error {
-		requestChan <- req
-		return stream.Send(&runnerv1.StreamWorkloadLogsResponse{
-			Event: &runnerv1.StreamWorkloadLogsResponse_Chunk{
-				Chunk: &runnerv1.LogChunk{Data: []byte("hello")},
+	client := &fakeRunnersClient{}
+	client.streamWorkloadLogs = func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
+		return &fakeStream{ctx: ctx, responses: []*runnerv1.StreamWorkloadLogsResponse{
+			{
+				Event: &runnerv1.StreamWorkloadLogsResponse_Chunk{
+					Chunk: &runnerv1.LogChunk{Data: []byte("hello")},
+				},
 			},
-		})
-	})
-
-	client := &fakeRunnersClient{
-		getWorkloadResp: &runnersv1.GetWorkloadResponse{
-			Workload: &runnersv1.Workload{
-				RunnerId:   runnerID,
-				InstanceId: &instanceID,
-			},
-		},
-		getRunnerResp: &runnersv1.GetRunnerResponse{
-			Runner: &runnersv1.Runner{OpenzitiServiceName: serviceName},
-		},
+		}}, nil
 	}
 
-	gateway := NewRunnersGateway(client)
-	gateway.requiresZitiContext = false
-	gateway.dialRunner = func(ctx context.Context, name string) (net.Conn, error) {
-		if name != serviceName {
-			return nil, status.Errorf(codes.InvalidArgument, "unexpected service name %q", name)
-		}
-		return (&net.Dialer{}).DialContext(ctx, "tcp", addr)
-	}
-
-	gatewayClient := newRunnersGatewayClient(t, gateway)
+	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client))
 	stream, err := gatewayClient.StreamWorkloadLogs(context.Background(), connect.NewRequest(&runnerv1.StreamWorkloadLogsRequest{
-		WorkloadId:    " " + workloadID + " ",
-		ContainerName: " " + containerName + " ",
+		WorkloadId:    requestWorkloadID,
+		ContainerName: requestContainerName,
 		Follow:        true,
 		TailLines:     3,
 		SinceTime:     sinceTime,
@@ -239,94 +217,33 @@ func TestStreamWorkloadLogs_Success(t *testing.T) {
 		t.Fatalf("unexpected stream error: %v", err)
 	}
 
-	select {
-	case gotReq := <-requestChan:
-		if gotReq.GetWorkloadId() != instanceID {
-			t.Fatalf("expected instance id %q, got %q", instanceID, gotReq.GetWorkloadId())
-		}
-		if gotReq.GetContainerName() != containerName {
-			t.Fatalf("expected container name %q, got %q", containerName, gotReq.GetContainerName())
-		}
-		if gotReq.GetTailLines() != 3 {
-			t.Fatalf("expected tail lines 3, got %d", gotReq.GetTailLines())
-		}
-		if gotReq.GetFollow() != true {
-			t.Fatalf("expected follow true")
-		}
-		if gotReq.GetSinceTime() == nil || gotReq.GetSinceTime().AsTime().Unix() != sinceTime.AsTime().Unix() {
-			t.Fatalf("expected since time %v, got %v", sinceTime, gotReq.GetSinceTime())
-		}
-	case <-time.After(time.Second):
-		t.Fatal("timed out waiting for runner request")
+	if client.streamWorkloadLogsCalls != 1 {
+		t.Fatalf("expected StreamWorkloadLogs to be called once, got %d", client.streamWorkloadLogsCalls)
 	}
-
-	if client.getWorkloadCalls != 1 {
-		t.Fatalf("expected GetWorkload to be called once, got %d", client.getWorkloadCalls)
+	if client.streamWorkloadLogsReq == nil {
+		t.Fatal("expected StreamWorkloadLogs request to be recorded")
 	}
-	if client.getWorkloadReq.GetId() != workloadID {
-		t.Fatalf("expected GetWorkload id %q, got %q", workloadID, client.getWorkloadReq.GetId())
+	if client.streamWorkloadLogsReq.GetWorkloadId() != requestWorkloadID {
+		t.Fatalf("expected workload id %q, got %q", requestWorkloadID, client.streamWorkloadLogsReq.GetWorkloadId())
 	}
-	if client.getRunnerCalls != 1 {
-		t.Fatalf("expected GetRunner to be called once, got %d", client.getRunnerCalls)
+	if client.streamWorkloadLogsReq.GetContainerName() != requestContainerName {
+		t.Fatalf("expected container name %q, got %q", requestContainerName, client.streamWorkloadLogsReq.GetContainerName())
 	}
-	if client.getRunnerReq.GetId() != runnerID {
-		t.Fatalf("expected GetRunner id %q, got %q", runnerID, client.getRunnerReq.GetId())
+	if client.streamWorkloadLogsReq.GetTailLines() != 3 {
+		t.Fatalf("expected tail lines 3, got %d", client.streamWorkloadLogsReq.GetTailLines())
+	}
+	if client.streamWorkloadLogsReq.GetFollow() != true {
+		t.Fatalf("expected follow true")
+	}
+	if client.streamWorkloadLogsReq.GetSinceTime() == nil || client.streamWorkloadLogsReq.GetSinceTime().AsTime().Unix() != sinceTime.AsTime().Unix() {
+		t.Fatalf("expected since time %v, got %v", sinceTime, client.streamWorkloadLogsReq.GetSinceTime())
 	}
 }
 
-func TestStreamWorkloadLogs_PropagatesGetWorkloadErrors(t *testing.T) {
-	tests := []struct {
-		name string
-		err  error
-		code connect.Code
-	}{
-		{
-			name: "not found",
-			err:  status.Error(codes.NotFound, "missing workload"),
-			code: connect.CodeNotFound,
-		},
-		{
-			name: "permission denied",
-			err:  status.Error(codes.PermissionDenied, "denied"),
-			code: connect.CodePermissionDenied,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client := &fakeRunnersClient{getWorkloadErr: test.err}
-			gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client))
-
-			stream, err := gatewayClient.StreamWorkloadLogs(context.Background(), connect.NewRequest(&runnerv1.StreamWorkloadLogsRequest{
-				WorkloadId:    "workload-1",
-				ContainerName: "container-1",
-			}))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if stream.Receive() {
-				t.Fatalf("expected no messages")
-			}
-			streamErr := stream.Err()
-			if streamErr == nil {
-				t.Fatalf("expected error")
-			}
-			if connect.CodeOf(streamErr) != test.code {
-				t.Fatalf("expected code %v, got %v", test.code, connect.CodeOf(streamErr))
-			}
-			if client.getRunnerCalls != 0 {
-				t.Fatalf("expected GetRunner not to be called")
-			}
-		})
-	}
-}
-
-func TestStreamWorkloadLogs_MissingInstanceID(t *testing.T) {
-	runnerID := "runner-1"
-	client := &fakeRunnersClient{
-		getWorkloadResp: &runnersv1.GetWorkloadResponse{
-			Workload: &runnersv1.Workload{RunnerId: runnerID},
-		},
+func TestStreamWorkloadLogs_PropagatesClientError(t *testing.T) {
+	client := &fakeRunnersClient{}
+	client.streamWorkloadLogs = func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
+		return nil, status.Error(codes.NotFound, "missing workload")
 	}
 
 	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client))
@@ -344,27 +261,15 @@ func TestStreamWorkloadLogs_MissingInstanceID(t *testing.T) {
 	if streamErr == nil {
 		t.Fatalf("expected error")
 	}
-	if connect.CodeOf(streamErr) != connect.CodeFailedPrecondition {
-		t.Fatalf("expected failed precondition, got %v", connect.CodeOf(streamErr))
-	}
-	if client.getRunnerCalls != 0 {
-		t.Fatalf("expected GetRunner not to be called")
+	if connect.CodeOf(streamErr) != connect.CodeNotFound {
+		t.Fatalf("expected code %v, got %v", connect.CodeNotFound, connect.CodeOf(streamErr))
 	}
 }
 
-func TestStreamWorkloadLogs_ZitiUnavailable(t *testing.T) {
-	instanceID := "instance-1"
-	runnerID := "runner-1"
-	client := &fakeRunnersClient{
-		getWorkloadResp: &runnersv1.GetWorkloadResponse{
-			Workload: &runnersv1.Workload{
-				RunnerId:   runnerID,
-				InstanceId: &instanceID,
-			},
-		},
-		getRunnerResp: &runnersv1.GetRunnerResponse{
-			Runner: &runnersv1.Runner{OpenzitiServiceName: "runner-service"},
-		},
+func TestStreamWorkloadLogs_PropagatesRecvError(t *testing.T) {
+	client := &fakeRunnersClient{}
+	client.streamWorkloadLogs = func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
+		return &fakeStream{ctx: ctx, err: status.Error(codes.Unavailable, "runner unavailable")}, nil
 	}
 
 	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client))
@@ -383,12 +288,6 @@ func TestStreamWorkloadLogs_ZitiUnavailable(t *testing.T) {
 		t.Fatalf("expected error")
 	}
 	if connect.CodeOf(streamErr) != connect.CodeUnavailable {
-		t.Fatalf("expected unavailable, got %v", connect.CodeOf(streamErr))
-	}
-	if client.getWorkloadCalls != 1 {
-		t.Fatalf("expected GetWorkload to be called once, got %d", client.getWorkloadCalls)
-	}
-	if client.getRunnerCalls != 1 {
-		t.Fatalf("expected GetRunner to be called once, got %d", client.getRunnerCalls)
+		t.Fatalf("expected code %v, got %v", connect.CodeUnavailable, connect.CodeOf(streamErr))
 	}
 }
