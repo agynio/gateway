@@ -46,22 +46,14 @@ func (g *UsersGateway) CreateUser(ctx context.Context, req *connect.Request[user
 	if oidcSubject == "" {
 		return nil, toConnectError(status.Error(codes.InvalidArgument, "oidc_subject is required"))
 	}
-
-	name := req.Msg.GetName()
-	createResp, err := g.users.ResolveOrCreateUser(ctx, &usersv1.ResolveOrCreateUserRequest{
-		OidcSubject: oidcSubject,
-		Name:        name,
-		Email:       name,
-		PhotoUrl:    req.Msg.GetPhotoUrl(),
-	})
+	req.Msg.OidcSubject = oidcSubject
+	resp, err := g.users.CreateUser(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}
-	if createResp == nil || createResp.User == nil {
+	if resp == nil || resp.User == nil {
 		return nil, toConnectError(status.Error(codes.Internal, "user missing from response"))
 	}
-
-	resp := &usersv1.CreateUserResponse{User: createResp.User}
 	return connect.NewResponse(resp), nil
 }
 

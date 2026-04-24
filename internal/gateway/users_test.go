@@ -12,10 +12,18 @@ import (
 )
 
 type fakeUsersClient struct {
-	resolveReq         *usersv1.ResolveOrCreateUserRequest
-	resolveResp        *usersv1.ResolveOrCreateUserResponse
-	resolveErr         error
-	resolveCalls       int
+	createUserReq      *usersv1.CreateUserRequest
+	createUserResp     *usersv1.CreateUserResponse
+	createUserErr      error
+	createUserCalls    int
+	updateMeReq        *usersv1.UpdateMeRequest
+	updateMeResp       *usersv1.UpdateMeResponse
+	updateMeErr        error
+	updateMeCalls      int
+	searchUsersReq     *usersv1.SearchUsersRequest
+	searchUsersResp    *usersv1.SearchUsersResponse
+	searchUsersErr     error
+	searchUsersCalls   int
 	getUserReq         *usersv1.GetUserRequest
 	getUserResp        *usersv1.GetUserResponse
 	getUserErr         error
@@ -43,15 +51,7 @@ type fakeUsersClient struct {
 }
 
 func (f *fakeUsersClient) ResolveOrCreateUser(ctx context.Context, in *usersv1.ResolveOrCreateUserRequest, opts ...grpc.CallOption) (*usersv1.ResolveOrCreateUserResponse, error) {
-	f.resolveCalls++
-	f.resolveReq = in
-	if f.resolveErr != nil {
-		return nil, f.resolveErr
-	}
-	if f.resolveResp == nil {
-		f.resolveResp = &usersv1.ResolveOrCreateUserResponse{}
-	}
-	return f.resolveResp, nil
+	return nil, status.Error(codes.Unimplemented, "ResolveOrCreateUser not implemented")
 }
 
 func (f *fakeUsersClient) GetUser(ctx context.Context, in *usersv1.GetUserRequest, opts ...grpc.CallOption) (*usersv1.GetUserResponse, error) {
@@ -83,7 +83,15 @@ func (f *fakeUsersClient) GetMe(ctx context.Context, in *usersv1.GetMeRequest, o
 }
 
 func (f *fakeUsersClient) UpdateMe(ctx context.Context, in *usersv1.UpdateMeRequest, opts ...grpc.CallOption) (*usersv1.UpdateMeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateMe not implemented")
+	f.updateMeCalls++
+	f.updateMeReq = in
+	if f.updateMeErr != nil {
+		return nil, f.updateMeErr
+	}
+	if f.updateMeResp == nil {
+		f.updateMeResp = &usersv1.UpdateMeResponse{}
+	}
+	return f.updateMeResp, nil
 }
 
 func (f *fakeUsersClient) BatchGetUsers(ctx context.Context, in *usersv1.BatchGetUsersRequest, opts ...grpc.CallOption) (*usersv1.BatchGetUsersResponse, error) {
@@ -107,11 +115,27 @@ func (f *fakeUsersClient) ListUsers(ctx context.Context, in *usersv1.ListUsersRe
 }
 
 func (f *fakeUsersClient) SearchUsers(ctx context.Context, in *usersv1.SearchUsersRequest, opts ...grpc.CallOption) (*usersv1.SearchUsersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "SearchUsers not implemented")
+	f.searchUsersCalls++
+	f.searchUsersReq = in
+	if f.searchUsersErr != nil {
+		return nil, f.searchUsersErr
+	}
+	if f.searchUsersResp == nil {
+		f.searchUsersResp = &usersv1.SearchUsersResponse{}
+	}
+	return f.searchUsersResp, nil
 }
 
 func (f *fakeUsersClient) CreateUser(ctx context.Context, in *usersv1.CreateUserRequest, opts ...grpc.CallOption) (*usersv1.CreateUserResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "CreateUser not implemented")
+	f.createUserCalls++
+	f.createUserReq = in
+	if f.createUserErr != nil {
+		return nil, f.createUserErr
+	}
+	if f.createUserResp == nil {
+		f.createUserResp = &usersv1.CreateUserResponse{}
+	}
+	return f.createUserResp, nil
 }
 
 func (f *fakeUsersClient) DeleteUser(ctx context.Context, in *usersv1.DeleteUserRequest, opts ...grpc.CallOption) (*usersv1.DeleteUserResponse, error) {
@@ -201,20 +225,74 @@ func TestGetMe_Success(t *testing.T) {
 	}
 }
 
-func TestCreateUser_Success(t *testing.T) {
+func TestUpdateMe_Success(t *testing.T) {
 	client := &fakeUsersClient{
-		resolveResp: &usersv1.ResolveOrCreateUserResponse{
+		updateMeResp: &usersv1.UpdateMeResponse{
 			User: &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-1"}, Name: "Ada"},
 		},
 	}
 	gateway := NewUsersGateway(client)
 
 	name := "Ada"
+	username := "ada"
+	req := connect.NewRequest(&usersv1.UpdateMeRequest{Name: &name, Username: &username})
+	resp, err := gateway.UpdateMe(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.updateMeCalls != 1 {
+		t.Fatalf("expected update me to be called once, got %d", client.updateMeCalls)
+	}
+	if client.updateMeReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.updateMeResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestUpdateMe_Error(t *testing.T) {
+	client := &fakeUsersClient{updateMeErr: status.Error(codes.PermissionDenied, "denied")}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.UpdateMeRequest{})
+	resp, err := gateway.UpdateMe(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.updateMeCalls != 1 {
+		t.Fatalf("expected update me to be called once, got %d", client.updateMeCalls)
+	}
+}
+
+func TestCreateUser_Success(t *testing.T) {
+	client := &fakeUsersClient{
+		createUserResp: &usersv1.CreateUserResponse{
+			User: &usersv1.User{Meta: &usersv1.EntityMeta{Id: "user-1"}, Name: "Ada"},
+		},
+	}
+	gateway := NewUsersGateway(client)
+
+	name := "Ada"
+	nickname := "Ada Lovelace"
+	username := "ada"
 	photoURL := "https://example.com/avatar.png"
 	req := connect.NewRequest(&usersv1.CreateUserRequest{
 		OidcSubject: " subject-1 ",
 		Name:        &name,
+		Nickname:    &nickname,
+		Username:    &username,
 		PhotoUrl:    &photoURL,
+		ClusterRole: usersv1.ClusterRole_CLUSTER_ROLE_ADMIN,
 	})
 	resp, err := gateway.CreateUser(context.Background(), req)
 	if err != nil {
@@ -223,26 +301,32 @@ func TestCreateUser_Success(t *testing.T) {
 	if resp == nil {
 		t.Fatalf("expected response")
 	}
-	if client.resolveCalls != 1 {
-		t.Fatalf("expected resolve-or-create to be called once, got %d", client.resolveCalls)
+	if client.createUserCalls != 1 {
+		t.Fatalf("expected create user to be called once, got %d", client.createUserCalls)
 	}
-	if client.resolveReq == nil {
-		t.Fatalf("expected resolve-or-create request")
+	if client.createUserReq == nil {
+		t.Fatalf("expected create user request")
 	}
-	if client.resolveReq.OidcSubject != "subject-1" {
-		t.Fatalf("expected oidc subject %q, got %q", "subject-1", client.resolveReq.OidcSubject)
+	if client.createUserReq.OidcSubject != "subject-1" {
+		t.Fatalf("expected oidc subject %q, got %q", "subject-1", client.createUserReq.OidcSubject)
 	}
-	if client.resolveReq.Name != name {
-		t.Fatalf("expected name %q, got %q", name, client.resolveReq.Name)
+	if client.createUserReq.Name == nil || *client.createUserReq.Name != name {
+		t.Fatalf("expected name %q, got %q", name, client.createUserReq.GetName())
 	}
-	if client.resolveReq.Email != name {
-		t.Fatalf("expected email %q, got %q", name, client.resolveReq.Email)
+	if client.createUserReq.Nickname == nil || *client.createUserReq.Nickname != nickname {
+		t.Fatalf("expected nickname %q, got %q", nickname, client.createUserReq.GetNickname())
 	}
-	if client.resolveReq.PhotoUrl != photoURL {
-		t.Fatalf("expected photo url %q, got %q", photoURL, client.resolveReq.PhotoUrl)
+	if client.createUserReq.Username == nil || *client.createUserReq.Username != username {
+		t.Fatalf("expected username %q, got %q", username, client.createUserReq.GetUsername())
 	}
-	if resp.Msg.User != client.resolveResp.User {
-		t.Fatalf("expected user to be forwarded")
+	if client.createUserReq.PhotoUrl == nil || *client.createUserReq.PhotoUrl != photoURL {
+		t.Fatalf("expected photo url %q, got %q", photoURL, client.createUserReq.GetPhotoUrl())
+	}
+	if client.createUserReq.ClusterRole != usersv1.ClusterRole_CLUSTER_ROLE_ADMIN {
+		t.Fatalf("expected cluster role %v, got %v", usersv1.ClusterRole_CLUSTER_ROLE_ADMIN, client.createUserReq.ClusterRole)
+	}
+	if resp.Msg != client.createUserResp {
+		t.Fatalf("expected response to be forwarded")
 	}
 }
 
@@ -262,13 +346,13 @@ func TestCreateUser_EmptyOidcSubject(t *testing.T) {
 	if resp != nil {
 		t.Fatalf("expected no response")
 	}
-	if client.resolveCalls != 0 {
-		t.Fatalf("expected resolve-or-create to not be called, got %d", client.resolveCalls)
+	if client.createUserCalls != 0 {
+		t.Fatalf("expected create user to not be called, got %d", client.createUserCalls)
 	}
 }
 
 func TestCreateUser_NilUserResponse(t *testing.T) {
-	client := &fakeUsersClient{resolveResp: &usersv1.ResolveOrCreateUserResponse{}}
+	client := &fakeUsersClient{createUserResp: &usersv1.CreateUserResponse{}}
 	gateway := NewUsersGateway(client)
 
 	req := connect.NewRequest(&usersv1.CreateUserRequest{OidcSubject: "subject-1"})
@@ -282,8 +366,55 @@ func TestCreateUser_NilUserResponse(t *testing.T) {
 	if resp != nil {
 		t.Fatalf("expected no response")
 	}
-	if client.resolveCalls != 1 {
-		t.Fatalf("expected resolve-or-create to be called once, got %d", client.resolveCalls)
+	if client.createUserCalls != 1 {
+		t.Fatalf("expected create user to be called once, got %d", client.createUserCalls)
+	}
+}
+
+func TestUsersGatewaySearchUsersSuccess(t *testing.T) {
+	client := &fakeUsersClient{
+		searchUsersResp: &usersv1.SearchUsersResponse{
+			Users: []*usersv1.UserDirectoryEntry{{IdentityId: "user-1", Name: "Ada"}},
+		},
+	}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.SearchUsersRequest{Prefix: "ad", Limit: 10})
+	resp, err := gateway.SearchUsers(context.Background(), req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.searchUsersCalls != 1 {
+		t.Fatalf("expected search users to be called once, got %d", client.searchUsersCalls)
+	}
+	if client.searchUsersReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.searchUsersResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestUsersGatewaySearchUsersError(t *testing.T) {
+	client := &fakeUsersClient{searchUsersErr: status.Error(codes.NotFound, "missing")}
+	gateway := NewUsersGateway(client)
+
+	req := connect.NewRequest(&usersv1.SearchUsersRequest{Prefix: "missing"})
+	resp, err := gateway.SearchUsers(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("expected CodeNotFound, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.searchUsersCalls != 1 {
+		t.Fatalf("expected search users to be called once, got %d", client.searchUsersCalls)
 	}
 }
 

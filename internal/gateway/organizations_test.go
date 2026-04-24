@@ -13,14 +13,18 @@ import (
 )
 
 type fakeOrganizationsClient struct {
-	listAccessibleReq   *organizationsv1.ListAccessibleOrganizationsRequest
-	listAccessibleResp  *organizationsv1.ListAccessibleOrganizationsResponse
-	listAccessibleErr   error
-	listAccessibleCalls int
+	listAccessibleReq      *organizationsv1.ListAccessibleOrganizationsRequest
+	listAccessibleResp     *organizationsv1.ListAccessibleOrganizationsResponse
+	listAccessibleErr      error
+	listAccessibleCalls    int
 	listMyMembershipsReq   *organizationsv1.ListMyMembershipsRequest
 	listMyMembershipsResp  *organizationsv1.ListMyMembershipsResponse
 	listMyMembershipsErr   error
 	listMyMembershipsCalls int
+	setMyOrgNicknameReq    *organizationsv1.SetMyOrgNicknameRequest
+	setMyOrgNicknameResp   *organizationsv1.SetMyOrgNicknameResponse
+	setMyOrgNicknameErr    error
+	setMyOrgNicknameCalls  int
 }
 
 func (f *fakeOrganizationsClient) CreateOrganization(ctx context.Context, in *organizationsv1.CreateOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.CreateOrganizationResponse, error) {
@@ -92,7 +96,15 @@ func (f *fakeOrganizationsClient) ListMyMemberships(ctx context.Context, in *org
 }
 
 func (f *fakeOrganizationsClient) SetMyOrgNickname(ctx context.Context, in *organizationsv1.SetMyOrgNicknameRequest, opts ...grpc.CallOption) (*organizationsv1.SetMyOrgNicknameResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "SetMyOrgNickname not implemented")
+	f.setMyOrgNicknameCalls++
+	f.setMyOrgNicknameReq = in
+	if f.setMyOrgNicknameErr != nil {
+		return nil, f.setMyOrgNicknameErr
+	}
+	if f.setMyOrgNicknameResp == nil {
+		f.setMyOrgNicknameResp = &organizationsv1.SetMyOrgNicknameResponse{}
+	}
+	return f.setMyOrgNicknameResp, nil
 }
 
 func TestOrganizationsGatewayListAccessibleOrganizations(t *testing.T) {
@@ -196,6 +208,55 @@ func TestListMyMemberships_Success(t *testing.T) {
 		t.Fatalf("expected request to be forwarded")
 	}
 	if resp.Msg != client.listMyMembershipsResp {
+		t.Fatalf("expected response to be forwarded")
+	}
+}
+
+func TestSetMyOrgNickname_MissingIdentity(t *testing.T) {
+	client := &fakeOrganizationsClient{}
+	gateway := NewOrganizationsGateway(client)
+
+	req := connect.NewRequest(&organizationsv1.SetMyOrgNicknameRequest{OrganizationId: "org-1", Nickname: "ada"})
+	resp, err := gateway.SetMyOrgNickname(context.Background(), req)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if connect.CodeOf(err) != connect.CodeUnauthenticated {
+		t.Fatalf("expected CodeUnauthenticated, got %v", connect.CodeOf(err))
+	}
+	if resp != nil {
+		t.Fatalf("expected no response")
+	}
+	if client.setMyOrgNicknameCalls != 0 {
+		t.Fatalf("expected set nickname not to be called, got %d", client.setMyOrgNicknameCalls)
+	}
+}
+
+func TestSetMyOrgNickname_Success(t *testing.T) {
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "identity-1",
+		IdentityType: identity.IdentityTypeUser,
+	}
+	ctx := identity.WithIdentity(context.Background(), resolved)
+
+	client := &fakeOrganizationsClient{setMyOrgNicknameResp: &organizationsv1.SetMyOrgNicknameResponse{}}
+	gateway := NewOrganizationsGateway(client)
+
+	req := connect.NewRequest(&organizationsv1.SetMyOrgNicknameRequest{OrganizationId: "org-1", Nickname: "ada"})
+	resp, err := gateway.SetMyOrgNickname(ctx, req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected response")
+	}
+	if client.setMyOrgNicknameCalls != 1 {
+		t.Fatalf("expected set nickname to be called once, got %d", client.setMyOrgNicknameCalls)
+	}
+	if client.setMyOrgNicknameReq != req.Msg {
+		t.Fatalf("expected request to be forwarded")
+	}
+	if resp.Msg != client.setMyOrgNicknameResp {
 		t.Fatalf("expected response to be forwarded")
 	}
 }

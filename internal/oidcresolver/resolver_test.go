@@ -52,6 +52,7 @@ func TestResolveFromTokenUsesExistingUser(t *testing.T) {
 
 func TestResolveFromTokenCreatesUserOnFirstLogin(t *testing.T) {
 	provider := oidctestutil.NewProvider(t)
+	provider.UserInfo.PreferredUsername = " ada "
 	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
 	if err != nil {
 		t.Fatalf("failed to create verifier: %v", err)
@@ -91,6 +92,12 @@ func TestResolveFromTokenCreatesUserOnFirstLogin(t *testing.T) {
 	}
 	if usersClient.lastResolve.PhotoUrl != provider.UserInfo.Picture {
 		t.Fatalf("expected resolve photo %q, got %q", provider.UserInfo.Picture, usersClient.lastResolve.PhotoUrl)
+	}
+	if usersClient.lastResolve.PreferredUsername == nil {
+		t.Fatalf("expected resolve preferred username to be set")
+	}
+	if *usersClient.lastResolve.PreferredUsername != "ada" {
+		t.Fatalf("expected resolve preferred username %q, got %q", "ada", *usersClient.lastResolve.PreferredUsername)
 	}
 	if provider.UserinfoCalls != 1 {
 		t.Fatalf("expected userinfo to be called once, got %d", provider.UserinfoCalls)
