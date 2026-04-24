@@ -41,7 +41,6 @@ func (g *UsersGateway) SearchUsers(ctx context.Context, req *connect.Request[use
 	}
 	return connect.NewResponse(resp), nil
 }
-
 func (g *UsersGateway) CreateUser(ctx context.Context, req *connect.Request[usersv1.CreateUserRequest]) (*connect.Response[usersv1.CreateUserResponse], error) {
 	oidcSubject := strings.TrimSpace(req.Msg.GetOidcSubject())
 	if oidcSubject == "" {
