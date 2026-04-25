@@ -41,15 +41,14 @@ pipelines:
                   - |
                     set -eu
                     start=$(date +%s)
-                    while [ ! -f /opt/app/data/go.mod ] || [ ! -f /opt/app/data/.air.toml ]; do
+                    while [ ! -f /opt/app/data/go.mod ] \
+                      || [ ! -f /opt/app/data/go.sum ] \
+                      || [ ! -f /opt/app/data/.air.toml ] \
+                      || [ ! -f /opt/app/data/cmd/gateway/main.go ] \
+                      || [ ! -f /opt/app/data/internal/platform/config.go ]; do
                       sleep 1
                       elapsed=$(( $(date +%s) - start ))
-                      [ "$elapsed" -ge 300 ] && { echo "ERROR: sync timeout waiting for go.mod" >&2; exit 1; }
-                    done
-                    while ! go list ./... >/dev/null 2>&1; do
-                      sleep 2
-                      elapsed=$(( $(date +%s) - start ))
-                      [ "$elapsed" -ge 300 ] && { echo "ERROR: sync timeout waiting for Go packages" >&2; exit 1; }
+                      [ "$elapsed" -ge 300 ] && { echo "ERROR: sync timeout waiting for source files" >&2; exit 1; }
                     done
                     exec /opt/app/data/scripts/devspace-startup.sh
                 volumeMounts:
