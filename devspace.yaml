@@ -40,10 +40,16 @@ pipelines:
                   - -c
                   - |
                     set -eu
-                    elapsed=0
-                    while [ ! -f /opt/app/data/go.mod ] || [ ! -f /opt/app/data/.air.toml ] || [ ! -f /opt/app/data/cmd/gateway/main.go ]; do
-                      sleep 1; elapsed=$((elapsed + 1))
-                      [ "$elapsed" -ge 120 ] && { echo "ERROR: sync timeout" >&2; exit 1; }
+                    start=$(date +%s)
+                    while [ ! -f /opt/app/data/go.mod ] || [ ! -f /opt/app/data/.air.toml ]; do
+                      sleep 1
+                      elapsed=$(( $(date +%s) - start ))
+                      [ "$elapsed" -ge 300 ] && { echo "ERROR: sync timeout waiting for go.mod" >&2; exit 1; }
+                    done
+                    while ! go list ./... >/dev/null 2>&1; do
+                      sleep 2
+                      elapsed=$(( $(date +%s) - start ))
+                      [ "$elapsed" -ge 300 ] && { echo "ERROR: sync timeout waiting for Go packages" >&2; exit 1; }
                     done
                     exec /opt/app/data/scripts/devspace-startup.sh
                 volumeMounts:
@@ -71,12 +77,13 @@ pipelines:
       EOF
       )"
       if [ "$(get_flag "watch")" == "true" ]; then
+        trap './scripts/argocd-restore.sh' EXIT
         start_dev --disable-pod-replace gateway
       else
         start_dev --disable-pod-replace gateway
         echo "Waiting for gateway to be healthy on :8080..."
         healthy=false
-        for i in $(seq 1 60); do
+        for i in $(seq 1 150); do
           if kubectl exec deployment/gateway-gateway -n ${GATEWAY_NAMESPACE} -c gateway -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1' 2>/dev/null; then
             echo "Gateway is healthy on :8080."
             healthy=true
@@ -85,7 +92,7 @@ pipelines:
           sleep 2
         done
         if [ "$healthy" != "true" ]; then
-          echo "ERROR: Gateway did not become healthy within 120s" >&2
+          echo "ERROR: Gateway did not become healthy within 300s" >&2
           exit 1
         fi
         echo "Dev environment ready. Stopping dev session."
