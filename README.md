@@ -30,14 +30,6 @@ devspace dev
 devspace dev -w
 ```
 
-### Run tests
-
-```bash
-devspace run test:e2e
-```
-
-See [E2E Testing](https://github.com/agynio/architecture/blob/main/architecture/operations/e2e-testing.md).
-
 ## Adding a New API Domain
 
 Every API domain in the gateway must be defined in protobuf and exposed via
