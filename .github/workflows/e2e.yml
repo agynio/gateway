@@ -1,0 +1,29 @@
+name: E2E
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Provision cluster
+        uses: agynio/bootstrap/.github/actions/provision@adf1dc4453de5934a9bae8c0f03f7b417e472d79
+
+      - name: Setup DevSpace
+        uses: agynio/e2e/.github/actions/setup-devspace@main
+
+      - name: Deploy from source
+        run: devspace dev
+
+      - name: Run E2E tests
+        uses: agynio/e2e/.github/actions/run-tests@main
+        with:
+          service: gateway
