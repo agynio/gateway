@@ -27,4 +27,4 @@ echo "Downloading Go modules..."
 go mod download
 
 echo "Starting dev server (air)..."
-exec air
+exec air -c /opt/app/data/scripts/air.toml
