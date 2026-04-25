@@ -6,8 +6,10 @@ echo "=== DevSpace startup ==="
 echo "Generating protobuf types..."
 buf generate buf.build/agynio/api \
   --path agynio/api/agents/v1 \
+  --path agynio/api/apps/v1 \
   --path agynio/api/threads/v1 \
   --path agynio/api/chat/v1 \
+  --path agynio/api/expose/v1 \
   --path agynio/api/notifications/v1 \
   --path agynio/api/files/v1 \
   --path agynio/api/agent_state/v1 \
@@ -19,6 +21,7 @@ buf generate buf.build/agynio/api \
   --path agynio/api/tracing/v1 \
   --path agynio/api/users/v1 \
   --path agynio/api/organizations/v1 \
+  --path agynio/api/runner/v1 \
   --path agynio/api/runners/v1 \
   --path agynio/api/ziti_management/v1 \
   --path agynio/api/gateway/v1
