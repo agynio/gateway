@@ -23,7 +23,7 @@ jobs:
 
           namespace="platform"
           identity_id="a3c1e9d2-7f4b-5e1a-9c3d-2b8f6a4e7d10"
-          identity_type="1"
+          identity_type="5"
           identity_db_selector="app.kubernetes.io/instance=identity-db"
 
           echo "Waiting for identity-db pod readiness..."
@@ -65,7 +65,7 @@ jobs:
           kubectl exec -n "${namespace}" "${identity_db_pod}" -- \
             env PGPASSWORD=identity psql -U identity -d identity -v ON_ERROR_STOP=1 -c \
             "INSERT INTO identities (identity_id, identity_type) VALUES ('${identity_id}', ${identity_type}) \
-            ON CONFLICT (identity_id) DO NOTHING;"
+            ON CONFLICT (identity_id) DO UPDATE SET identity_type = EXCLUDED.identity_type;"
 
       - name: Setup DevSpace
         uses: agynio/e2e/.github/actions/setup-devspace@main
