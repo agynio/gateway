@@ -96,6 +96,14 @@ func (g *ThreadsGateway) GetUnackedMessages(ctx context.Context, req *connect.Re
 	return connect.NewResponse(resp), nil
 }
 
+func (g *ThreadsGateway) GetUnackedMessageCounts(ctx context.Context, req *connect.Request[threadsv1.GetUnackedMessageCountsRequest]) (*connect.Response[threadsv1.GetUnackedMessageCountsResponse], error) {
+	resp, err := g.threads.GetUnackedMessageCounts(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *ThreadsGateway) AckMessages(ctx context.Context, req *connect.Request[threadsv1.AckMessagesRequest]) (*connect.Response[threadsv1.AckMessagesResponse], error) {
 	resp, err := g.threads.AckMessages(ctx, req.Msg)
 	if err != nil {
