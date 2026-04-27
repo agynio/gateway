@@ -17,6 +17,24 @@ jobs:
       - name: Provision cluster
         uses: agynio/bootstrap/.github/actions/provision@main
 
+      - name: Set up Buf
+        uses: bufbuild/buf-setup-action@v1
+        with:
+          version: "1.66.1"
+          github_token: ${{ github.token }}
+
+      - name: Install grpcurl
+        shell: bash
+        run: |
+          set -euo pipefail
+          grpcurl_version="1.9.3"
+          curl -sSL "https://github.com/fullstorydev/grpcurl/releases/download/v${grpcurl_version}/grpcurl_${grpcurl_version}_linux_x86_64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin grpcurl
+
+      - name: Register cluster admin identity
+        shell: bash
+        run: ./.github/scripts/register_cluster_admin_identity.sh
+
       - name: Setup DevSpace
         uses: agynio/e2e/.github/actions/setup-devspace@main
 
@@ -28,7 +46,7 @@ jobs:
         with:
           service: gateway
         env:
-          # No identity-db seed step; e2e harness owns it.
+          # Cluster admin identity is registered via gRPC earlier.
           AGYN_AGENT_INIT_IMAGE: ghcr.io/agynio/agent-init:v1.0.0
           CODEX_INIT_IMAGE: ghcr.io/agynio/agent-init-codex:0.13
           AGN_INIT_IMAGE: ghcr.io/agynio/agent-init-agn:0.4
