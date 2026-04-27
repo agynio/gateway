@@ -72,14 +72,6 @@ func (g *ThreadsGateway) GetOrganizationThreads(ctx context.Context, req *connec
 	return connect.NewResponse(resp), nil
 }
 
-func (g *ThreadsGateway) ListOrganizationThreads(ctx context.Context, req *connect.Request[threadsv1.ListOrganizationThreadsRequest]) (*connect.Response[threadsv1.ListOrganizationThreadsResponse], error) {
-	resp, err := g.threads.ListOrganizationThreads(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
 func (g *ThreadsGateway) GetThread(ctx context.Context, req *connect.Request[threadsv1.GetThreadRequest]) (*connect.Response[threadsv1.GetThreadResponse], error) {
 	resp, err := g.threads.GetThread(ctx, req.Msg)
 	if err != nil {
@@ -98,6 +90,14 @@ func (g *ThreadsGateway) GetMessages(ctx context.Context, req *connect.Request[t
 
 func (g *ThreadsGateway) GetUnackedMessages(ctx context.Context, req *connect.Request[threadsv1.GetUnackedMessagesRequest]) (*connect.Response[threadsv1.GetUnackedMessagesResponse], error) {
 	resp, err := g.threads.GetUnackedMessages(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *ThreadsGateway) GetUnackedMessageCounts(ctx context.Context, req *connect.Request[threadsv1.GetUnackedMessageCountsRequest]) (*connect.Response[threadsv1.GetUnackedMessageCountsResponse], error) {
+	resp, err := g.threads.GetUnackedMessageCounts(ctx, req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}

@@ -156,7 +156,7 @@ func TestResolveInstallationCache(t *testing.T) {
 		},
 		getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
 			appCalls++
-			return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: "service-" + req.Id}}, nil
+			return &appsv1.GetAppResponse{App: &appsv1.App{Slug: "slug-" + req.Id}}, nil
 		},
 	}
 	handler := &AppProxyHandler{
@@ -170,8 +170,8 @@ func TestResolveInstallationCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if resolved.serviceName != "service-app-org-1" {
-		t.Fatalf("expected service name %q, got %q", "service-app-org-1", resolved.serviceName)
+	if resolved.serviceName != "app-slug-app-org-1" {
+		t.Fatalf("expected service name %q, got %q", "app-slug-app-org-1", resolved.serviceName)
 	}
 	if resolved.installationID != "inst-org-1" {
 		t.Fatalf("expected installation id %q, got %q", "inst-org-1", resolved.installationID)
@@ -181,8 +181,8 @@ func TestResolveInstallationCache(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if resolved.serviceName != "service-app-org-1" {
-		t.Fatalf("expected service name %q, got %q", "service-app-org-1", resolved.serviceName)
+	if resolved.serviceName != "app-slug-app-org-1" {
+		t.Fatalf("expected service name %q, got %q", "app-slug-app-org-1", resolved.serviceName)
 	}
 	if installationCalls != 1 {
 		t.Fatalf("expected installation lookup once, got %d", installationCalls)
@@ -196,8 +196,8 @@ func TestResolveInstallationCache(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if resolved.serviceName != "service-app-org-2" {
-			t.Fatalf("expected service name %q, got %q", "service-app-org-2", resolved.serviceName)
+		if resolved.serviceName != "app-slug-app-org-2" {
+			t.Fatalf("expected service name %q, got %q", "app-slug-app-org-2", resolved.serviceName)
 		}
 		if resolved.installationID != "inst-org-2" {
 			t.Fatalf("expected installation id %q, got %q", "inst-org-2", resolved.installationID)
@@ -269,7 +269,7 @@ func TestResolveInstallationErrors(t *testing.T) {
 		}
 	})
 
-	t.Run("missing service id", func(t *testing.T) {
+	t.Run("missing slug", func(t *testing.T) {
 		handler := &AppProxyHandler{
 			apps: &fakeAppsClient{
 				getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
@@ -279,7 +279,7 @@ func TestResolveInstallationErrors(t *testing.T) {
 					}}, nil
 				},
 				getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
-					return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: " "}}, nil
+					return &appsv1.GetAppResponse{App: &appsv1.App{Slug: " "}}, nil
 				},
 			},
 			cache:    make(map[string]cachedInstallation),
@@ -326,7 +326,7 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 			}}, nil
 		},
 		getApp: func(ctx context.Context, req *appsv1.GetAppRequest, opts ...grpc.CallOption) (*appsv1.GetAppResponse, error) {
-			return &appsv1.GetAppResponse{App: &appsv1.App{ZitiServiceId: "service"}}, nil
+			return &appsv1.GetAppResponse{App: &appsv1.App{Slug: "app-slug"}}, nil
 		},
 	}
 	handler := &AppProxyHandler{
