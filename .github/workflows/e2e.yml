@@ -28,6 +28,7 @@ jobs:
         with:
           service: gateway
         env:
+          # No identity-db seed step; e2e harness owns it.
           AGYN_AGENT_INIT_IMAGE: ghcr.io/agynio/agent-init:v1.0.0
           CODEX_INIT_IMAGE: ghcr.io/agynio/agent-init-codex:0.13
           AGN_INIT_IMAGE: ghcr.io/agynio/agent-init-agn:0.4
