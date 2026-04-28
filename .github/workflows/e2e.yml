@@ -10,12 +10,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-    env:
-      AGYN_AGENT_INIT_IMAGE: ghcr.io/agynio/agent-init:latest
-      CODEX_INIT_IMAGE: ghcr.io/agynio/agent-init-codex:latest
-      AGN_INIT_IMAGE: ghcr.io/agynio/agent-init-agn:latest
-      CLAUDE_INIT_IMAGE: ghcr.io/agynio/agent-init-claude:latest
-      AGN_EXPOSE_INIT_IMAGE: ghcr.io/agynio/agent-init-agn:latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
