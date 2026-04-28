@@ -82,7 +82,7 @@ pipelines:
         start_dev --disable-pod-replace gateway
         echo "Waiting for gateway to be healthy on :8080..."
         healthy=false
-        for i in $(seq 1 150); do
+        for i in $(seq 1 300); do
           if kubectl exec deployment/gateway-gateway -n ${GATEWAY_NAMESPACE} -c gateway -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1' 2>/dev/null; then
             echo "Gateway is healthy on :8080."
             healthy=true
@@ -91,7 +91,7 @@ pipelines:
           sleep 2
         done
         if [ "$healthy" != "true" ]; then
-          echo "ERROR: Gateway did not become healthy within 300s" >&2
+          echo "ERROR: Gateway did not become healthy within 600s" >&2
           exit 1
         fi
         echo "Dev environment ready. Stopping dev session."
