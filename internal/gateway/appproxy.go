@@ -161,12 +161,11 @@ func (h *AppProxyHandler) resolveInstallation(ctx context.Context, orgID, slug s
 		return resolvedInstallation{}, fmt.Errorf("app response missing")
 	}
 
-	serviceID := strings.TrimSpace(app.GetZitiServiceId())
-	if serviceID == "" {
-		return resolvedInstallation{}, fmt.Errorf("app service id missing")
+	appSlug := strings.TrimSpace(app.GetSlug())
+	if appSlug == "" {
+		return resolvedInstallation{}, fmt.Errorf("app slug missing")
 	}
-	// ZitiServiceId stores the dialable service identifier for the app.
-	serviceName := serviceID
+	serviceName := fmt.Sprintf("app-%s", appSlug)
 
 	resolved := resolvedInstallation{installationID: installationID, serviceName: serviceName}
 	h.cacheMu.Lock()
