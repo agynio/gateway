@@ -263,7 +263,7 @@ func main() {
 			}
 		}()
 
-		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, mgr, defaultAppProxyCacheTTL))
+		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, agentsClient, organizationsClient, mgr, defaultAppProxyCacheTTL))
 		if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
 			appProxyHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(appProxyHandler)
 		}

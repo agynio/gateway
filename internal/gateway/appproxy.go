@@ -12,13 +12,19 @@ import (
 	"sync"
 	"time"
 
+	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
+	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/openziti/sdk-golang/ziti"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type AppProxyHandler struct {
 	apps                appsv1.AppsServiceClient
+	agents              agentsv1.AgentsServiceClient
+	organizations       organizationsv1.OrganizationsServiceClient
 	zitiContextProvider ZitiContextProvider
 	transport           *http.Transport
 	client              *http.Client
@@ -41,7 +47,13 @@ type ZitiContextProvider interface {
 	ZitiContext() ziti.Context
 }
 
-func NewAppProxyHandler(apps appsv1.AppsServiceClient, zitiContextProvider ZitiContextProvider, cacheTTL time.Duration) *AppProxyHandler {
+func NewAppProxyHandler(
+	apps appsv1.AppsServiceClient,
+	agents agentsv1.AgentsServiceClient,
+	organizations organizationsv1.OrganizationsServiceClient,
+	zitiContextProvider ZitiContextProvider,
+	cacheTTL time.Duration,
+) *AppProxyHandler {
 	if apps == nil {
 		panic("apps client is required")
 	}
@@ -54,6 +66,8 @@ func NewAppProxyHandler(apps appsv1.AppsServiceClient, zitiContextProvider ZitiC
 
 	handler := &AppProxyHandler{
 		apps:                apps,
+		agents:              agents,
+		organizations:       organizations,
 		zitiContextProvider: zitiContextProvider,
 		cache:               make(map[string]cachedInstallation),
 		cacheTTL:            cacheTTL,
@@ -66,6 +80,43 @@ func NewAppProxyHandler(apps appsv1.AppsServiceClient, zitiContextProvider ZitiC
 	return handler
 }
 
+func (h *AppProxyHandler) resolveOrganizationID(ctx context.Context, resolved identity.ResolvedIdentity) (string, error) {
+	switch resolved.IdentityType {
+	case identity.IdentityTypeAgent:
+		if h.agents == nil {
+			return "", status.Error(codes.Internal, "agent resolver not configured")
+		}
+		resp, err := h.agents.ResolveAgentIdentity(ctx, &agentsv1.ResolveAgentIdentityRequest{IdentityId: resolved.IdentityID})
+		if err != nil {
+			return "", err
+		}
+		orgID := strings.TrimSpace(resp.GetOrganizationId())
+		if orgID == "" {
+			return "", status.Error(codes.FailedPrecondition, "organization id missing")
+		}
+		return orgID, nil
+	case identity.IdentityTypeUser:
+		if h.organizations == nil {
+			return "", status.Error(codes.Internal, "organizations resolver not configured")
+		}
+		resp, err := h.organizations.ListMyMemberships(ctx, &organizationsv1.ListMyMembershipsRequest{})
+		if err != nil {
+			return "", err
+		}
+		memberships := resp.GetMemberships()
+		if len(memberships) == 0 {
+			return "", status.Error(codes.NotFound, "no organization memberships")
+		}
+		orgID := strings.TrimSpace(memberships[0].GetOrganizationId())
+		if orgID == "" {
+			return "", status.Error(codes.FailedPrecondition, "organization id missing")
+		}
+		return orgID, nil
+	default:
+		return "", status.Error(codes.Unimplemented, "organization resolution not supported for identity type")
+	}
+}
+
 func (h *AppProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	slug, method, err := parseAppProxyPath(r.URL.Path)
 	if err != nil {
@@ -73,13 +124,20 @@ func (h *AppProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orgID := strings.TrimSpace(r.Header.Get(identity.MetadataKeyOrganizationID))
-	if orgID == "" {
-		writeProblem(w, http.StatusBadRequest, "missing x-organization-id header")
+	ctx := r.Context()
+	resolvedIdentity, ok := identity.IdentityFromContext(ctx)
+	if !ok {
+		writeProblem(w, http.StatusUnauthorized, "identity not available")
 		return
 	}
 
-	resolved, err := h.resolveInstallation(r.Context(), orgID, slug)
+	orgID, err := h.resolveOrganizationID(ctx, resolvedIdentity)
+	if err != nil {
+		writeProblem(w, httpStatusFromError(err), err.Error())
+		return
+	}
+
+	resolved, err := h.resolveInstallation(ctx, orgID, slug)
 	if err != nil {
 		writeProblem(w, httpStatusFromError(err), err.Error())
 		return
@@ -100,12 +158,10 @@ func (h *AppProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	proxyReq.Header = r.Header.Clone()
 	proxyReq.ContentLength = r.ContentLength
 	proxyReq.Host = resolved.serviceName
+	stripInternalHeaders(proxyReq.Header)
+	proxyReq.Header.Set(identity.MetadataKeyIdentityID, resolvedIdentity.IdentityID)
+	proxyReq.Header.Set(identity.MetadataKeyIdentityType, string(resolvedIdentity.IdentityType))
 	proxyReq.Header.Set(identity.MetadataKeyAppInstallationID, resolved.installationID)
-
-	if ident, ok := identity.IdentityFromContext(r.Context()); ok {
-		proxyReq.Header.Set(identity.MetadataKeyIdentityID, ident.IdentityID)
-		proxyReq.Header.Set(identity.MetadataKeyIdentityType, string(ident.IdentityType))
-	}
 
 	resp, err := h.client.Do(proxyReq)
 	if err != nil {
@@ -211,4 +267,15 @@ func (h *AppProxyHandler) dialContext(ctx context.Context, network, addr string)
 	}
 
 	return zitiContext.Dial(serviceName)
+}
+
+func stripInternalHeaders(header http.Header) {
+	if header == nil {
+		return
+	}
+	header.Del(identity.MetadataKeyOrganizationID)
+	header.Del(identity.MetadataKeyIdentityID)
+	header.Del(identity.MetadataKeyIdentityType)
+	header.Del(identity.MetadataKeyWorkloadID)
+	header.Del(identity.MetadataKeyAppInstallationID)
 }
