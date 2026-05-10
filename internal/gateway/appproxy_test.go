@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
@@ -105,6 +106,190 @@ func (f *fakeAppsClient) AppendInstallationAuditLogEntry(ctx context.Context, re
 func (f *fakeAppsClient) ListInstallationAuditLogEntries(ctx context.Context, req *appsv1.ListInstallationAuditLogEntriesRequest, opts ...grpc.CallOption) (*appsv1.ListInstallationAuditLogEntriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
+
+type fakeAgentsClient struct {
+	resolveAgentIdentity func(ctx context.Context, req *agentsv1.ResolveAgentIdentityRequest, opts ...grpc.CallOption) (*agentsv1.ResolveAgentIdentityResponse, error)
+}
+
+func (f *fakeAgentsClient) CreateAgent(ctx context.Context, req *agentsv1.CreateAgentRequest, opts ...grpc.CallOption) (*agentsv1.CreateAgentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetAgent(ctx context.Context, req *agentsv1.GetAgentRequest, opts ...grpc.CallOption) (*agentsv1.GetAgentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ResolveAgentIdentity(ctx context.Context, req *agentsv1.ResolveAgentIdentityRequest, opts ...grpc.CallOption) (*agentsv1.ResolveAgentIdentityResponse, error) {
+	if f.resolveAgentIdentity != nil {
+		return f.resolveAgentIdentity(ctx, req, opts...)
+	}
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateAgent(ctx context.Context, req *agentsv1.UpdateAgentRequest, opts ...grpc.CallOption) (*agentsv1.UpdateAgentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteAgent(ctx context.Context, req *agentsv1.DeleteAgentRequest, opts ...grpc.CallOption) (*agentsv1.DeleteAgentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListAgents(ctx context.Context, req *agentsv1.ListAgentsRequest, opts ...grpc.CallOption) (*agentsv1.ListAgentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateVolume(ctx context.Context, req *agentsv1.CreateVolumeRequest, opts ...grpc.CallOption) (*agentsv1.CreateVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetVolume(ctx context.Context, req *agentsv1.GetVolumeRequest, opts ...grpc.CallOption) (*agentsv1.GetVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateVolume(ctx context.Context, req *agentsv1.UpdateVolumeRequest, opts ...grpc.CallOption) (*agentsv1.UpdateVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteVolume(ctx context.Context, req *agentsv1.DeleteVolumeRequest, opts ...grpc.CallOption) (*agentsv1.DeleteVolumeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListVolumes(ctx context.Context, req *agentsv1.ListVolumesRequest, opts ...grpc.CallOption) (*agentsv1.ListVolumesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateVolumeAttachment(ctx context.Context, req *agentsv1.CreateVolumeAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.CreateVolumeAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetVolumeAttachment(ctx context.Context, req *agentsv1.GetVolumeAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.GetVolumeAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteVolumeAttachment(ctx context.Context, req *agentsv1.DeleteVolumeAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.DeleteVolumeAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListVolumeAttachments(ctx context.Context, req *agentsv1.ListVolumeAttachmentsRequest, opts ...grpc.CallOption) (*agentsv1.ListVolumeAttachmentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateMcp(ctx context.Context, req *agentsv1.CreateMcpRequest, opts ...grpc.CallOption) (*agentsv1.CreateMcpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetMcp(ctx context.Context, req *agentsv1.GetMcpRequest, opts ...grpc.CallOption) (*agentsv1.GetMcpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateMcp(ctx context.Context, req *agentsv1.UpdateMcpRequest, opts ...grpc.CallOption) (*agentsv1.UpdateMcpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteMcp(ctx context.Context, req *agentsv1.DeleteMcpRequest, opts ...grpc.CallOption) (*agentsv1.DeleteMcpResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListMcps(ctx context.Context, req *agentsv1.ListMcpsRequest, opts ...grpc.CallOption) (*agentsv1.ListMcpsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateSkill(ctx context.Context, req *agentsv1.CreateSkillRequest, opts ...grpc.CallOption) (*agentsv1.CreateSkillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetSkill(ctx context.Context, req *agentsv1.GetSkillRequest, opts ...grpc.CallOption) (*agentsv1.GetSkillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateSkill(ctx context.Context, req *agentsv1.UpdateSkillRequest, opts ...grpc.CallOption) (*agentsv1.UpdateSkillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteSkill(ctx context.Context, req *agentsv1.DeleteSkillRequest, opts ...grpc.CallOption) (*agentsv1.DeleteSkillResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListSkills(ctx context.Context, req *agentsv1.ListSkillsRequest, opts ...grpc.CallOption) (*agentsv1.ListSkillsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateHook(ctx context.Context, req *agentsv1.CreateHookRequest, opts ...grpc.CallOption) (*agentsv1.CreateHookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetHook(ctx context.Context, req *agentsv1.GetHookRequest, opts ...grpc.CallOption) (*agentsv1.GetHookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateHook(ctx context.Context, req *agentsv1.UpdateHookRequest, opts ...grpc.CallOption) (*agentsv1.UpdateHookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteHook(ctx context.Context, req *agentsv1.DeleteHookRequest, opts ...grpc.CallOption) (*agentsv1.DeleteHookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListHooks(ctx context.Context, req *agentsv1.ListHooksRequest, opts ...grpc.CallOption) (*agentsv1.ListHooksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateEnv(ctx context.Context, req *agentsv1.CreateEnvRequest, opts ...grpc.CallOption) (*agentsv1.CreateEnvResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetEnv(ctx context.Context, req *agentsv1.GetEnvRequest, opts ...grpc.CallOption) (*agentsv1.GetEnvResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateEnv(ctx context.Context, req *agentsv1.UpdateEnvRequest, opts ...grpc.CallOption) (*agentsv1.UpdateEnvResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteEnv(ctx context.Context, req *agentsv1.DeleteEnvRequest, opts ...grpc.CallOption) (*agentsv1.DeleteEnvResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListEnvs(ctx context.Context, req *agentsv1.ListEnvsRequest, opts ...grpc.CallOption) (*agentsv1.ListEnvsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateInitScript(ctx context.Context, req *agentsv1.CreateInitScriptRequest, opts ...grpc.CallOption) (*agentsv1.CreateInitScriptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetInitScript(ctx context.Context, req *agentsv1.GetInitScriptRequest, opts ...grpc.CallOption) (*agentsv1.GetInitScriptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateInitScript(ctx context.Context, req *agentsv1.UpdateInitScriptRequest, opts ...grpc.CallOption) (*agentsv1.UpdateInitScriptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteInitScript(ctx context.Context, req *agentsv1.DeleteInitScriptRequest, opts ...grpc.CallOption) (*agentsv1.DeleteInitScriptResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListInitScripts(ctx context.Context, req *agentsv1.ListInitScriptsRequest, opts ...grpc.CallOption) (*agentsv1.ListInitScriptsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateImagePullSecretAttachment(ctx context.Context, req *agentsv1.CreateImagePullSecretAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.CreateImagePullSecretAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetImagePullSecretAttachment(ctx context.Context, req *agentsv1.GetImagePullSecretAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.GetImagePullSecretAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteImagePullSecretAttachment(ctx context.Context, req *agentsv1.DeleteImagePullSecretAttachmentRequest, opts ...grpc.CallOption) (*agentsv1.DeleteImagePullSecretAttachmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListImagePullSecretAttachments(ctx context.Context, req *agentsv1.ListImagePullSecretAttachmentsRequest, opts ...grpc.CallOption) (*agentsv1.ListImagePullSecretAttachmentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 
 func TestParseAppProxyPath(t *testing.T) {
 	tests := []struct {
@@ -298,11 +483,13 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	var gotIdentityType string
 	var gotInstallationID string
 	var gotPath string
+	var gotOrganizationID string
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotIdentityID = r.Header.Get(identity.MetadataKeyIdentityID)
 		gotIdentityType = r.Header.Get(identity.MetadataKeyIdentityType)
 		gotInstallationID = r.Header.Get(identity.MetadataKeyAppInstallationID)
+		gotOrganizationID = r.Header.Get(identity.MetadataKeyOrganizationID)
 		gotPath = r.URL.Path
 		w.Header().Set("X-Test", "ok")
 		w.WriteHeader(http.StatusOK)
@@ -318,6 +505,11 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 			return (&net.Dialer{}).DialContext(ctx, "tcp", serverAddr)
 		},
 	}
+	agentsClient := &fakeAgentsClient{
+		resolveAgentIdentity: func(ctx context.Context, req *agentsv1.ResolveAgentIdentityRequest, opts ...grpc.CallOption) (*agentsv1.ResolveAgentIdentityResponse, error) {
+			return &agentsv1.ResolveAgentIdentityResponse{OrganizationId: "org-1"}, nil
+		},
+	}
 	appsClient := &fakeAppsClient{
 		getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
 			return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
@@ -331,16 +523,17 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	}
 	handler := &AppProxyHandler{
 		apps:     appsClient,
+		agents:   agentsClient,
 		client:   &http.Client{Transport: transport},
 		cache:    make(map[string]cachedInstallation),
 		cacheTTL: time.Minute,
 	}
 
-	resolved := identity.ResolvedIdentity{IdentityID: "identity-1", IdentityType: identity.IdentityTypeUser}
+	resolved := identity.ResolvedIdentity{IdentityID: "identity-1", IdentityType: identity.IdentityTypeAgent}
 	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
 	req = req.WithContext(identity.WithIdentity(req.Context(), resolved))
 	resp := httptest.NewRecorder()
-	req.Header.Set(identity.MetadataKeyOrganizationID, "org-1")
+	req.Header.Set(identity.MetadataKeyOrganizationID, "org-override")
 
 	handler.ServeHTTP(resp, req)
 
@@ -362,25 +555,44 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 	if gotInstallationID != "inst-1" {
 		t.Fatalf("expected installation header %q, got %q", "inst-1", gotInstallationID)
 	}
+	if gotOrganizationID != "" {
+		t.Fatalf("expected organization header stripped, got %q", gotOrganizationID)
+	}
 	if gotPath != "/health" {
 		t.Fatalf("expected proxied path %q, got %q", "/health", gotPath)
 	}
 }
 
 func TestAppProxyHandlerServeHTTPMissingOrgID(t *testing.T) {
-	handler := &AppProxyHandler{}
+	appsClient := &fakeAppsClient{}
+	handler := &AppProxyHandler{apps: appsClient}
 	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
 	resp := httptest.NewRecorder()
 
 	handler.ServeHTTP(resp, req)
 
-	if resp.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, resp.Code)
+	if resp.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, resp.Code)
+	}
+}
+
+func TestAppProxyHandlerServeHTTPUserIdentityUnsupported(t *testing.T) {
+	appsClient := &fakeAppsClient{}
+	agentsClient := &fakeAgentsClient{}
+	handler := &AppProxyHandler{apps: appsClient, agents: agentsClient}
+	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
+	req = req.WithContext(identity.WithIdentity(req.Context(), identity.ResolvedIdentity{IdentityID: "user-1", IdentityType: identity.IdentityTypeUser}))
+	resp := httptest.NewRecorder()
+
+	handler.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusPreconditionFailed {
+		t.Fatalf("expected status %d, got %d", http.StatusPreconditionFailed, resp.Code)
 	}
 }
 
 func TestAppProxyHandlerServeHTTPInvalidPath(t *testing.T) {
-	handler := &AppProxyHandler{}
+	handler := &AppProxyHandler{apps: &fakeAppsClient{}}
 	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug", nil)
 	resp := httptest.NewRecorder()
 
