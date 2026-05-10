@@ -14,7 +14,6 @@ import (
 
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
-	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"github.com/openziti/sdk-golang/ziti"
 	"google.golang.org/grpc/codes"
@@ -24,7 +23,6 @@ import (
 type AppProxyHandler struct {
 	apps                appsv1.AppsServiceClient
 	agents              agentsv1.AgentsServiceClient
-	organizations       organizationsv1.OrganizationsServiceClient
 	zitiContextProvider ZitiContextProvider
 	transport           *http.Transport
 	client              *http.Client
@@ -50,7 +48,6 @@ type ZitiContextProvider interface {
 func NewAppProxyHandler(
 	apps appsv1.AppsServiceClient,
 	agents agentsv1.AgentsServiceClient,
-	organizations organizationsv1.OrganizationsServiceClient,
 	zitiContextProvider ZitiContextProvider,
 	cacheTTL time.Duration,
 ) *AppProxyHandler {
@@ -67,7 +64,6 @@ func NewAppProxyHandler(
 	handler := &AppProxyHandler{
 		apps:                apps,
 		agents:              agents,
-		organizations:       organizations,
 		zitiContextProvider: zitiContextProvider,
 		cache:               make(map[string]cachedInstallation),
 		cacheTTL:            cacheTTL,
@@ -96,22 +92,7 @@ func (h *AppProxyHandler) resolveOrganizationID(ctx context.Context, resolved id
 		}
 		return orgID, nil
 	case identity.IdentityTypeUser:
-		if h.organizations == nil {
-			return "", status.Error(codes.Internal, "organizations resolver not configured")
-		}
-		resp, err := h.organizations.ListMyMemberships(ctx, &organizationsv1.ListMyMembershipsRequest{})
-		if err != nil {
-			return "", err
-		}
-		memberships := resp.GetMemberships()
-		if len(memberships) == 0 {
-			return "", status.Error(codes.NotFound, "no organization memberships")
-		}
-		orgID := strings.TrimSpace(memberships[0].GetOrganizationId())
-		if orgID == "" {
-			return "", status.Error(codes.FailedPrecondition, "organization id missing")
-		}
-		return orgID, nil
+		return "", status.Error(codes.FailedPrecondition, "organization id is required for user identity")
 	default:
 		return "", status.Error(codes.Unimplemented, "organization resolution not supported for identity type")
 	}

@@ -10,7 +10,6 @@ import (
 
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
-	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -291,68 +290,6 @@ func (f *fakeAgentsClient) ListImagePullSecretAttachments(ctx context.Context, r
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
-type fakeAppProxyOrganizationsClient struct {
-	listMyMemberships func(ctx context.Context, req *organizationsv1.ListMyMembershipsRequest, opts ...grpc.CallOption) (*organizationsv1.ListMyMembershipsResponse, error)
-}
-
-func (f *fakeAppProxyOrganizationsClient) CreateOrganization(ctx context.Context, req *organizationsv1.CreateOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.CreateOrganizationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) GetOrganization(ctx context.Context, req *organizationsv1.GetOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.GetOrganizationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) UpdateOrganization(ctx context.Context, req *organizationsv1.UpdateOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.UpdateOrganizationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) DeleteOrganization(ctx context.Context, req *organizationsv1.DeleteOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.DeleteOrganizationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) ListOrganizations(ctx context.Context, req *organizationsv1.ListOrganizationsRequest, opts ...grpc.CallOption) (*organizationsv1.ListOrganizationsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) ListAccessibleOrganizations(ctx context.Context, req *organizationsv1.ListAccessibleOrganizationsRequest, opts ...grpc.CallOption) (*organizationsv1.ListAccessibleOrganizationsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) CreateMembership(ctx context.Context, req *organizationsv1.CreateMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.CreateMembershipResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) AcceptMembership(ctx context.Context, req *organizationsv1.AcceptMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.AcceptMembershipResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) DeclineMembership(ctx context.Context, req *organizationsv1.DeclineMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.DeclineMembershipResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) RemoveMembership(ctx context.Context, req *organizationsv1.RemoveMembershipRequest, opts ...grpc.CallOption) (*organizationsv1.RemoveMembershipResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) UpdateMembershipRole(ctx context.Context, req *organizationsv1.UpdateMembershipRoleRequest, opts ...grpc.CallOption) (*organizationsv1.UpdateMembershipRoleResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) ListMembers(ctx context.Context, req *organizationsv1.ListMembersRequest, opts ...grpc.CallOption) (*organizationsv1.ListMembersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) ListMyMemberships(ctx context.Context, req *organizationsv1.ListMyMembershipsRequest, opts ...grpc.CallOption) (*organizationsv1.ListMyMembershipsResponse, error) {
-	if f.listMyMemberships != nil {
-		return f.listMyMemberships(ctx, req, opts...)
-	}
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
-
-func (f *fakeAppProxyOrganizationsClient) SetMyOrgNickname(ctx context.Context, req *organizationsv1.SetMyOrgNicknameRequest, opts ...grpc.CallOption) (*organizationsv1.SetMyOrgNicknameResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
-}
 
 func TestParseAppProxyPath(t *testing.T) {
 	tests := []struct {
@@ -573,11 +510,6 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 			return &agentsv1.ResolveAgentIdentityResponse{OrganizationId: "org-1"}, nil
 		},
 	}
-	organizationsClient := &fakeAppProxyOrganizationsClient{
-		listMyMemberships: func(ctx context.Context, req *organizationsv1.ListMyMembershipsRequest, opts ...grpc.CallOption) (*organizationsv1.ListMyMembershipsResponse, error) {
-			return &organizationsv1.ListMyMembershipsResponse{Memberships: []*organizationsv1.Membership{{OrganizationId: "org-1"}}}, nil
-		},
-	}
 	appsClient := &fakeAppsClient{
 		getInstallationBySlug: func(ctx context.Context, req *appsv1.GetInstallationBySlugRequest, opts ...grpc.CallOption) (*appsv1.GetInstallationBySlugResponse, error) {
 			return &appsv1.GetInstallationBySlugResponse{Installation: &appsv1.Installation{
@@ -590,12 +522,11 @@ func TestAppProxyHandlerServeHTTP(t *testing.T) {
 		},
 	}
 	handler := &AppProxyHandler{
-		apps:          appsClient,
-		agents:        agentsClient,
-		organizations: organizationsClient,
-		client:        &http.Client{Transport: transport},
-		cache:         make(map[string]cachedInstallation),
-		cacheTTL:      time.Minute,
+		apps:     appsClient,
+		agents:   agentsClient,
+		client:   &http.Client{Transport: transport},
+		cache:    make(map[string]cachedInstallation),
+		cacheTTL: time.Minute,
 	}
 
 	resolved := identity.ResolvedIdentity{IdentityID: "identity-1", IdentityType: identity.IdentityTypeAgent}
@@ -642,6 +573,21 @@ func TestAppProxyHandlerServeHTTPMissingOrgID(t *testing.T) {
 
 	if resp.Code != http.StatusUnauthorized {
 		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, resp.Code)
+	}
+}
+
+func TestAppProxyHandlerServeHTTPUserIdentityUnsupported(t *testing.T) {
+	appsClient := &fakeAppsClient{}
+	agentsClient := &fakeAgentsClient{}
+	handler := &AppProxyHandler{apps: appsClient, agents: agentsClient}
+	req := httptest.NewRequest(http.MethodGet, "/apps/app-slug/health", nil)
+	req = req.WithContext(identity.WithIdentity(req.Context(), identity.ResolvedIdentity{IdentityID: "user-1", IdentityType: identity.IdentityTypeUser}))
+	resp := httptest.NewRecorder()
+
+	handler.ServeHTTP(resp, req)
+
+	if resp.Code != http.StatusPreconditionFailed {
+		t.Fatalf("expected status %d, got %d", http.StatusPreconditionFailed, resp.Code)
 	}
 }
 
