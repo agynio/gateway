@@ -66,6 +66,7 @@ func (f *fakeNotificationsStream) RecvMsg(any) error {
 type fakeNotificationsClient struct {
 	subscribe      func(ctx context.Context, req *notificationsv1.SubscribeRequest) (grpc.ServerStreamingClient[notificationsv1.SubscribeResponse], error)
 	subscribeReq   *notificationsv1.SubscribeRequest
+	metadata       metadata.MD
 	subscribeCalls int
 }
 
@@ -76,6 +77,7 @@ func (f *fakeNotificationsClient) Publish(ctx context.Context, in *notifications
 func (f *fakeNotificationsClient) Subscribe(ctx context.Context, in *notificationsv1.SubscribeRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[notificationsv1.SubscribeResponse], error) {
 	f.subscribeCalls++
 	f.subscribeReq = in
+	f.metadata, _ = metadata.FromOutgoingContext(ctx)
 	if f.subscribe == nil {
 		return nil, status.Error(codes.Unimplemented, "Subscribe not implemented")
 	}
@@ -165,5 +167,52 @@ func TestNotificationsGatewaySubscribePassThrough(t *testing.T) {
 	}
 	if client.subscribeReq == nil || len(client.subscribeReq.GetRooms()) != 1 || client.subscribeReq.GetRooms()[0] != "room" {
 		t.Fatalf("expected rooms to be forwarded")
+	}
+}
+
+func TestNotificationsGatewaySubscribePropagatesIdentityMetadata(t *testing.T) {
+	client := &fakeNotificationsClient{}
+	client.subscribe = func(ctx context.Context, req *notificationsv1.SubscribeRequest) (grpc.ServerStreamingClient[notificationsv1.SubscribeResponse], error) {
+		return &fakeNotificationsStream{ctx: ctx}, nil
+	}
+	resolved := identity.ResolvedIdentity{IdentityID: "identity-1", IdentityType: identity.IdentityTypeUser}
+	options := connect.WithInterceptors(identityInterceptor{resolved: resolved})
+	gatewayClient := newNotificationsGatewayClient(t, &Gateway{notifications: client}, options)
+
+	stream, err := gatewayClient.Subscribe(context.Background(), connect.NewRequest(&notificationsv1.SubscribeRequest{Rooms: []string{"thread_participant:me"}}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for stream.Receive() {
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatalf("unexpected stream error: %v", err)
+	}
+	if got := client.metadata.Get(identity.MetadataKeyIdentityID); len(got) != 1 || got[0] != resolved.IdentityID {
+		t.Fatalf("expected x-identity-id %q, got %#v", resolved.IdentityID, got)
+	}
+	if got := client.metadata.Get(identity.MetadataKeyIdentityType); len(got) != 1 || got[0] != string(resolved.IdentityType) {
+		t.Fatalf("expected x-identity-type %q, got %#v", resolved.IdentityType, got)
+	}
+}
+
+func TestNotificationsGatewaySubscribePropagatesDownstreamError(t *testing.T) {
+	client := &fakeNotificationsClient{}
+	client.subscribe = func(ctx context.Context, req *notificationsv1.SubscribeRequest) (grpc.ServerStreamingClient[notificationsv1.SubscribeResponse], error) {
+		return &fakeNotificationsStream{ctx: ctx, err: status.Error(codes.PermissionDenied, "permission denied")}, nil
+	}
+	resolved := identity.ResolvedIdentity{IdentityID: "identity-1", IdentityType: identity.IdentityTypeUser}
+	options := connect.WithInterceptors(identityInterceptor{resolved: resolved})
+	gatewayClient := newNotificationsGatewayClient(t, &Gateway{notifications: client}, options)
+
+	stream, err := gatewayClient.Subscribe(context.Background(), connect.NewRequest(&notificationsv1.SubscribeRequest{Rooms: []string{"thread_participant:other"}}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if stream.Receive() {
+		t.Fatalf("expected no messages")
+	}
+	if connect.CodeOf(stream.Err()) != connect.CodePermissionDenied {
+		t.Fatalf("expected CodePermissionDenied, got %v (%v)", connect.CodeOf(stream.Err()), stream.Err())
 	}
 }
