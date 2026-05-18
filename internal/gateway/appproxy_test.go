@@ -138,6 +138,22 @@ func (f *fakeAgentsClient) ListAgents(ctx context.Context, req *agentsv1.ListAge
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeAgentsClient) SetAgentRole(ctx context.Context, req *agentsv1.SetAgentRoleRequest, opts ...grpc.CallOption) (*agentsv1.SetAgentRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) RemoveAgentRole(ctx context.Context, req *agentsv1.RemoveAgentRoleRequest, opts ...grpc.CallOption) (*agentsv1.RemoveAgentRoleResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListAgentRoles(ctx context.Context, req *agentsv1.ListAgentRolesRequest, opts ...grpc.CallOption) (*agentsv1.ListAgentRolesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListMyAgentRoles(ctx context.Context, req *agentsv1.ListMyAgentRolesRequest, opts ...grpc.CallOption) (*agentsv1.ListMyAgentRolesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeAgentsClient) CreateVolume(ctx context.Context, req *agentsv1.CreateVolumeRequest, opts ...grpc.CallOption) (*agentsv1.CreateVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
@@ -289,7 +305,6 @@ func (f *fakeAgentsClient) DeleteImagePullSecretAttachment(ctx context.Context, 
 func (f *fakeAgentsClient) ListImagePullSecretAttachments(ctx context.Context, req *agentsv1.ListImagePullSecretAttachmentsRequest, opts ...grpc.CallOption) (*agentsv1.ListImagePullSecretAttachmentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
-
 
 func TestParseAppProxyPath(t *testing.T) {
 	tests := []struct {
