@@ -33,6 +33,7 @@ jobs:
       - name: Run E2E tests
         uses: agynio/e2e/.github/actions/run-tests@main
         with:
+          ref: noa/gateway-178-e2e
           service: gateway
 
       - name: Restore ArgoCD auto-sync
