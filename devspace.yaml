@@ -121,14 +121,20 @@ dev:
               - .devspace/
               - gateway.log
               - gateway.pid
+              - bootstrap/
+              - e2e/
             uploadExcludePaths:
               - .git/
               - /gen/
               - dist/
+              - bootstrap/
+              - e2e/
             downloadExcludePaths:
               - .git/
               - /gen/
               - dist/
+              - bootstrap/
+              - e2e/
         logs:
           enabled: true
           lastLines: 200
