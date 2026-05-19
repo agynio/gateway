@@ -47,6 +47,38 @@ func (g *Gateway) ListAgents(ctx context.Context, req *connect.Request[agentsv1.
 	return connect.NewResponse(resp), nil
 }
 
+func (g *Gateway) SetAgentRole(ctx context.Context, req *connect.Request[agentsv1.SetAgentRoleRequest]) (*connect.Response[agentsv1.SetAgentRoleResponse], error) {
+	resp, err := g.agents.SetAgentRole(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) RemoveAgentRole(ctx context.Context, req *connect.Request[agentsv1.RemoveAgentRoleRequest]) (*connect.Response[agentsv1.RemoveAgentRoleResponse], error) {
+	resp, err := g.agents.RemoveAgentRole(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListAgentRoles(ctx context.Context, req *connect.Request[agentsv1.ListAgentRolesRequest]) (*connect.Response[agentsv1.ListAgentRolesResponse], error) {
+	resp, err := g.agents.ListAgentRoles(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListMyAgentRoles(ctx context.Context, req *connect.Request[agentsv1.ListMyAgentRolesRequest]) (*connect.Response[agentsv1.ListMyAgentRolesResponse], error) {
+	resp, err := g.agents.ListMyAgentRoles(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *Gateway) CreateVolume(ctx context.Context, req *connect.Request[agentsv1.CreateVolumeRequest]) (*connect.Response[agentsv1.CreateVolumeResponse], error) {
 	resp, err := g.agents.CreateVolume(ctx, req.Msg)
 	if err != nil {
