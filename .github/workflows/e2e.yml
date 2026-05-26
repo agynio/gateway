@@ -35,7 +35,6 @@ jobs:
         env:
           E2E_SUITES: go-core go-terraform playwright
         with:
-          ref: noa/gateway-178-e2e
           service: gateway
 
       - name: Restore ArgoCD auto-sync
