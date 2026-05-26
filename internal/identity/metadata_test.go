@@ -40,6 +40,51 @@ func TestAppendToOutgoingContextMissingIdentity(t *testing.T) {
 	}
 }
 
+func TestAppendToOutgoingContextReplacesIdentityMetadata(t *testing.T) {
+	ctx := metadata.AppendToOutgoingContext(
+		context.Background(),
+		MetadataKeyIdentityID, "stale-identity",
+		MetadataKeyIdentityType, string(IdentityTypeRunner),
+		MetadataKeyWorkloadID, "stale-workload",
+	)
+	ctx = WithIdentity(ctx, ResolvedIdentity{
+		IdentityID:   "identity-123",
+		IdentityType: IdentityTypeUser,
+	})
+
+	ctx = AppendToOutgoingContext(ctx)
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		t.Fatalf("expected outgoing metadata")
+	}
+
+	assertMetadataValue(t, md, MetadataKeyIdentityID, "identity-123")
+	assertMetadataValue(t, md, MetadataKeyIdentityType, string(IdentityTypeUser))
+	if got := md.Get(MetadataKeyWorkloadID); len(got) != 0 {
+		t.Fatalf("expected workload metadata to be removed, got %v", got)
+	}
+}
+
+func TestAppendToOutgoingContextPreservesExistingMetadata(t *testing.T) {
+	ctx := metadata.AppendToOutgoingContext(context.Background(), "existing", "value")
+	ctx = WithIdentity(ctx, ResolvedIdentity{
+		IdentityID:   "identity-123",
+		IdentityType: IdentityTypeAgent,
+		WorkloadID:   "workload-123",
+	})
+
+	ctx = AppendToOutgoingContext(ctx)
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		t.Fatalf("expected outgoing metadata")
+	}
+
+	assertMetadataValue(t, md, "existing", "value")
+	assertMetadataValue(t, md, MetadataKeyIdentityID, "identity-123")
+	assertMetadataValue(t, md, MetadataKeyIdentityType, string(IdentityTypeAgent))
+	assertMetadataValue(t, md, MetadataKeyWorkloadID, "workload-123")
+}
+
 func TestIdentityFromIncomingContext(t *testing.T) {
 	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
 		MetadataKeyIdentityID, "identity-777",

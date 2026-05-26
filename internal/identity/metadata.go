@@ -22,16 +22,21 @@ func AppendToOutgoingContext(ctx context.Context) context.Context {
 		return ctx
 	}
 
-	entries := []string{
-		MetadataKeyIdentityID, resolved.IdentityID,
-		MetadataKeyIdentityType, string(resolved.IdentityType),
+	merged := metadata.MD{}
+	if existing, ok := metadata.FromOutgoingContext(ctx); ok {
+		for key, values := range existing {
+			merged[key] = append([]string(nil), values...)
+		}
 	}
+	merged.Set(MetadataKeyIdentityID, resolved.IdentityID)
+	merged.Set(MetadataKeyIdentityType, string(resolved.IdentityType))
 	workloadID := strings.TrimSpace(resolved.WorkloadID)
 	if workloadID != "" {
-		entries = append(entries, MetadataKeyWorkloadID, workloadID)
+		merged.Set(MetadataKeyWorkloadID, workloadID)
+	} else {
+		merged.Delete(MetadataKeyWorkloadID)
 	}
-
-	return metadata.AppendToOutgoingContext(ctx, entries...)
+	return metadata.NewOutgoingContext(ctx, merged)
 }
 
 func IdentityFromIncomingContext(ctx context.Context) (ResolvedIdentity, error) {

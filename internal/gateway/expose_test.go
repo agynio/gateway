@@ -6,7 +6,9 @@ import (
 
 	"connectrpc.com/connect"
 	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
+	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 type fakeExposeClient struct {
@@ -14,6 +16,7 @@ type fakeExposeClient struct {
 	addExposureResp     *exposev1.AddExposureResponse
 	addExposureErr      error
 	addExposureCalls    int
+	addExposureMetadata metadata.MD
 	removeExposureReq   *exposev1.RemoveExposureRequest
 	removeExposureResp  *exposev1.RemoveExposureResponse
 	removeExposureErr   error
@@ -27,6 +30,7 @@ type fakeExposeClient struct {
 func (f *fakeExposeClient) AddExposure(ctx context.Context, in *exposev1.AddExposureRequest, opts ...grpc.CallOption) (*exposev1.AddExposureResponse, error) {
 	f.addExposureCalls++
 	f.addExposureReq = in
+	f.addExposureMetadata, _ = metadata.FromOutgoingContext(ctx)
 	if f.addExposureErr != nil {
 		return nil, f.addExposureErr
 	}
@@ -87,6 +91,32 @@ func TestExposeGatewayAddExposureForwardsRequest(t *testing.T) {
 	if resp.Msg != client.addExposureResp {
 		t.Fatalf("expected response to be forwarded")
 	}
+}
+
+func TestExposeGatewayAddExposurePropagatesIdentityMetadata(t *testing.T) {
+	client := &fakeExposeClient{addExposureResp: &exposev1.AddExposureResponse{}}
+	gateway := NewExposeGateway(client)
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: identity.IdentityTypeAgent,
+		WorkloadID:   "workload-1",
+	}
+	ctx := metadata.AppendToOutgoingContext(
+		context.Background(),
+		identity.MetadataKeyIdentityID, "stale-identity",
+		identity.MetadataKeyIdentityType, string(identity.IdentityTypeUser),
+		identity.MetadataKeyWorkloadID, "stale-workload",
+	)
+	ctx = identity.WithIdentity(ctx, resolved)
+
+	_, err := gateway.AddExposure(ctx, connect.NewRequest(&exposev1.AddExposureRequest{Port: 8080}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertMetadataValue(t, client.addExposureMetadata, identity.MetadataKeyIdentityID, resolved.IdentityID)
+	assertMetadataValue(t, client.addExposureMetadata, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
+	assertMetadataValue(t, client.addExposureMetadata, identity.MetadataKeyWorkloadID, resolved.WorkloadID)
 }
 
 func TestExposeGatewayRemoveExposureForwardsRequest(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	gatewayv1connect "github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
 	runnerv1 "github.com/agynio/gateway/gen/agynio/api/runner/v1"
 	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
+	"github.com/agynio/gateway/internal/identity"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -66,6 +67,10 @@ func (f *fakeStream) RecvMsg(any) error {
 }
 
 type fakeRunnersClient struct {
+	getWorkload             func(ctx context.Context, req *runnersv1.GetWorkloadRequest) (*runnersv1.GetWorkloadResponse, error)
+	getWorkloadReq          *runnersv1.GetWorkloadRequest
+	getWorkloadMetadata     metadata.MD
+	getWorkloadCalls        int
 	streamWorkloadLogs      func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
 	streamWorkloadLogsReq   *runnerv1.StreamWorkloadLogsRequest
 	streamWorkloadLogsCalls int
@@ -120,7 +125,13 @@ func (f *fakeRunnersClient) DeleteWorkload(ctx context.Context, in *runnersv1.De
 }
 
 func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.GetWorkloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "GetWorkload not implemented")
+	f.getWorkloadCalls++
+	f.getWorkloadReq = in
+	f.getWorkloadMetadata, _ = metadata.FromOutgoingContext(ctx)
+	if f.getWorkload == nil {
+		return nil, status.Error(codes.Unimplemented, "GetWorkload not implemented")
+	}
+	return f.getWorkload(ctx, in)
 }
 
 func (f *fakeRunnersClient) ListWorkloadsByThread(ctx context.Context, in *runnersv1.ListWorkloadsByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByThreadResponse, error) {
@@ -176,6 +187,46 @@ func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway) gatewayv1con
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return gatewayv1connect.NewRunnersGatewayClient(server.Client(), server.URL)
+}
+
+func assertMetadataValue(t *testing.T, md metadata.MD, key string, expected string) {
+	t.Helper()
+	got := md.Get(key)
+	if len(got) != 1 || got[0] != expected {
+		t.Fatalf("expected %s %q, got %#v", key, expected, got)
+	}
+}
+
+func TestRunnersGatewayGetWorkloadPropagatesIdentityMetadata(t *testing.T) {
+	client := &fakeRunnersClient{}
+	client.getWorkload = func(ctx context.Context, req *runnersv1.GetWorkloadRequest) (*runnersv1.GetWorkloadResponse, error) {
+		return &runnersv1.GetWorkloadResponse{Workload: &runnersv1.Workload{}}, nil
+	}
+	gateway := NewRunnersGateway(client)
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "identity-1",
+		IdentityType: identity.IdentityTypeUser,
+	}
+	ctx := metadata.AppendToOutgoingContext(
+		context.Background(),
+		identity.MetadataKeyIdentityID, "stale-identity",
+		identity.MetadataKeyIdentityType, string(identity.IdentityTypeRunner),
+	)
+	ctx = identity.WithIdentity(ctx, resolved)
+
+	_, err := gateway.GetWorkload(ctx, connect.NewRequest(&runnersv1.GetWorkloadRequest{Id: "workload-1"}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if client.getWorkloadCalls != 1 {
+		t.Fatalf("expected GetWorkload to be called once, got %d", client.getWorkloadCalls)
+	}
+	if client.getWorkloadReq.GetId() != "workload-1" {
+		t.Fatalf("expected workload id to be forwarded")
+	}
+	assertMetadataValue(t, client.getWorkloadMetadata, identity.MetadataKeyIdentityID, resolved.IdentityID)
+	assertMetadataValue(t, client.getWorkloadMetadata, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
 }
 
 func TestStreamWorkloadLogs_PassThrough(t *testing.T) {

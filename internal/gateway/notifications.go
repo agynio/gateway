@@ -17,7 +17,7 @@ func (g *Gateway) Subscribe(ctx context.Context, req *connect.Request[notificati
 		return toConnectError(status.Error(codes.Unauthenticated, "identity not available"))
 	}
 
-	grpcStream, err := g.notifications.Subscribe(identity.AppendToOutgoingContext(ctx), req.Msg)
+	grpcStream, err := g.notifications.Subscribe(downstreamContext(ctx), req.Msg)
 	if err != nil {
 		return toConnectError(err)
 	}
