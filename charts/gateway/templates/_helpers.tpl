@@ -37,6 +37,15 @@
 {{- $organizationsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.organizationsGrpcTarget) -}}
 {{- $env = append $env (dict "name" "ORGANIZATIONS_GRPC_TARGET" "value" $organizationsGrpcTarget) -}}
 
+{{- $runnersGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.runnersGrpcTarget) -}}
+{{- $env = append $env (dict "name" "RUNNERS_GRPC_TARGET" "value" $runnersGrpcTarget) -}}
+
+{{- $exposeGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.exposeGrpcTarget) -}}
+{{- $env = append $env (dict "name" "EXPOSE_GRPC_TARGET" "value" $exposeGrpcTarget) -}}
+
+{{- $egressRulesGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.egressRulesGrpcTarget) -}}
+{{- $env = append $env (dict "name" "EGRESS_RULES_GRPC_TARGET" "value" $egressRulesGrpcTarget) -}}
+
 {{- $oidcIssuerUrl := trimAll " \n\t" (default "" .Values.gateway.oidcIssuerUrl) -}}
 {{- if $oidcIssuerUrl -}}
 {{- $env = append $env (dict "name" "OIDC_ISSUER_URL" "value" $oidcIssuerUrl) -}}
