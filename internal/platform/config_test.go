@@ -20,6 +20,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("USERS_GRPC_TARGET", "users:50060")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "organizations:50062")
 	t.Setenv("RUNNERS_GRPC_TARGET", "runners:50063")
+	t.Setenv("EXPOSE_GRPC_TARGET", "expose:50065")
+	t.Setenv("EGRESS_RULES_GRPC_TARGET", "egress-rules:50066")
 	t.Setenv("ZITI_ENABLED", "true")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "3m")
 	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "90s")
@@ -90,6 +92,14 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Fatalf("unexpected runners grpc target: %s", got)
 	}
 
+	if got := cfg.ExposeGRPCTarget; got != "expose:50065" {
+		t.Fatalf("unexpected expose grpc target: %s", got)
+	}
+
+	if got := cfg.EgressRulesGRPCTarget; got != "egress-rules:50066" {
+		t.Fatalf("unexpected egress rules grpc target: %s", got)
+	}
+
 	if !cfg.ZitiEnabled {
 		t.Fatalf("expected ziti to be enabled")
 	}
@@ -152,6 +162,8 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("USERS_GRPC_TARGET", "")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "")
 	t.Setenv("RUNNERS_GRPC_TARGET", "")
+	t.Setenv("EXPOSE_GRPC_TARGET", "")
+	t.Setenv("EGRESS_RULES_GRPC_TARGET", "")
 	t.Setenv("ZITI_ENABLED", "")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "")
 	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "")
@@ -207,6 +219,12 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.RunnersGRPCTarget != defaultRunnersGRPCTarget {
 		t.Fatalf("unexpected runners grpc target: %s", cfg.RunnersGRPCTarget)
+	}
+	if cfg.ExposeGRPCTarget != defaultExposeGRPCTarget {
+		t.Fatalf("unexpected expose grpc target: %s", cfg.ExposeGRPCTarget)
+	}
+	if cfg.EgressRulesGRPCTarget != defaultEgressRulesGRPCTarget {
+		t.Fatalf("unexpected egress rules grpc target: %s", cfg.EgressRulesGRPCTarget)
 	}
 	if cfg.ZitiEnabled {
 		t.Fatalf("expected ziti to be disabled")

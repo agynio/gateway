@@ -22,6 +22,7 @@ import (
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
+	egressv1 "github.com/agynio/gateway/gen/agynio/api/egress/v1"
 	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
@@ -134,6 +135,7 @@ func main() {
 	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
 	tracingClient := mustClient(config.TracingGRPCTarget, "tracing", tracingv1.NewTracingServiceClient, &cleanup)
 	exposeClient := mustClient(config.ExposeGRPCTarget, "expose", exposev1.NewExposeServiceClient, &cleanup)
+	egressRulesClient := mustClient(config.EgressRulesGRPCTarget, "egress rules", egressv1.NewEgressRulesServiceClient, &cleanup)
 
 	gatewayHandler := gateway.New(
 		agentsClient,
@@ -154,6 +156,7 @@ func main() {
 	runnersGateway := gateway.NewRunnersGateway(runnersClient)
 	meteringGateway := gateway.NewMeteringGateway(meteringClient)
 	exposeGateway := gateway.NewExposeGateway(exposeClient)
+	egressRulesGateway := gateway.NewEgressRulesGateway(egressRulesClient)
 
 	interceptors := []connect.Interceptor{
 		gateway.NewRecoveryInterceptor(),
@@ -192,6 +195,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewOrganizationsGatewayHandler(organizationsGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewRunnersGatewayHandler(runnersGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewExposeGatewayHandler(exposeGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewEgressRulesGatewayHandler(egressRulesGateway, handlerOptions))
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
