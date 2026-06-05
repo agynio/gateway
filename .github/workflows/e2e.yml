@@ -34,7 +34,7 @@ jobs:
         uses: agynio/e2e/.github/actions/run-tests@main
         env:
           E2E_SUITES: go-core go-terraform playwright
-          AGYN_BASE_URL: http://gateway.platform.svc.cluster.local:8080
+          AGYN_INTERNAL_GATEWAY_URL: http://gateway.platform.svc.cluster.local:8080
         with:
           service: gateway
 
