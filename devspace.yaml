@@ -20,7 +20,7 @@ pipelines:
         echo "WARNING: ArgoCD Application 'gateway' not found in argocd namespace."
       fi
       echo "Patching gateway deployment for DevSpace..."
-      kubectl patch deployment gateway-gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
+      kubectl patch deployment gateway -n ${GATEWAY_NAMESPACE} --type strategic --patch "$(cat <<'EOF'
       spec:
         template:
           spec:
@@ -83,7 +83,7 @@ pipelines:
         echo "Waiting for gateway to be healthy on :8080..."
         healthy=false
         for i in $(seq 1 300); do
-          if kubectl exec deployment/gateway-gateway -n ${GATEWAY_NAMESPACE} -c gateway -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1' 2>/dev/null; then
+          if kubectl exec deployment/gateway -n ${GATEWAY_NAMESPACE} -c gateway -- bash -c 'nc -z localhost 8080 >/dev/null 2>&1 || (echo > /dev/tcp/localhost/8080) >/dev/null 2>&1' 2>/dev/null; then
             echo "Gateway is healthy on :8080."
             healthy=true
             break
