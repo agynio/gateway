@@ -51,6 +51,7 @@ type Config struct {
 	ZitiManagementGRPCTarget string
 	OIDCIssuerURL            string
 	OIDCClientID             string
+	OIDCAudience             string
 	ClusterAdminToken        string
 	ClusterAdminIdentityID   string
 	UsersGRPCTarget          string
@@ -108,6 +109,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
 		OIDCIssuerURL:            strings.TrimSpace(os.Getenv("OIDC_ISSUER_URL")),
 		OIDCClientID:             strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")),
+		OIDCAudience:             strings.TrimSpace(os.Getenv("OIDC_AUDIENCE")),
 		ClusterAdminToken:        clusterAdminToken,
 		ClusterAdminIdentityID:   clusterAdminIdentityID,
 		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),

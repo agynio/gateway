@@ -168,5 +168,6 @@ gateway:
   egressRulesGrpcTarget: "egress-rules:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
+  oidcAudience: ""
   clusterAdminToken: ""
   clusterAdminIdentityId: ""

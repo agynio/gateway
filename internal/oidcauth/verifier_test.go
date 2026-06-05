@@ -56,6 +56,54 @@ func TestVerifierVerifyAcceptsResourceServerAudience(t *testing.T) {
 	}
 }
 
+func TestVerifierVerifyRequiresConfiguredAudience(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+
+	verifier, err := NewVerifierWithAudience(context.Background(), provider.Issuer, provider.ClientID, "https://api.example.com")
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	claims := oidc.NewAccessTokenClaims(
+		provider.Issuer,
+		provider.Subject,
+		[]string{"https://other.example.com"},
+		time.Now().Add(time.Hour),
+		"jwtid",
+		provider.ClientID,
+		time.Second,
+	)
+	token := provider.SignAccessToken(t, claims)
+
+	if _, err := verifier.Verify(context.Background(), token); err == nil {
+		t.Fatal("expected audience validation error")
+	}
+}
+
+func TestVerifierVerifyAcceptsConfiguredAudience(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+
+	verifier, err := NewVerifierWithAudience(context.Background(), provider.Issuer, provider.ClientID, "https://api.example.com")
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	claims := oidc.NewAccessTokenClaims(
+		provider.Issuer,
+		provider.Subject,
+		[]string{"https://api.example.com"},
+		time.Now().Add(time.Hour),
+		"jwtid",
+		provider.ClientID,
+		time.Second,
+	)
+	token := provider.SignAccessToken(t, claims)
+
+	if _, err := verifier.Verify(context.Background(), token); err != nil {
+		t.Fatalf("failed to verify token: %v", err)
+	}
+}
+
 func TestVerifierVerifyAcceptsEmptyAudience(t *testing.T) {
 	provider := oidctestutil.NewProvider(t)
 	verifier := newVerifier(t, provider)

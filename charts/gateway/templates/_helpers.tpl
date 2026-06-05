@@ -56,6 +56,11 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- $oidcAudience := trimAll " \n\t" (default "" .Values.gateway.oidcAudience) -}}
+{{- if $oidcAudience -}}
+{{- $env = append $env (dict "name" "OIDC_AUDIENCE" "value" $oidcAudience) -}}
+{{- end -}}
+
 {{- $clusterAdminToken := trimAll " \n\t" (default "" .Values.gateway.clusterAdminToken) -}}
 {{- if $clusterAdminToken -}}
 {{- $env = append $env (dict "name" "CLUSTER_ADMIN_TOKEN" "value" $clusterAdminToken) -}}

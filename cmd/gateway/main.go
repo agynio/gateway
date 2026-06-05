@@ -97,7 +97,7 @@ func main() {
 		if config.OIDCIssuerURL == "" || config.OIDCClientID == "" {
 			log.Fatalf("both OIDC issuer URL and client ID are required when OIDC is enabled")
 		}
-		verifier, err := oidcauth.NewVerifier(ctx, config.OIDCIssuerURL, config.OIDCClientID)
+		verifier, err := oidcauth.NewVerifierWithAudience(ctx, config.OIDCIssuerURL, config.OIDCClientID, config.OIDCAudience)
 		if err != nil {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
