@@ -30,20 +30,6 @@ jobs:
       - name: Deploy gateway from source
         run: devspace dev
 
-      - name: Expose internal gateway URL to runner
-        run: |
-          set -euo pipefail
-          echo "127.0.0.1 gateway-gateway.platform.svc.cluster.local" | sudo tee -a /etc/hosts
-          kubectl -n platform port-forward service/gateway-gateway 8080:8080 >/tmp/gateway-port-forward.log 2>&1 &
-          for _ in $(seq 1 30); do
-            if status=$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 2 --max-time 5 http://gateway-gateway.platform.svc.cluster.local:8080) && [ "$status" != "000" ]; then
-              exit 0
-            fi
-            sleep 2
-          done
-          cat /tmp/gateway-port-forward.log
-          exit 1
-
       - name: Run E2E tests
         uses: agynio/e2e/.github/actions/run-tests@main
         env:
