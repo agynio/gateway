@@ -22,6 +22,8 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("RUNNERS_GRPC_TARGET", "runners:50063")
 	t.Setenv("EXPOSE_GRPC_TARGET", "expose:50065")
 	t.Setenv("EGRESS_RULES_GRPC_TARGET", "egress-rules:50066")
+	t.Setenv("GROUPS_GRPC_TARGET", "groups:50067")
+	t.Setenv("NETWORKS_GRPC_TARGET", "networks:50068")
 	t.Setenv("ZITI_ENABLED", "true")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "3m")
 	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "90s")
@@ -100,6 +102,14 @@ func TestLoadConfigFromEnv(t *testing.T) {
 		t.Fatalf("unexpected egress rules grpc target: %s", got)
 	}
 
+	if got := cfg.GroupsGRPCTarget; got != "groups:50067" {
+		t.Fatalf("unexpected groups grpc target: %s", got)
+	}
+
+	if got := cfg.NetworksGRPCTarget; got != "networks:50068" {
+		t.Fatalf("unexpected networks grpc target: %s", got)
+	}
+
 	if !cfg.ZitiEnabled {
 		t.Fatalf("expected ziti to be enabled")
 	}
@@ -164,6 +174,8 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("RUNNERS_GRPC_TARGET", "")
 	t.Setenv("EXPOSE_GRPC_TARGET", "")
 	t.Setenv("EGRESS_RULES_GRPC_TARGET", "")
+	t.Setenv("GROUPS_GRPC_TARGET", "")
+	t.Setenv("NETWORKS_GRPC_TARGET", "")
 	t.Setenv("ZITI_ENABLED", "")
 	t.Setenv("ZITI_LEASE_RENEWAL_INTERVAL", "")
 	t.Setenv("ZITI_ENROLLMENT_TIMEOUT", "")
@@ -225,6 +237,12 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.EgressRulesGRPCTarget != defaultEgressRulesGRPCTarget {
 		t.Fatalf("unexpected egress rules grpc target: %s", cfg.EgressRulesGRPCTarget)
+	}
+	if cfg.GroupsGRPCTarget != defaultGroupsGRPCTarget {
+		t.Fatalf("unexpected groups grpc target: %s", cfg.GroupsGRPCTarget)
+	}
+	if cfg.NetworksGRPCTarget != defaultNetworksGRPCTarget {
+		t.Fatalf("unexpected networks grpc target: %s", cfg.NetworksGRPCTarget)
 	}
 	if cfg.ZitiEnabled {
 		t.Fatalf("expected ziti to be disabled")

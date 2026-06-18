@@ -46,6 +46,12 @@
 {{- $egressRulesGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.egressRulesGrpcTarget) -}}
 {{- $env = append $env (dict "name" "EGRESS_RULES_GRPC_TARGET" "value" $egressRulesGrpcTarget) -}}
 
+{{- $groupsGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.groupsGrpcTarget) -}}
+{{- $env = append $env (dict "name" "GROUPS_GRPC_TARGET" "value" $groupsGrpcTarget) -}}
+
+{{- $networksGrpcTarget := trimAll " \n\t" (default "" .Values.gateway.networksGrpcTarget) -}}
+{{- $env = append $env (dict "name" "NETWORKS_GRPC_TARGET" "value" $networksGrpcTarget) -}}
+
 {{- $oidcIssuerUrl := trimAll " \n\t" (default "" .Values.gateway.oidcIssuerUrl) -}}
 {{- if $oidcIssuerUrl -}}
 {{- $env = append $env (dict "name" "OIDC_ISSUER_URL" "value" $oidcIssuerUrl) -}}

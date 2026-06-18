@@ -29,6 +29,8 @@ const (
 	defaultRunnersGRPCTarget        = "runners:50051"
 	defaultExposeGRPCTarget         = "expose:50051"
 	defaultEgressRulesGRPCTarget    = "egress-rules:50051"
+	defaultGroupsGRPCTarget         = "groups:50051"
+	defaultNetworksGRPCTarget       = "networks:50051"
 )
 
 // Config holds the runtime configuration for communicating with upstream services.
@@ -58,6 +60,8 @@ type Config struct {
 	RunnersGRPCTarget        string
 	ExposeGRPCTarget         string
 	EgressRulesGRPCTarget    string
+	GroupsGRPCTarget         string
+	NetworksGRPCTarget       string
 }
 
 // LoadConfigFromEnv constructs a Config instance from environment variables.
@@ -115,6 +119,8 @@ func LoadConfigFromEnv() (*Config, error) {
 		RunnersGRPCTarget:        envOrDefault("RUNNERS_GRPC_TARGET", defaultRunnersGRPCTarget),
 		ExposeGRPCTarget:         envOrDefault("EXPOSE_GRPC_TARGET", defaultExposeGRPCTarget),
 		EgressRulesGRPCTarget:    envOrDefault("EGRESS_RULES_GRPC_TARGET", defaultEgressRulesGRPCTarget),
+		GroupsGRPCTarget:         envOrDefault("GROUPS_GRPC_TARGET", defaultGroupsGRPCTarget),
+		NetworksGRPCTarget:       envOrDefault("NETWORKS_GRPC_TARGET", defaultNetworksGRPCTarget),
 	}, nil
 }
 

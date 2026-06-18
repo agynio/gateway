@@ -166,6 +166,8 @@ gateway:
   runnersGrpcTarget: "runners:50051"
   exposeGrpcTarget: "expose:50051"
   egressRulesGrpcTarget: "egress-rules:50051"
+  groupsGrpcTarget: "groups:50051"
+  networksGrpcTarget: "networks:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
   clusterAdminToken: ""
