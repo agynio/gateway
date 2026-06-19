@@ -30,6 +30,7 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "ziti-management:50061")
 	t.Setenv("OIDC_ISSUER_URL", "https://issuer.example.com")
 	t.Setenv("OIDC_CLIENT_ID", "client-123")
+	t.Setenv("OIDC_AUDIENCE", "https://api.example.com")
 	t.Setenv("CLUSTER_ADMIN_TOKEN", "cluster-token")
 	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "cluster-identity")
 
@@ -133,6 +134,9 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	if got := cfg.OIDCClientID; got != "client-123" {
 		t.Fatalf("unexpected oidc client id: %s", got)
 	}
+	if got := cfg.OIDCAudience; got != "https://api.example.com" {
+		t.Fatalf("unexpected oidc audience: %s", got)
+	}
 
 	if got := cfg.ClusterAdminToken; got != "cluster-token" {
 		t.Fatalf("unexpected cluster admin token: %s", got)
@@ -182,6 +186,7 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("ZITI_MANAGEMENT_GRPC_TARGET", "")
 	t.Setenv("OIDC_ISSUER_URL", "")
 	t.Setenv("OIDC_CLIENT_ID", "")
+	t.Setenv("OIDC_AUDIENCE", "")
 	t.Setenv("CLUSTER_ADMIN_TOKEN", "")
 	t.Setenv("CLUSTER_ADMIN_IDENTITY_ID", "")
 
@@ -261,6 +266,9 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.OIDCClientID != "" {
 		t.Fatalf("unexpected oidc client id: %s", cfg.OIDCClientID)
+	}
+	if cfg.OIDCAudience != "" {
+		t.Fatalf("unexpected oidc audience: %s", cfg.OIDCAudience)
 	}
 	if cfg.ClusterAdminToken != "" {
 		t.Fatalf("unexpected cluster admin token: %s", cfg.ClusterAdminToken)

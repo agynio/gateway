@@ -170,5 +170,6 @@ gateway:
   networksGrpcTarget: "networks:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
+  oidcAudience: ""
   clusterAdminToken: ""
   clusterAdminIdentityId: ""
