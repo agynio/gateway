@@ -45,12 +45,23 @@ func NewVerifier(ctx context.Context, issuer, clientID string) (*Verifier, error
 	}
 	userinfoEndpoint := strings.TrimSpace(discovery.UserinfoEndpoint)
 
+	// Accept the signing algorithms the IdP actually advertises. Left unset,
+	// zitadel/oidc defaults to RS256 only and rejects any other algorithm with
+	// "signature algorithm not supported" — e.g. Logto signs exclusively with
+	// ES384, so its tokens would never verify. Fall back to RS256 if discovery
+	// omits the list.
+	signAlgs := discovery.IDTokenSigningAlgValuesSupported
+	if len(signAlgs) == 0 {
+		signAlgs = []string{"RS256"}
+	}
+
 	return &Verifier{
-		issuer:           trimmedIssuer,
-		clientID:         trimmedClientID,
-		keySet:           rp.NewRemoteKeySet(httphelper.DefaultHTTPClient, jwksURI),
-		userinfoEndpoint: userinfoEndpoint,
-		clockSkew:        time.Second,
+		issuer:            trimmedIssuer,
+		clientID:          trimmedClientID,
+		keySet:            rp.NewRemoteKeySet(httphelper.DefaultHTTPClient, jwksURI),
+		userinfoEndpoint:  userinfoEndpoint,
+		supportedSignAlgs: signAlgs,
+		clockSkew:         time.Second,
 	}, nil
 }
 
