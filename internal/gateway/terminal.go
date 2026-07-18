@@ -145,7 +145,7 @@ func (g *TerminalGateway) resolveTerminalWorkload(ctx context.Context, workloadI
 }
 
 func internalRunnersContext(ctx context.Context) context.Context {
-	return metadata.NewOutgoingContext(ctx, metadata.MD{})
+	return metadata.NewOutgoingContext(identity.WithoutIdentity(ctx), metadata.MD{})
 }
 
 func terminalAuthorizationTuple(identityID string, workload *runnersv1.Workload) (*authorizationv1.TupleKey, error) {

@@ -35,6 +35,7 @@ type fakeTerminalRunnersClient struct {
 func (f *fakeTerminalRunnersClient) ListWorkloads(ctx context.Context, in *runnersv1.ListWorkloadsRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsResponse, error) {
 	f.listWorkloadsCalls++
 	f.listWorkloadsRequests = append(f.listWorkloadsRequests, in)
+	ctx = identity.AppendToOutgoingContext(ctx)
 	md, _ := metadata.FromOutgoingContext(ctx)
 	f.listWorkloadsMetadata = append(f.listWorkloadsMetadata, md)
 	if f.listWorkloadsErr != nil {
