@@ -21,6 +21,7 @@ import (
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
+	authorizationv1 "github.com/agynio/gateway/gen/agynio/api/authorization/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	egressv1 "github.com/agynio/gateway/gen/agynio/api/egress/v1"
 	exposev1 "github.com/agynio/gateway/gen/agynio/api/expose/v1"
@@ -34,6 +35,7 @@ import (
 	organizationsv1 "github.com/agynio/gateway/gen/agynio/api/organizations/v1"
 	runnersv1 "github.com/agynio/gateway/gen/agynio/api/runners/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
+	terminalproxyv1 "github.com/agynio/gateway/gen/agynio/api/terminal_proxy/v1"
 	threadsv1 "github.com/agynio/gateway/gen/agynio/api/threads/v1"
 	tokencountingv1 "github.com/agynio/gateway/gen/agynio/api/token_counting/v1"
 	tracingv1 "github.com/agynio/gateway/gen/agynio/api/tracing/v1"
@@ -129,6 +131,8 @@ func main() {
 	notificationsClient := mustClient(config.NotificationsGRPCTarget, "notifications", notificationsv1.NewNotificationsServiceClient, &cleanup)
 	organizationsClient := mustClient(config.OrganizationsGRPCTarget, "organizations", organizationsv1.NewOrganizationsServiceClient, &cleanup)
 	runnersClient := mustClient(config.RunnersGRPCTarget, "runners", runnersv1.NewRunnersServiceClient, &cleanup)
+	authorizationClient := mustClient(config.AuthorizationGRPCTarget, "authorization", authorizationv1.NewAuthorizationServiceClient, &cleanup)
+	terminalProxyClient := mustClient(config.TerminalProxyGRPCTarget, "terminal proxy", terminalproxyv1.NewTerminalProxyServiceClient, &cleanup)
 	filesClient := mustClient(config.FilesGRPCTarget, "files", filesv1.NewFilesServiceClient, &cleanup)
 	agentStateClient := mustClient(config.AgentStateGRPCTarget, "agent state", agentstatev1.NewAgentStateServiceClient, &cleanup)
 	tokenCountingClient := mustClient(config.TokenCountingGRPCTarget, "token counting", tokencountingv1.NewTokenCountingServiceClient, &cleanup)
@@ -158,6 +162,7 @@ func main() {
 	usersGateway := gateway.NewUsersGateway(usersClient)
 	organizationsGateway := gateway.NewOrganizationsGateway(organizationsClient)
 	runnersGateway := gateway.NewRunnersGateway(runnersClient)
+	terminalGateway := gateway.NewTerminalGateway(runnersClient, authorizationClient, terminalProxyClient)
 	meteringGateway := gateway.NewMeteringGateway(meteringClient)
 	exposeGateway := gateway.NewExposeGateway(exposeClient)
 	egressRulesGateway := gateway.NewEgressRulesGateway(egressRulesClient)
@@ -200,6 +205,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewOrganizationsGatewayHandler(organizationsGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewRunnersGatewayHandler(runnersGateway, handlerOptions))
+	registerConnect(gatewayv1connect.NewTerminalGatewayHandler(terminalGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewExposeGatewayHandler(exposeGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewEgressRulesGatewayHandler(egressRulesGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewGroupsGatewayHandler(groupsGateway, handlerOptions))
