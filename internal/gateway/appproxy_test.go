@@ -154,6 +154,98 @@ func (f *fakeAgentsClient) ListMyAgentRoles(ctx context.Context, req *agentsv1.L
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeAgentsClient) CreateEnvironment(ctx context.Context, req *agentsv1.CreateEnvironmentRequest, opts ...grpc.CallOption) (*agentsv1.CreateEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetEnvironment(ctx context.Context, req *agentsv1.GetEnvironmentRequest, opts ...grpc.CallOption) (*agentsv1.GetEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateEnvironment(ctx context.Context, req *agentsv1.UpdateEnvironmentRequest, opts ...grpc.CallOption) (*agentsv1.UpdateEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteEnvironment(ctx context.Context, req *agentsv1.DeleteEnvironmentRequest, opts ...grpc.CallOption) (*agentsv1.DeleteEnvironmentResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListEnvironments(ctx context.Context, req *agentsv1.ListEnvironmentsRequest, opts ...grpc.CallOption) (*agentsv1.ListEnvironmentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateSandbox(ctx context.Context, req *agentsv1.CreateSandboxRequest, opts ...grpc.CallOption) (*agentsv1.CreateSandboxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetSandbox(ctx context.Context, req *agentsv1.GetSandboxRequest, opts ...grpc.CallOption) (*agentsv1.GetSandboxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListSandboxes(ctx context.Context, req *agentsv1.ListSandboxesRequest, opts ...grpc.CallOption) (*agentsv1.ListSandboxesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) StopSandbox(ctx context.Context, req *agentsv1.StopSandboxRequest, opts ...grpc.CallOption) (*agentsv1.StopSandboxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteSandbox(ctx context.Context, req *agentsv1.DeleteSandboxRequest, opts ...grpc.CallOption) (*agentsv1.DeleteSandboxResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) EnsureSandboxRunning(ctx context.Context, req *agentsv1.EnsureSandboxRunningRequest, opts ...grpc.CallOption) (*agentsv1.EnsureSandboxRunningResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) UpdateSandboxLastSession(ctx context.Context, req *agentsv1.UpdateSandboxLastSessionRequest, opts ...grpc.CallOption) (*agentsv1.UpdateSandboxLastSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) CreateInstance(ctx context.Context, req *agentsv1.CreateInstanceRequest, opts ...grpc.CallOption) (*agentsv1.CreateInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetInstance(ctx context.Context, req *agentsv1.GetInstanceRequest, opts ...grpc.CallOption) (*agentsv1.GetInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ListInstances(ctx context.Context, req *agentsv1.ListInstancesRequest, opts ...grpc.CallOption) (*agentsv1.ListInstancesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) PauseInstance(ctx context.Context, req *agentsv1.PauseInstanceRequest, opts ...grpc.CallOption) (*agentsv1.PauseInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) ResumeInstance(ctx context.Context, req *agentsv1.ResumeInstanceRequest, opts ...grpc.CallOption) (*agentsv1.ResumeInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) DeleteInstance(ctx context.Context, req *agentsv1.DeleteInstanceRequest, opts ...grpc.CallOption) (*agentsv1.DeleteInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) WriteInboxItem(ctx context.Context, req *agentsv1.WriteInboxItemRequest, opts ...grpc.CallOption) (*agentsv1.WriteInboxItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) FanoutInboxItem(ctx context.Context, req *agentsv1.FanoutInboxItemRequest, opts ...grpc.CallOption) (*agentsv1.FanoutInboxItemResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetUnackedInboxItems(ctx context.Context, req *agentsv1.GetUnackedInboxItemsRequest, opts ...grpc.CallOption) (*agentsv1.GetUnackedInboxItemsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) AckInboxItems(ctx context.Context, req *agentsv1.AckInboxItemsRequest, opts ...grpc.CallOption) (*agentsv1.AckInboxItemsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
+func (f *fakeAgentsClient) GetUnackedInboxCount(ctx context.Context, req *agentsv1.GetUnackedInboxCountRequest, opts ...grpc.CallOption) (*agentsv1.GetUnackedInboxCountResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
+}
+
 func (f *fakeAgentsClient) CreateVolume(ctx context.Context, req *agentsv1.CreateVolumeRequest, opts ...grpc.CallOption) (*agentsv1.CreateVolumeResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

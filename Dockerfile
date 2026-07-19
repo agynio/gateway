@@ -45,6 +45,7 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/runners/v1 \
       --path agynio/api/expose/v1 \
       --path agynio/api/egress/v1 \
+      --path agynio/api/terminal_proxy/v1 \
       --path agynio/api/ziti_management/v1 \
       --path agynio/api/gateway/v1
 

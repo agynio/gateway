@@ -104,6 +104,26 @@ func (f *fakeRunnersClient) EnrollRunner(ctx context.Context, in *runnersv1.Enro
 	return nil, status.Error(codes.Unimplemented, "EnrollRunner not implemented")
 }
 
+func (f *fakeRunnersClient) CreateFlavor(ctx context.Context, in *runnersv1.CreateFlavorRequest, opts ...grpc.CallOption) (*runnersv1.CreateFlavorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "CreateFlavor not implemented")
+}
+
+func (f *fakeRunnersClient) GetFlavor(ctx context.Context, in *runnersv1.GetFlavorRequest, opts ...grpc.CallOption) (*runnersv1.GetFlavorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "GetFlavor not implemented")
+}
+
+func (f *fakeRunnersClient) UpdateFlavor(ctx context.Context, in *runnersv1.UpdateFlavorRequest, opts ...grpc.CallOption) (*runnersv1.UpdateFlavorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "UpdateFlavor not implemented")
+}
+
+func (f *fakeRunnersClient) DeleteFlavor(ctx context.Context, in *runnersv1.DeleteFlavorRequest, opts ...grpc.CallOption) (*runnersv1.DeleteFlavorResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "DeleteFlavor not implemented")
+}
+
+func (f *fakeRunnersClient) ListFlavors(ctx context.Context, in *runnersv1.ListFlavorsRequest, opts ...grpc.CallOption) (*runnersv1.ListFlavorsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListFlavors not implemented")
+}
+
 func (f *fakeRunnersClient) CreateWorkload(ctx context.Context, in *runnersv1.CreateWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.CreateWorkloadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "CreateWorkload not implemented")
 }
@@ -136,6 +156,10 @@ func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWo
 
 func (f *fakeRunnersClient) ListWorkloadsByThread(ctx context.Context, in *runnersv1.ListWorkloadsByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByThreadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ListWorkloadsByThread not implemented")
+}
+
+func (f *fakeRunnersClient) ListWorkloadsByAgentInstance(ctx context.Context, in *runnersv1.ListWorkloadsByAgentInstanceRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByAgentInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListWorkloadsByAgentInstance not implemented")
 }
 
 func (f *fakeRunnersClient) ListWorkloads(ctx context.Context, in *runnersv1.ListWorkloadsRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsResponse, error) {
@@ -173,6 +197,10 @@ func (f *fakeRunnersClient) ListVolumes(ctx context.Context, in *runnersv1.ListV
 
 func (f *fakeRunnersClient) ListVolumesByThread(ctx context.Context, in *runnersv1.ListVolumesByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListVolumesByThreadResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ListVolumesByThread not implemented")
+}
+
+func (f *fakeRunnersClient) ListVolumesByAgentInstance(ctx context.Context, in *runnersv1.ListVolumesByAgentInstanceRequest, opts ...grpc.CallOption) (*runnersv1.ListVolumesByAgentInstanceResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListVolumesByAgentInstance not implemented")
 }
 
 func (f *fakeRunnersClient) BatchUpdateVolumeSampledAt(ctx context.Context, in *runnersv1.BatchUpdateVolumeSampledAtRequest, opts ...grpc.CallOption) (*runnersv1.BatchUpdateVolumeSampledAtResponse, error) {

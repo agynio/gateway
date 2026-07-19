@@ -5,13 +5,25 @@ import (
 
 	"connectrpc.com/connect"
 	egressv1 "github.com/agynio/gateway/gen/agynio/api/egress/v1"
+	"google.golang.org/grpc"
 )
 
 type EgressRulesGateway struct {
-	egressRules egressv1.EgressRulesServiceClient
+	egressRules egressRulesClient
 }
 
-func NewEgressRulesGateway(egressRules egressv1.EgressRulesServiceClient) *EgressRulesGateway {
+type egressRulesClient interface {
+	CreateEgressRule(context.Context, *egressv1.CreateEgressRuleRequest, ...grpc.CallOption) (*egressv1.CreateEgressRuleResponse, error)
+	GetEgressRule(context.Context, *egressv1.GetEgressRuleRequest, ...grpc.CallOption) (*egressv1.GetEgressRuleResponse, error)
+	ListEgressRules(context.Context, *egressv1.ListEgressRulesRequest, ...grpc.CallOption) (*egressv1.ListEgressRulesResponse, error)
+	UpdateEgressRule(context.Context, *egressv1.UpdateEgressRuleRequest, ...grpc.CallOption) (*egressv1.UpdateEgressRuleResponse, error)
+	DeleteEgressRule(context.Context, *egressv1.DeleteEgressRuleRequest, ...grpc.CallOption) (*egressv1.DeleteEgressRuleResponse, error)
+	CreateEgressRuleAttachment(context.Context, *egressv1.CreateEgressRuleAttachmentRequest, ...grpc.CallOption) (*egressv1.CreateEgressRuleAttachmentResponse, error)
+	DeleteEgressRuleAttachment(context.Context, *egressv1.DeleteEgressRuleAttachmentRequest, ...grpc.CallOption) (*egressv1.DeleteEgressRuleAttachmentResponse, error)
+	ListEgressRuleAttachments(context.Context, *egressv1.ListEgressRuleAttachmentsRequest, ...grpc.CallOption) (*egressv1.ListEgressRuleAttachmentsResponse, error)
+}
+
+func NewEgressRulesGateway(egressRules egressRulesClient) *EgressRulesGateway {
 	return &EgressRulesGateway{egressRules: egressRules}
 }
 

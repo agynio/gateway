@@ -27,6 +27,7 @@ const (
 	defaultUsersGRPCTarget          = "users:50051"
 	defaultOrganizationsGRPCTarget  = "organizations:50051"
 	defaultRunnersGRPCTarget        = "runners:50051"
+	defaultTerminalProxyGRPCTarget  = "terminal-proxy:50051"
 	defaultExposeGRPCTarget         = "expose:50051"
 	defaultEgressRulesGRPCTarget    = "egress-rules:50051"
 	defaultGroupsGRPCTarget         = "groups:50051"
@@ -58,6 +59,7 @@ type Config struct {
 	UsersGRPCTarget          string
 	OrganizationsGRPCTarget  string
 	RunnersGRPCTarget        string
+	TerminalProxyGRPCTarget  string
 	ExposeGRPCTarget         string
 	EgressRulesGRPCTarget    string
 	GroupsGRPCTarget         string
@@ -117,6 +119,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),
 		OrganizationsGRPCTarget:  envOrDefault("ORGANIZATIONS_GRPC_TARGET", defaultOrganizationsGRPCTarget),
 		RunnersGRPCTarget:        envOrDefault("RUNNERS_GRPC_TARGET", defaultRunnersGRPCTarget),
+		TerminalProxyGRPCTarget:  envOrDefault("TERMINAL_PROXY_GRPC_TARGET", defaultTerminalProxyGRPCTarget),
 		ExposeGRPCTarget:         envOrDefault("EXPOSE_GRPC_TARGET", defaultExposeGRPCTarget),
 		EgressRulesGRPCTarget:    envOrDefault("EGRESS_RULES_GRPC_TARGET", defaultEgressRulesGRPCTarget),
 		GroupsGRPCTarget:         envOrDefault("GROUPS_GRPC_TARGET", defaultGroupsGRPCTarget),

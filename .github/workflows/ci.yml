@@ -56,6 +56,7 @@ jobs:
             --path agynio/api/egress/v1 \
             --path agynio/api/groups/v1 \
             --path agynio/api/networks/v1 \
+            --path agynio/api/terminal_proxy/v1 \
             --path agynio/api/ziti_management/v1 \
             --path agynio/api/gateway/v1
 

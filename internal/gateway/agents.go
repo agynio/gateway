@@ -79,6 +79,174 @@ func (g *Gateway) ListMyAgentRoles(ctx context.Context, req *connect.Request[age
 	return connect.NewResponse(resp), nil
 }
 
+func (g *Gateway) CreateEnvironment(ctx context.Context, req *connect.Request[agentsv1.CreateEnvironmentRequest]) (*connect.Response[agentsv1.CreateEnvironmentResponse], error) {
+	resp, err := g.agents.CreateEnvironment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetEnvironment(ctx context.Context, req *connect.Request[agentsv1.GetEnvironmentRequest]) (*connect.Response[agentsv1.GetEnvironmentResponse], error) {
+	resp, err := g.agents.GetEnvironment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) UpdateEnvironment(ctx context.Context, req *connect.Request[agentsv1.UpdateEnvironmentRequest]) (*connect.Response[agentsv1.UpdateEnvironmentResponse], error) {
+	resp, err := g.agents.UpdateEnvironment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteEnvironment(ctx context.Context, req *connect.Request[agentsv1.DeleteEnvironmentRequest]) (*connect.Response[agentsv1.DeleteEnvironmentResponse], error) {
+	resp, err := g.agents.DeleteEnvironment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListEnvironments(ctx context.Context, req *connect.Request[agentsv1.ListEnvironmentsRequest]) (*connect.Response[agentsv1.ListEnvironmentsResponse], error) {
+	resp, err := g.agents.ListEnvironments(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) CreateSandbox(ctx context.Context, req *connect.Request[agentsv1.CreateSandboxRequest]) (*connect.Response[agentsv1.CreateSandboxResponse], error) {
+	resp, err := g.agents.CreateSandbox(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetSandbox(ctx context.Context, req *connect.Request[agentsv1.GetSandboxRequest]) (*connect.Response[agentsv1.GetSandboxResponse], error) {
+	resp, err := g.agents.GetSandbox(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListSandboxes(ctx context.Context, req *connect.Request[agentsv1.ListSandboxesRequest]) (*connect.Response[agentsv1.ListSandboxesResponse], error) {
+	resp, err := g.agents.ListSandboxes(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) StopSandbox(ctx context.Context, req *connect.Request[agentsv1.StopSandboxRequest]) (*connect.Response[agentsv1.StopSandboxResponse], error) {
+	resp, err := g.agents.StopSandbox(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteSandbox(ctx context.Context, req *connect.Request[agentsv1.DeleteSandboxRequest]) (*connect.Response[agentsv1.DeleteSandboxResponse], error) {
+	resp, err := g.agents.DeleteSandbox(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) EnsureSandboxRunning(ctx context.Context, req *connect.Request[agentsv1.EnsureSandboxRunningRequest]) (*connect.Response[agentsv1.EnsureSandboxRunningResponse], error) {
+	resp, err := g.agents.EnsureSandboxRunning(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) CreateInstance(ctx context.Context, req *connect.Request[agentsv1.CreateInstanceRequest]) (*connect.Response[agentsv1.CreateInstanceResponse], error) {
+	resp, err := g.agents.CreateInstance(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetInstance(ctx context.Context, req *connect.Request[agentsv1.GetInstanceRequest]) (*connect.Response[agentsv1.GetInstanceResponse], error) {
+	resp, err := g.agents.GetInstance(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListInstances(ctx context.Context, req *connect.Request[agentsv1.ListInstancesRequest]) (*connect.Response[agentsv1.ListInstancesResponse], error) {
+	resp, err := g.agents.ListInstances(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) PauseInstance(ctx context.Context, req *connect.Request[agentsv1.PauseInstanceRequest]) (*connect.Response[agentsv1.PauseInstanceResponse], error) {
+	resp, err := g.agents.PauseInstance(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ResumeInstance(ctx context.Context, req *connect.Request[agentsv1.ResumeInstanceRequest]) (*connect.Response[agentsv1.ResumeInstanceResponse], error) {
+	resp, err := g.agents.ResumeInstance(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteInstance(ctx context.Context, req *connect.Request[agentsv1.DeleteInstanceRequest]) (*connect.Response[agentsv1.DeleteInstanceResponse], error) {
+	resp, err := g.agents.DeleteInstance(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) WriteInboxItem(ctx context.Context, req *connect.Request[agentsv1.WriteInboxItemRequest]) (*connect.Response[agentsv1.WriteInboxItemResponse], error) {
+	resp, err := g.agents.WriteInboxItem(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetUnackedInboxItems(ctx context.Context, req *connect.Request[agentsv1.GetUnackedInboxItemsRequest]) (*connect.Response[agentsv1.GetUnackedInboxItemsResponse], error) {
+	resp, err := g.agents.GetUnackedInboxItems(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) AckInboxItems(ctx context.Context, req *connect.Request[agentsv1.AckInboxItemsRequest]) (*connect.Response[agentsv1.AckInboxItemsResponse], error) {
+	resp, err := g.agents.AckInboxItems(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetUnackedInboxCount(ctx context.Context, req *connect.Request[agentsv1.GetUnackedInboxCountRequest]) (*connect.Response[agentsv1.GetUnackedInboxCountResponse], error) {
+	resp, err := g.agents.GetUnackedInboxCount(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *Gateway) CreateVolume(ctx context.Context, req *connect.Request[agentsv1.CreateVolumeRequest]) (*connect.Response[agentsv1.CreateVolumeResponse], error) {
 	resp, err := g.agents.CreateVolume(ctx, req.Msg)
 	if err != nil {
