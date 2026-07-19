@@ -43,10 +43,6 @@ func WithIdentity(ctx context.Context, identity ResolvedIdentity) context.Contex
 	return context.WithValue(ctx, contextKey{}, identity)
 }
 
-func WithoutIdentity(ctx context.Context) context.Context {
-	return context.WithValue(ctx, contextKey{}, nil)
-}
-
 func IdentityFromContext(ctx context.Context) (ResolvedIdentity, bool) {
 	identity, ok := ctx.Value(contextKey{}).(ResolvedIdentity)
 	return identity, ok

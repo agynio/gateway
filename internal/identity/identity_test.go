@@ -31,19 +31,6 @@ func TestIdentityContextMissing(t *testing.T) {
 	}
 }
 
-func TestWithoutIdentity(t *testing.T) {
-	ctx := WithIdentity(context.Background(), ResolvedIdentity{
-		IdentityID:   "id-123",
-		IdentityType: IdentityTypeUser,
-	})
-	ctx = WithoutIdentity(ctx)
-
-	_, ok := IdentityFromContext(ctx)
-	if ok {
-		t.Fatalf("expected no identity")
-	}
-}
-
 func TestParseIdentityTypeApp(t *testing.T) {
 	identityType, err := ParseIdentityType("app")
 	if err != nil {

@@ -20,7 +20,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 	t.Setenv("USERS_GRPC_TARGET", "users:50060")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "organizations:50062")
 	t.Setenv("RUNNERS_GRPC_TARGET", "runners:50063")
-	t.Setenv("AUTHORIZATION_GRPC_TARGET", "authorization:50069")
 	t.Setenv("TERMINAL_PROXY_GRPC_TARGET", "terminal-proxy:50070")
 	t.Setenv("EXPOSE_GRPC_TARGET", "expose:50065")
 	t.Setenv("EGRESS_RULES_GRPC_TARGET", "egress-rules:50066")
@@ -94,10 +93,6 @@ func TestLoadConfigFromEnv(t *testing.T) {
 
 	if got := cfg.RunnersGRPCTarget; got != "runners:50063" {
 		t.Fatalf("unexpected runners grpc target: %s", got)
-	}
-
-	if got := cfg.AuthorizationGRPCTarget; got != "authorization:50069" {
-		t.Fatalf("unexpected authorization grpc target: %s", got)
 	}
 
 	if got := cfg.TerminalProxyGRPCTarget; got != "terminal-proxy:50070" {
@@ -182,7 +177,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	t.Setenv("USERS_GRPC_TARGET", "")
 	t.Setenv("ORGANIZATIONS_GRPC_TARGET", "")
 	t.Setenv("RUNNERS_GRPC_TARGET", "")
-	t.Setenv("AUTHORIZATION_GRPC_TARGET", "")
 	t.Setenv("TERMINAL_PROXY_GRPC_TARGET", "")
 	t.Setenv("EXPOSE_GRPC_TARGET", "")
 	t.Setenv("EGRESS_RULES_GRPC_TARGET", "")
@@ -243,9 +237,6 @@ func TestLoadConfigFromEnvAllDefaults(t *testing.T) {
 	}
 	if cfg.RunnersGRPCTarget != defaultRunnersGRPCTarget {
 		t.Fatalf("unexpected runners grpc target: %s", cfg.RunnersGRPCTarget)
-	}
-	if cfg.AuthorizationGRPCTarget != defaultAuthorizationGRPCTarget {
-		t.Fatalf("unexpected authorization grpc target: %s", cfg.AuthorizationGRPCTarget)
 	}
 	if cfg.TerminalProxyGRPCTarget != defaultTerminalProxyGRPCTarget {
 		t.Fatalf("unexpected terminal proxy grpc target: %s", cfg.TerminalProxyGRPCTarget)

@@ -29,7 +29,6 @@ RUN buf generate buf.build/agynio/api \
       --include-imports \
       --path agynio/api/agents/v1 \
       --path agynio/api/apps/v1 \
-      --path agynio/api/authorization/v1 \
       --path agynio/api/threads/v1 \
       --path agynio/api/chat/v1 \
       --path agynio/api/notifications/v1 \
