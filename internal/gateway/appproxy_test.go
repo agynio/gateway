@@ -712,3 +712,7 @@ func TestAppProxyHandlerServeHTTPInvalidPath(t *testing.T) {
 		t.Fatalf("expected problem content type")
 	}
 }
+
+func (f *fakeAgentsClient) UpdateSandboxRuntimeState(ctx context.Context, in *agentsv1.UpdateSandboxRuntimeStateRequest, opts ...grpc.CallOption) (*agentsv1.UpdateSandboxRuntimeStateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "UpdateSandboxRuntimeState not implemented")
+}
