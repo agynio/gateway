@@ -25,6 +25,7 @@ const (
 	defaultZitiLeaseRenewalInterval = 2 * time.Minute
 	defaultZitiEnrollmentTimeout    = 2 * time.Minute
 	defaultUsersGRPCTarget          = "users:50051"
+	defaultOIDCProfileSource        = "userinfo"
 	defaultOrganizationsGRPCTarget  = "organizations:50051"
 	defaultRunnersGRPCTarget        = "runners:50051"
 	defaultTerminalProxyGRPCTarget  = "terminal-proxy:50051"
@@ -54,6 +55,11 @@ type Config struct {
 	ZitiManagementGRPCTarget string
 	OIDCIssuerURL            string
 	OIDCClientID             string
+	OIDCProfileSource        string
+	OIDCClaimName            string
+	OIDCClaimEmail           string
+	OIDCClaimPicture         string
+	OIDCClaimPreferredUser   string
 	ClusterAdminToken        string
 	ClusterAdminIdentityID   string
 	UsersGRPCTarget          string
@@ -89,6 +95,18 @@ func LoadConfigFromEnv() (*Config, error) {
 		return nil, fmt.Errorf("ZITI_ENROLLMENT_TIMEOUT must be positive")
 	}
 
+	// Where provisioning-time profile claims come from. Defaults to the UserInfo
+	// endpoint; "token" reads them from the access token, which is required for
+	// IdPs that issue audience-restricted tokens (UserInfo rejects any token
+	// carrying an `aud` claim).
+	oidcProfileSource := strings.TrimSpace(os.Getenv("OIDC_PROFILE_SOURCE"))
+	if oidcProfileSource == "" {
+		oidcProfileSource = defaultOIDCProfileSource
+	}
+	if oidcProfileSource != "userinfo" && oidcProfileSource != "token" {
+		return nil, fmt.Errorf("OIDC_PROFILE_SOURCE must be either \"userinfo\" or \"token\"")
+	}
+
 	clusterAdminToken := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_TOKEN"))
 	clusterAdminIdentityID := strings.TrimSpace(os.Getenv("CLUSTER_ADMIN_IDENTITY_ID"))
 	if (clusterAdminToken == "") != (clusterAdminIdentityID == "") {
@@ -114,6 +132,11 @@ func LoadConfigFromEnv() (*Config, error) {
 		ZitiManagementGRPCTarget: envOrDefault("ZITI_MANAGEMENT_GRPC_TARGET", defaultZitiManagementGRPCTarget),
 		OIDCIssuerURL:            strings.TrimSpace(os.Getenv("OIDC_ISSUER_URL")),
 		OIDCClientID:             strings.TrimSpace(os.Getenv("OIDC_CLIENT_ID")),
+		OIDCProfileSource:        oidcProfileSource,
+		OIDCClaimName:            strings.TrimSpace(os.Getenv("OIDC_CLAIM_NAME")),
+		OIDCClaimEmail:           strings.TrimSpace(os.Getenv("OIDC_CLAIM_EMAIL")),
+		OIDCClaimPicture:         strings.TrimSpace(os.Getenv("OIDC_CLAIM_PICTURE")),
+		OIDCClaimPreferredUser:   strings.TrimSpace(os.Getenv("OIDC_CLAIM_PREFERRED_USERNAME")),
 		ClusterAdminToken:        clusterAdminToken,
 		ClusterAdminIdentityID:   clusterAdminIdentityID,
 		UsersGRPCTarget:          envOrDefault("USERS_GRPC_TARGET", defaultUsersGRPCTarget),

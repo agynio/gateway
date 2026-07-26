@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
 	"github.com/agynio/gateway/internal/identity"
@@ -292,5 +293,159 @@ func assertResolvedIdentity(t *testing.T, resolved identity.ResolvedIdentity, ex
 	}
 	if resolved.IdentityType != identity.IdentityTypeUser {
 		t.Fatalf("expected identity type %q, got %q", identity.IdentityTypeUser, resolved.IdentityType)
+	}
+}
+
+func newAccessTokenWithClaims(t *testing.T, provider *oidctestutil.Provider, custom map[string]any) string {
+	t.Helper()
+
+	claims := oidc.NewAccessTokenClaims(
+		provider.Issuer,
+		provider.Subject,
+		[]string{provider.Issuer},
+		time.Now().Add(time.Hour),
+		"jwtid",
+		provider.ClientID,
+		time.Second,
+	)
+	claims.Claims = custom
+
+	return provider.SignAccessToken(t, claims)
+}
+
+func TestResolveFromTokenProfileSourceTokenSkipsUserinfo(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	token := newAccessTokenWithClaims(t, provider, map[string]any{
+		"name":               "Ada Lovelace",
+		"email":              " ada@example.com ",
+		"picture":            "https://example.com/ada.png",
+		"preferred_username": "ada",
+	})
+
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.NotFound, "not found"),
+		resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-token")},
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client(), WithProfileSource(ProfileSourceToken))
+	if err != nil {
+		t.Fatalf("failed to create resolver: %v", err)
+	}
+
+	resolved, err := resolver.ResolveFromToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	assertResolvedIdentity(t, resolved, "user-token")
+
+	if provider.UserinfoCalls != 0 {
+		t.Fatalf("expected userinfo not to be called, got %d", provider.UserinfoCalls)
+	}
+	if usersClient.lastResolve == nil {
+		t.Fatalf("expected resolve-or-create request to be captured")
+	}
+	if usersClient.lastResolve.OidcSubject != provider.Subject {
+		t.Fatalf("expected resolve subject %q, got %q", provider.Subject, usersClient.lastResolve.OidcSubject)
+	}
+	if usersClient.lastResolve.Name != "Ada Lovelace" {
+		t.Fatalf("expected resolve name from token claim, got %q", usersClient.lastResolve.Name)
+	}
+	if usersClient.lastResolve.Email != "ada@example.com" {
+		t.Fatalf("expected trimmed email from token claim, got %q", usersClient.lastResolve.Email)
+	}
+	if usersClient.lastResolve.PhotoUrl != "https://example.com/ada.png" {
+		t.Fatalf("expected resolve photo from token claim, got %q", usersClient.lastResolve.PhotoUrl)
+	}
+	if usersClient.lastResolve.PreferredUsername == nil || *usersClient.lastResolve.PreferredUsername != "ada" {
+		t.Fatalf("expected resolve preferred username from token claim")
+	}
+}
+
+func TestResolveFromTokenProfileSourceTokenCustomClaimNames(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	token := newAccessTokenWithClaims(t, provider, map[string]any{
+		"urn:agyn:email": "grace@example.com",
+		"display_name":   "Grace Hopper",
+		"email":          "wrong@example.com",
+	})
+
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.NotFound, "not found"),
+		resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-custom")},
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client(),
+		WithProfileSource(ProfileSourceToken),
+		WithClaimNames(ClaimNames{Name: "display_name", Email: "urn:agyn:email"}),
+	)
+	if err != nil {
+		t.Fatalf("failed to create resolver: %v", err)
+	}
+
+	if _, err := resolver.ResolveFromToken(context.Background(), token); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if usersClient.lastResolve.Email != "grace@example.com" {
+		t.Fatalf("expected email from configured claim, got %q", usersClient.lastResolve.Email)
+	}
+	if usersClient.lastResolve.Name != "Grace Hopper" {
+		t.Fatalf("expected name from configured claim, got %q", usersClient.lastResolve.Name)
+	}
+	// Unset overrides keep their defaults.
+	if usersClient.lastResolve.PhotoUrl != "" {
+		t.Fatalf("expected empty photo, got %q", usersClient.lastResolve.PhotoUrl)
+	}
+}
+
+func TestResolveFromTokenProfileSourceTokenMissingClaimsProvisionsEmpty(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	// Token carries no profile claims at all — only sub is required.
+	token := newAccessTokenWithClaims(t, provider, nil)
+
+	usersClient := &fakeUsersClient{
+		getBySubjectErr: status.Error(codes.NotFound, "not found"),
+		resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-empty")},
+	}
+	resolver, err := NewResolver(verifier, usersClient, provider.Server.Client(), WithProfileSource(ProfileSourceToken))
+	if err != nil {
+		t.Fatalf("failed to create resolver: %v", err)
+	}
+
+	resolved, err := resolver.ResolveFromToken(context.Background(), token)
+	if err != nil {
+		t.Fatalf("expected provisioning to succeed with empty profile, got %v", err)
+	}
+	assertResolvedIdentity(t, resolved, "user-empty")
+	if usersClient.lastResolve.Email != "" || usersClient.lastResolve.Name != "" {
+		t.Fatalf("expected empty profile fields, got name=%q email=%q", usersClient.lastResolve.Name, usersClient.lastResolve.Email)
+	}
+	if usersClient.lastResolve.PreferredUsername != nil {
+		t.Fatalf("expected preferred username to stay unset")
+	}
+}
+
+func TestNewResolverRejectsUnknownProfileSource(t *testing.T) {
+	provider := oidctestutil.NewProvider(t)
+	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+	if err != nil {
+		t.Fatalf("failed to create verifier: %v", err)
+	}
+
+	_, err = NewResolver(verifier, &fakeUsersClient{}, provider.Server.Client(), WithProfileSource("nonsense"))
+	if err == nil {
+		t.Fatalf("expected an error for an unsupported profile source")
 	}
 }
