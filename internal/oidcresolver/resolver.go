@@ -74,9 +74,14 @@ func (r *Resolver) ResolveFromToken(ctx context.Context, accessToken string) (id
 	}
 
 	createResponse, err := r.usersClient.ResolveOrCreateUser(ctx, &usersv1.ResolveOrCreateUserRequest{
-		OidcSubject:       userInfo.Subject,
-		Name:              userInfo.Name,
-		Email:             userInfo.Email,
+		OidcSubject: userInfo.Subject,
+		Name:        userInfo.Name,
+		Email:       userInfo.Email,
+		// Forwarded so the Users service can tell an asserted address from a
+		// verified one. The first-admin claim turns on that distinction:
+		// without it, anyone able to register with the IdP could claim the
+		// configured admin's address.
+		EmailVerified:     bool(userInfo.EmailVerified),
 		PhotoUrl:          userInfo.Picture,
 		PreferredUsername: preferredUsernamePtr,
 	})

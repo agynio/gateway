@@ -294,3 +294,32 @@ func assertResolvedIdentity(t *testing.T, resolved identity.ResolvedIdentity, ex
 		t.Fatalf("expected identity type %q, got %q", identity.IdentityTypeUser, resolved.IdentityType)
 	}
 }
+
+func TestResolveFromTokenForwardsEmailVerified(t *testing.T) {
+	// The Users service decides the first-admin claim on this flag. If the
+	// Gateway drops it, every claimant looks unverified and a cluster with
+	// first_admin_email configured can never acquire an admin at all.
+	for _, verified := range []bool{true, false} {
+		provider := oidctestutil.NewProvider(t)
+		provider.UserInfo.EmailVerified = oidc.Bool(verified)
+		verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+		if err != nil {
+			t.Fatalf("failed to create verifier: %v", err)
+		}
+		usersClient := &fakeUsersClient{
+			getBySubjectErr: status.Error(codes.NotFound, "not found"),
+			resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-3")},
+		}
+		resolver, err := NewResolver(verifier, usersClient, provider.Server.Client())
+		if err != nil {
+			t.Fatalf("failed to create resolver: %v", err)
+		}
+
+		if _, err := resolver.ResolveFromToken(context.Background(), provider.Token); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got := usersClient.lastResolve.GetEmailVerified(); got != verified {
+			t.Fatalf("expected email_verified %v to reach the users service, got %v", verified, got)
+		}
+	}
+}
