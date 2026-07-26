@@ -170,5 +170,14 @@ gateway:
   networksGrpcTarget: "networks:50051"
   oidcIssuerUrl: ""
   oidcClientId: ""
+  # Where provisioning-time profile claims come from: "userinfo" (default) or
+  # "token". Use "token" with IdPs that issue audience-restricted access tokens,
+  # which the OIDC UserInfo endpoint rejects.
+  oidcProfileSource: ""
+  # Override the claim carrying each profile field. Empty keeps the OIDC default.
+  oidcClaimName: ""
+  oidcClaimEmail: ""
+  oidcClaimPicture: ""
+  oidcClaimPreferredUsername: ""
   clusterAdminToken: ""
   clusterAdminIdentityId: ""

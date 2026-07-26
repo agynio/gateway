@@ -62,6 +62,31 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- $oidcProfileSource := trimAll " \n\t" (default "" .Values.gateway.oidcProfileSource) -}}
+{{- if $oidcProfileSource -}}
+{{- $env = append $env (dict "name" "OIDC_PROFILE_SOURCE" "value" $oidcProfileSource) -}}
+{{- end -}}
+
+{{- $oidcClaimName := trimAll " \n\t" (default "" .Values.gateway.oidcClaimName) -}}
+{{- if $oidcClaimName -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_NAME" "value" $oidcClaimName) -}}
+{{- end -}}
+
+{{- $oidcClaimEmail := trimAll " \n\t" (default "" .Values.gateway.oidcClaimEmail) -}}
+{{- if $oidcClaimEmail -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_EMAIL" "value" $oidcClaimEmail) -}}
+{{- end -}}
+
+{{- $oidcClaimPicture := trimAll " \n\t" (default "" .Values.gateway.oidcClaimPicture) -}}
+{{- if $oidcClaimPicture -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_PICTURE" "value" $oidcClaimPicture) -}}
+{{- end -}}
+
+{{- $oidcClaimPreferredUsername := trimAll " \n\t" (default "" .Values.gateway.oidcClaimPreferredUsername) -}}
+{{- if $oidcClaimPreferredUsername -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_PREFERRED_USERNAME" "value" $oidcClaimPreferredUsername) -}}
+{{- end -}}
+
 {{- $clusterAdminToken := trimAll " \n\t" (default "" .Values.gateway.clusterAdminToken) -}}
 {{- if $clusterAdminToken -}}
 {{- $env = append $env (dict "name" "CLUSTER_ADMIN_TOKEN" "value" $clusterAdminToken) -}}
