@@ -171,4 +171,9 @@ gateway:
   oidcIssuerUrl: ""
   oidcClientId: ""
   clusterAdminToken: ""
+  # Read the bootstrap token from an existing Secret instead of rendering it
+  # into the Deployment. Mutually exclusive with clusterAdminToken.
+  clusterAdminTokenSecret:
+    name: ""
+    key: token
   clusterAdminIdentityId: ""

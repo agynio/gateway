@@ -62,8 +62,20 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- /* A Secret reference keeps the bootstrap token out of the Deployment spec,
+       so it is not readable by anyone who can read workloads. It also lets the
+       value be supplied after the chart is rendered, which is how an install
+       can hold a token the image did not ship. */ -}}
+{{- $clusterAdminTokenSecret := default dict .Values.gateway.clusterAdminTokenSecret -}}
+{{- $clusterAdminTokenSecretName := trimAll " \n\t" (default "" $clusterAdminTokenSecret.name) -}}
 {{- $clusterAdminToken := trimAll " \n\t" (default "" .Values.gateway.clusterAdminToken) -}}
-{{- if $clusterAdminToken -}}
+{{- if and $clusterAdminTokenSecretName $clusterAdminToken -}}
+{{- fail "gateway.clusterAdminToken and gateway.clusterAdminTokenSecret are mutually exclusive" -}}
+{{- end -}}
+{{- if $clusterAdminTokenSecretName -}}
+{{- $clusterAdminTokenSecretKey := trimAll " \n\t" (default "token" $clusterAdminTokenSecret.key) -}}
+{{- $env = append $env (dict "name" "CLUSTER_ADMIN_TOKEN" "valueFrom" (dict "secretKeyRef" (dict "name" $clusterAdminTokenSecretName "key" $clusterAdminTokenSecretKey))) -}}
+{{- else if $clusterAdminToken -}}
 {{- $env = append $env (dict "name" "CLUSTER_ADMIN_TOKEN" "value" $clusterAdminToken) -}}
 {{- end -}}
 
