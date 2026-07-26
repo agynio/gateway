@@ -31,6 +31,39 @@ func TestIdentityContextMissing(t *testing.T) {
 	}
 }
 
+func TestParseIdentityTypeSandbox(t *testing.T) {
+	identityType, err := ParseIdentityType("sandbox")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if identityType != IdentityTypeSandbox {
+		t.Fatalf("unexpected identity type: %s", identityType)
+	}
+	if !identityType.IsWorkload() {
+		t.Fatalf("expected a sandbox identity to be a workload identity")
+	}
+}
+
+func TestSandboxIDIsTheIdentityItself(t *testing.T) {
+	sandbox := ResolvedIdentity{
+		IdentityID:   "sandbox-1",
+		IdentityType: IdentityTypeSandbox,
+		WorkloadID:   "workload-9",
+	}
+	if sandbox.SandboxID() != "sandbox-1" {
+		t.Fatalf("unexpected sandbox id: %s", sandbox.SandboxID())
+	}
+
+	agent := ResolvedIdentity{
+		IdentityID:   "agent-1",
+		IdentityType: IdentityTypeAgent,
+		WorkloadID:   "workload-9",
+	}
+	if agent.SandboxID() != "" {
+		t.Fatalf("expected no sandbox id for an agent identity, got %s", agent.SandboxID())
+	}
+}
+
 func TestParseIdentityTypeApp(t *testing.T) {
 	identityType, err := ParseIdentityType("app")
 	if err != nil {
