@@ -108,7 +108,6 @@ dev:
     namespace: ${GATEWAY_NAMESPACE}
     labelSelector:
       app.kubernetes.io/name: gateway
-      app.kubernetes.io/instance: gateway
     containers:
       gateway:
         container: gateway
