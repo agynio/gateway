@@ -172,7 +172,10 @@ func main() {
 		gateway.NewLoggingInterceptor(),
 	}
 	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
-		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)}, interceptors...)
+		interceptors = append([]connect.Interceptor{
+			gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver),
+			gateway.NewSandboxInterceptor(gateway.NewSandboxAuthorizer(agentsClient)),
+		}, interceptors...)
 	}
 	handlerOptions := connect.WithInterceptors(interceptors...)
 
@@ -180,7 +183,7 @@ func main() {
 
 	var meHandler http.Handler = http.HandlerFunc(gateway.MeHandler)
 	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
-		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(meHandler)
+		meHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(gateway.NewSandboxMiddleware()(meHandler))
 	}
 	mux.Handle("/me", meHandler)
 
@@ -281,7 +284,7 @@ func main() {
 
 		appProxyHandler := http.Handler(gateway.NewAppProxyHandler(appsClient, agentsClient, mgr, defaultAppProxyCacheTTL))
 		if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
-			appProxyHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(appProxyHandler)
+			appProxyHandler = gateway.NewAuthMiddleware(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)(gateway.NewSandboxMiddleware()(appProxyHandler))
 		}
 		mux.Handle("/apps/", appProxyHandler)
 
