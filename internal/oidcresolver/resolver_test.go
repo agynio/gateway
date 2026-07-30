@@ -405,6 +405,55 @@ func TestResolveFromTokenProfileSourceTokenCustomClaimNames(t *testing.T) {
 	}
 }
 
+// The Users service decides the first-admin claim on this flag. If the Gateway
+// drops it, every claimant looks unverified and a cluster with a configured
+// first-admin address can never acquire an admin at all.
+func TestResolveFromTokenForwardsEmailVerified(t *testing.T) {
+	for _, testCase := range []struct {
+		name   string
+		claim  any
+		expect bool
+	}{
+		{name: "true", claim: true, expect: true},
+		{name: "false", claim: false, expect: false},
+		// Some issuers send the flag as a JSON string.
+		{name: "string true", claim: "true", expect: true},
+		{name: "absent", claim: nil, expect: false},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			provider := oidctestutil.NewProvider(t)
+			verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)
+			if err != nil {
+				t.Fatalf("failed to create verifier: %v", err)
+			}
+
+			claims := map[string]any{"email": "grace@example.com"}
+			if testCase.claim != nil {
+				claims["email_verified"] = testCase.claim
+			}
+			token := newAccessTokenWithClaims(t, provider, claims)
+
+			usersClient := &fakeUsersClient{
+				getBySubjectErr: status.Error(codes.NotFound, "not found"),
+				resolveResp:     &usersv1.ResolveOrCreateUserResponse{User: buildUser("user-verified")},
+			}
+			resolver, err := NewResolver(verifier, usersClient, provider.Server.Client(),
+				WithProfileSource(ProfileSourceToken),
+			)
+			if err != nil {
+				t.Fatalf("failed to create resolver: %v", err)
+			}
+
+			if _, err := resolver.ResolveFromToken(context.Background(), token); err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if usersClient.lastResolve.EmailVerified != testCase.expect {
+				t.Fatalf("expected email_verified %v, got %v", testCase.expect, usersClient.lastResolve.EmailVerified)
+			}
+		})
+	}
+}
+
 func TestResolveFromTokenProfileSourceTokenMissingClaimsProvisionsEmpty(t *testing.T) {
 	provider := oidctestutil.NewProvider(t)
 	verifier, err := oidcauth.NewVerifier(context.Background(), provider.Issuer, provider.ClientID)

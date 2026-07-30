@@ -97,7 +97,7 @@ func (c *Client) ResolveIdentity(ctx context.Context, sourceIdentity string) (id
 	}
 
 	workloadID := strings.TrimSpace(response.GetWorkloadId())
-	if identityType == identity.IdentityTypeAgent && workloadID == "" {
+	if identityType.IsWorkload() && workloadID == "" {
 		return identity.ResolvedIdentity{}, fmt.Errorf("workload id missing")
 	}
 
@@ -118,6 +118,8 @@ func parseIdentityType(identityType identityv1.IdentityType) (identity.IdentityT
 		return identity.IdentityTypeUser, nil
 	case identityv1.IdentityType_IDENTITY_TYPE_APP:
 		return identity.IdentityTypeApp, nil
+	case identityv1.IdentityType_IDENTITY_TYPE_SANDBOX:
+		return identity.IdentityTypeSandbox, nil
 	case identityv1.IdentityType_IDENTITY_TYPE_UNSPECIFIED:
 		return "", fmt.Errorf("identity type unspecified")
 	default:

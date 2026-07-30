@@ -180,7 +180,9 @@ func main() {
 		gateway.NewLoggingInterceptor(),
 	}
 	if zitiResolver != nil || oidcResolver != nil || apiTokenResolver != nil || clusterAdminResolver != nil {
-		interceptors = append([]connect.Interceptor{gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver)}, interceptors...)
+		interceptors = append([]connect.Interceptor{
+			gateway.NewAuthInterceptor(zitiResolver, oidcResolver, apiTokenResolver, clusterAdminResolver),
+		}, interceptors...)
 	}
 	handlerOptions := connect.WithInterceptors(interceptors...)
 

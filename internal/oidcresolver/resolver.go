@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	usersv1 "github.com/agynio/gateway/gen/agynio/api/users/v1"
@@ -157,9 +158,18 @@ func (r *Resolver) ResolveFromToken(ctx context.Context, accessToken string) (id
 	}
 
 	createResponse, err := r.usersClient.ResolveOrCreateUser(ctx, &usersv1.ResolveOrCreateUserRequest{
-		OidcSubject:       claims.Subject,
-		Name:              stringClaim(profileClaims, r.claimNames.Name),
-		Email:             stringClaim(profileClaims, r.claimNames.Email),
+		OidcSubject: claims.Subject,
+		Name:        stringClaim(profileClaims, r.claimNames.Name),
+		Email:       stringClaim(profileClaims, r.claimNames.Email),
+		// Forwarded so the Users service can tell an asserted address from a
+		// verified one. The first-admin claim turns on that distinction:
+		// without it, anyone able to register with the IdP could claim the
+		// configured admin's address.
+		//
+		// Not configurable alongside the others: OIDC defines email_verified as
+		// the companion to email, so it travels with it rather than being named
+		// separately.
+		EmailVerified:     boolClaim(profileClaims, "email_verified"),
 		PhotoUrl:          stringClaim(profileClaims, r.claimNames.Picture),
 		PreferredUsername: preferredUsernamePtr,
 	})
@@ -187,6 +197,23 @@ func (r *Resolver) profileClaims(ctx context.Context, accessToken string, claims
 
 // stringClaim reads a claim as a trimmed string. A missing claim, or one that
 // isn't a string, yields "" so a partial profile provisions rather than fails.
+// boolClaim reads a boolean claim. Some issuers send it as a JSON string, so
+// both spellings are accepted; anything else is treated as not asserted.
+func boolClaim(claims map[string]any, name string) bool {
+	if claims == nil || name == "" {
+		return false
+	}
+	switch value := claims[name].(type) {
+	case bool:
+		return value
+	case string:
+		parsed, err := strconv.ParseBool(strings.TrimSpace(value))
+		return err == nil && parsed
+	default:
+		return false
+	}
+}
+
 func stringClaim(claims map[string]any, name string) string {
 	if claims == nil || name == "" {
 		return ""

@@ -27,6 +27,8 @@ type runnersClient interface {
 	UpdateFlavor(context.Context, *runnersv1.UpdateFlavorRequest, ...grpc.CallOption) (*runnersv1.UpdateFlavorResponse, error)
 	DeleteFlavor(context.Context, *runnersv1.DeleteFlavorRequest, ...grpc.CallOption) (*runnersv1.DeleteFlavorResponse, error)
 	ListFlavors(context.Context, *runnersv1.ListFlavorsRequest, ...grpc.CallOption) (*runnersv1.ListFlavorsResponse, error)
+	ReportRunnerCatalog(context.Context, *runnersv1.ReportRunnerCatalogRequest, ...grpc.CallOption) (*runnersv1.ReportRunnerCatalogResponse, error)
+	ListStorageClasses(context.Context, *runnersv1.ListStorageClassesRequest, ...grpc.CallOption) (*runnersv1.ListStorageClassesResponse, error)
 	GetVolume(context.Context, *runnersv1.GetVolumeRequest, ...grpc.CallOption) (*runnersv1.GetVolumeResponse, error)
 	ListVolumes(context.Context, *runnersv1.ListVolumesRequest, ...grpc.CallOption) (*runnersv1.ListVolumesResponse, error)
 	ListVolumesByThread(context.Context, *runnersv1.ListVolumesByThreadRequest, ...grpc.CallOption) (*runnersv1.ListVolumesByThreadResponse, error)
@@ -125,6 +127,24 @@ func (g *RunnersGateway) DeleteFlavor(ctx context.Context, req *connect.Request[
 
 func (g *RunnersGateway) ListFlavors(ctx context.Context, req *connect.Request[runnersv1.ListFlavorsRequest]) (*connect.Response[runnersv1.ListFlavorsResponse], error) {
 	resp, err := g.runners.ListFlavors(downstreamContext(ctx), req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+// ReportRunnerCatalog carries the runner's service token in the request, as
+// EnrollRunner does; the runners service authenticates it there.
+func (g *RunnersGateway) ReportRunnerCatalog(ctx context.Context, req *connect.Request[runnersv1.ReportRunnerCatalogRequest]) (*connect.Response[runnersv1.ReportRunnerCatalogResponse], error) {
+	resp, err := g.runners.ReportRunnerCatalog(downstreamContext(ctx), req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *RunnersGateway) ListStorageClasses(ctx context.Context, req *connect.Request[runnersv1.ListStorageClassesRequest]) (*connect.Response[runnersv1.ListStorageClassesResponse], error) {
+	resp, err := g.runners.ListStorageClasses(downstreamContext(ctx), req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}

@@ -11,6 +11,7 @@ import (
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	"github.com/agynio/gateway/internal/identity"
+	"github.com/openziti/sdk-golang/ziti"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -109,6 +110,7 @@ func (f *fakeAppsClient) ListInstallationAuditLogEntries(ctx context.Context, re
 
 type fakeAgentsClient struct {
 	resolveAgentIdentity func(ctx context.Context, req *agentsv1.ResolveAgentIdentityRequest, opts ...grpc.CallOption) (*agentsv1.ResolveAgentIdentityResponse, error)
+	getSandbox           func(ctx context.Context, req *agentsv1.GetSandboxRequest, opts ...grpc.CallOption) (*agentsv1.GetSandboxResponse, error)
 }
 
 func (f *fakeAgentsClient) CreateAgent(ctx context.Context, req *agentsv1.CreateAgentRequest, opts ...grpc.CallOption) (*agentsv1.CreateAgentResponse, error) {
@@ -179,6 +181,9 @@ func (f *fakeAgentsClient) CreateSandbox(ctx context.Context, req *agentsv1.Crea
 }
 
 func (f *fakeAgentsClient) GetSandbox(ctx context.Context, req *agentsv1.GetSandboxRequest, opts ...grpc.CallOption) (*agentsv1.GetSandboxResponse, error) {
+	if f.getSandbox != nil {
+		return f.getSandbox(ctx, req, opts...)
+	}
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -710,5 +715,62 @@ func TestAppProxyHandlerServeHTTPInvalidPath(t *testing.T) {
 	}
 	if resp.Header().Get("Content-Type") != problemContentType {
 		t.Fatalf("expected problem content type")
+	}
+}
+
+func (f *fakeAgentsClient) UpdateSandboxRuntimeState(ctx context.Context, in *agentsv1.UpdateSandboxRuntimeStateRequest, opts ...grpc.CallOption) (*agentsv1.UpdateSandboxRuntimeStateResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "UpdateSandboxRuntimeState not implemented")
+}
+
+// resolveOrganizationID never dials the overlay, but the constructor requires a
+// provider; nil is what an unstarted manager reports anyway.
+type nilZitiContextProvider struct{}
+
+func (nilZitiContextProvider) ZitiContext() ziti.Context { return nil }
+
+// A sandbox reaches an app the same way an agent does: the organization comes
+// from its own record, not from anything it sends.
+func TestResolveOrganizationIDFromSandboxRecord(t *testing.T) {
+	var askedFor string
+	agents := &fakeAgentsClient{
+		getSandbox: func(_ context.Context, req *agentsv1.GetSandboxRequest, _ ...grpc.CallOption) (*agentsv1.GetSandboxResponse, error) {
+			askedFor = req.GetId()
+			return &agentsv1.GetSandboxResponse{
+				Sandbox: &agentsv1.Sandbox{OrganizationId: "org-from-sandbox"},
+			}, nil
+		},
+	}
+	handler := NewAppProxyHandler(&fakeAppsClient{}, agents, nilZitiContextProvider{}, time.Minute)
+
+	orgID, err := handler.resolveOrganizationID(context.Background(), identity.ResolvedIdentity{
+		IdentityType: identity.IdentityTypeSandbox,
+		IdentityID:   "sandbox-1",
+	})
+	if err != nil {
+		t.Fatalf("resolve organization: %v", err)
+	}
+	if orgID != "org-from-sandbox" {
+		t.Fatalf("expected the sandbox's organization, got %q", orgID)
+	}
+	if askedFor != "sandbox-1" {
+		t.Fatalf("expected the caller's own sandbox to be read, got %q", askedFor)
+	}
+}
+
+// A sandbox whose record carries no organization must not fall through to a
+// blank one, which would resolve installations in the wrong place.
+func TestResolveOrganizationIDRejectsSandboxWithoutOrganization(t *testing.T) {
+	agents := &fakeAgentsClient{
+		getSandbox: func(context.Context, *agentsv1.GetSandboxRequest, ...grpc.CallOption) (*agentsv1.GetSandboxResponse, error) {
+			return &agentsv1.GetSandboxResponse{Sandbox: &agentsv1.Sandbox{}}, nil
+		},
+	}
+	handler := NewAppProxyHandler(&fakeAppsClient{}, agents, nilZitiContextProvider{}, time.Minute)
+
+	if _, err := handler.resolveOrganizationID(context.Background(), identity.ResolvedIdentity{
+		IdentityType: identity.IdentityTypeSandbox,
+		IdentityID:   "sandbox-1",
+	}); status.Code(err) != codes.FailedPrecondition {
+		t.Fatalf("expected FailedPrecondition, got %v", err)
 	}
 }

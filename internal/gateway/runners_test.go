@@ -120,6 +120,14 @@ func (f *fakeRunnersClient) DeleteFlavor(ctx context.Context, in *runnersv1.Dele
 	return nil, status.Error(codes.Unimplemented, "DeleteFlavor not implemented")
 }
 
+func (f *fakeRunnersClient) ReportRunnerCatalog(ctx context.Context, in *runnersv1.ReportRunnerCatalogRequest, opts ...grpc.CallOption) (*runnersv1.ReportRunnerCatalogResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ReportRunnerCatalog not implemented")
+}
+
+func (f *fakeRunnersClient) ListStorageClasses(ctx context.Context, in *runnersv1.ListStorageClassesRequest, opts ...grpc.CallOption) (*runnersv1.ListStorageClassesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "ListStorageClasses not implemented")
+}
+
 func (f *fakeRunnersClient) ListFlavors(ctx context.Context, in *runnersv1.ListFlavorsRequest, opts ...grpc.CallOption) (*runnersv1.ListFlavorsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "ListFlavors not implemented")
 }
