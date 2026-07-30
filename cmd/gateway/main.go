@@ -105,7 +105,15 @@ func main() {
 			log.Fatalf("failed to create OIDC verifier: %v", err)
 		}
 		userinfoHTTPClient := &http.Client{Timeout: 10 * time.Second}
-		resolver, err := oidcresolver.NewResolver(verifier, usersClient, userinfoHTTPClient)
+		resolver, err := oidcresolver.NewResolver(verifier, usersClient, userinfoHTTPClient,
+			oidcresolver.WithProfileSource(oidcresolver.ProfileSource(config.OIDCProfileSource)),
+			oidcresolver.WithClaimNames(oidcresolver.ClaimNames{
+				Name:              config.OIDCClaimName,
+				Email:             config.OIDCClaimEmail,
+				Picture:           config.OIDCClaimPicture,
+				PreferredUsername: config.OIDCClaimPreferredUser,
+			}),
+		)
 		if err != nil {
 			log.Fatalf("failed to create OIDC resolver: %v", err)
 		}

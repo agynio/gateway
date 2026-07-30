@@ -2,6 +2,7 @@ package oidcauth
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -14,6 +15,9 @@ import (
 
 type Claims struct {
 	Subject string
+	// All holds every claim in the verified token payload, so callers can read
+	// provider-specific profile claims without this package knowing their names.
+	All map[string]any
 }
 
 type Verifier struct {
@@ -103,7 +107,13 @@ func (v *Verifier) Verify(ctx context.Context, accessToken string) (Claims, erro
 		return Claims{}, fmt.Errorf("subject claim is required")
 	}
 
+	var all map[string]any
+	if err := json.Unmarshal(payload, &all); err != nil {
+		return Claims{}, err
+	}
+
 	return Claims{
 		Subject: subject,
+		All:     all,
 	}, nil
 }

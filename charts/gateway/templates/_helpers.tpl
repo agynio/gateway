@@ -62,10 +62,33 @@
 {{- $env = append $env (dict "name" "OIDC_CLIENT_ID" "value" $oidcClientId) -}}
 {{- end -}}
 
+{{- $oidcProfileSource := trimAll " \n\t" (default "" .Values.gateway.oidcProfileSource) -}}
+{{- if $oidcProfileSource -}}
+{{- $env = append $env (dict "name" "OIDC_PROFILE_SOURCE" "value" $oidcProfileSource) -}}
+{{- end -}}
+
+{{- $oidcClaimName := trimAll " \n\t" (default "" .Values.gateway.oidcClaimName) -}}
+{{- if $oidcClaimName -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_NAME" "value" $oidcClaimName) -}}
+{{- end -}}
+
+{{- $oidcClaimEmail := trimAll " \n\t" (default "" .Values.gateway.oidcClaimEmail) -}}
+{{- if $oidcClaimEmail -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_EMAIL" "value" $oidcClaimEmail) -}}
+{{- end -}}
+
+{{- $oidcClaimPicture := trimAll " \n\t" (default "" .Values.gateway.oidcClaimPicture) -}}
+{{- if $oidcClaimPicture -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_PICTURE" "value" $oidcClaimPicture) -}}
+{{- end -}}
+
+{{- $oidcClaimPreferredUsername := trimAll " \n\t" (default "" .Values.gateway.oidcClaimPreferredUsername) -}}
+{{- if $oidcClaimPreferredUsername -}}
+{{- $env = append $env (dict "name" "OIDC_CLAIM_PREFERRED_USERNAME" "value" $oidcClaimPreferredUsername) -}}
+{{- end -}}
+
 {{- /* A Secret reference keeps the bootstrap token out of the Deployment spec,
-       so it is not readable by anyone who can read workloads. It also lets the
-       value be supplied after the chart is rendered, which is how an install
-       can hold a token the image did not ship. */ -}}
+       so it is not readable by anyone who can read workloads. */ -}}
 {{- $clusterAdminTokenSecret := default dict .Values.gateway.clusterAdminTokenSecret -}}
 {{- $clusterAdminTokenSecretName := trimAll " \n\t" (default "" $clusterAdminTokenSecret.name) -}}
 {{- $clusterAdminToken := trimAll " \n\t" (default "" .Values.gateway.clusterAdminToken) -}}
