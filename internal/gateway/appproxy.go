@@ -91,6 +91,25 @@ func (h *AppProxyHandler) resolveOrganizationID(ctx context.Context, resolved id
 			return "", status.Error(codes.FailedPrecondition, "organization id missing")
 		}
 		return orgID, nil
+	case identity.IdentityTypeSandbox:
+		if h.agents == nil {
+			return "", status.Error(codes.Internal, "agent resolver not configured")
+		}
+		sandboxID := resolved.SandboxID()
+		if sandboxID == "" {
+			return "", status.Error(codes.FailedPrecondition, "sandbox id missing")
+		}
+		resp, err := h.agents.GetSandbox(ctx, &agentsv1.GetSandboxRequest{
+			Ref: &agentsv1.GetSandboxRequest_Id{Id: sandboxID},
+		})
+		if err != nil {
+			return "", err
+		}
+		orgID := strings.TrimSpace(resp.GetSandbox().GetOrganizationId())
+		if orgID == "" {
+			return "", status.Error(codes.FailedPrecondition, "organization id missing")
+		}
+		return orgID, nil
 	case identity.IdentityTypeUser:
 		return "", status.Error(codes.FailedPrecondition, "organization id is required for user identity")
 	default:
