@@ -73,3 +73,19 @@ func TestParseIdentityTypeApp(t *testing.T) {
 		t.Fatalf("unexpected identity type: %s", identityType)
 	}
 }
+
+// An agent workload authenticates as its instance. The type has to parse and
+// count as a workload, or the gateway rejects the identity outright and every
+// call the workload makes fails at the door.
+func TestParseIdentityTypeAcceptsAgentInstance(t *testing.T) {
+	parsed, err := ParseIdentityType("agent_instance")
+	if err != nil {
+		t.Fatalf("parse agent_instance: %v", err)
+	}
+	if parsed != IdentityTypeAgentInstance {
+		t.Fatalf("parsed = %q, want agent_instance", parsed)
+	}
+	if !parsed.IsWorkload() {
+		t.Fatal("agent_instance must count as a workload identity")
+	}
+}

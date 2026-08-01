@@ -1,8 +1,7 @@
-.venv/
-.hypothesis/
-dist/
-gateway.log
-gateway.pid
+.gen/
 
-# Build-time generated code - do not commit
-gen/
+# devspace writes session logs into the working tree.
+.devspace/
+
+tmp/
+.DS_Store
