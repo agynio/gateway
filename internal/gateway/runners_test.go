@@ -66,7 +66,10 @@ func (f *fakeStream) RecvMsg(any) error {
 	return nil
 }
 
+// Embedded for the same reason as fakeAgentsClient: this fake answers two RPCs
+// and used to restate thirty.
 type fakeRunnersClient struct {
+	runnersv1.RunnersServiceClient
 	getWorkload             func(ctx context.Context, req *runnersv1.GetWorkloadRequest) (*runnersv1.GetWorkloadResponse, error)
 	getWorkloadReq          *runnersv1.GetWorkloadRequest
 	getWorkloadMetadata     metadata.MD
@@ -74,82 +77,6 @@ type fakeRunnersClient struct {
 	streamWorkloadLogs      func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
 	streamWorkloadLogsReq   *runnerv1.StreamWorkloadLogsRequest
 	streamWorkloadLogsCalls int
-}
-
-func (f *fakeRunnersClient) RegisterRunner(ctx context.Context, in *runnersv1.RegisterRunnerRequest, opts ...grpc.CallOption) (*runnersv1.RegisterRunnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "RegisterRunner not implemented")
-}
-
-func (f *fakeRunnersClient) GetRunner(ctx context.Context, in *runnersv1.GetRunnerRequest, opts ...grpc.CallOption) (*runnersv1.GetRunnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "GetRunner not implemented")
-}
-
-func (f *fakeRunnersClient) ListRunners(ctx context.Context, in *runnersv1.ListRunnersRequest, opts ...grpc.CallOption) (*runnersv1.ListRunnersResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListRunners not implemented")
-}
-
-func (f *fakeRunnersClient) UpdateRunner(ctx context.Context, in *runnersv1.UpdateRunnerRequest, opts ...grpc.CallOption) (*runnersv1.UpdateRunnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateRunner not implemented")
-}
-
-func (f *fakeRunnersClient) DeleteRunner(ctx context.Context, in *runnersv1.DeleteRunnerRequest, opts ...grpc.CallOption) (*runnersv1.DeleteRunnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "DeleteRunner not implemented")
-}
-
-func (f *fakeRunnersClient) ValidateServiceToken(ctx context.Context, in *runnersv1.ValidateServiceTokenRequest, opts ...grpc.CallOption) (*runnersv1.ValidateServiceTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ValidateServiceToken not implemented")
-}
-
-func (f *fakeRunnersClient) EnrollRunner(ctx context.Context, in *runnersv1.EnrollRunnerRequest, opts ...grpc.CallOption) (*runnersv1.EnrollRunnerResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "EnrollRunner not implemented")
-}
-
-func (f *fakeRunnersClient) CreateFlavor(ctx context.Context, in *runnersv1.CreateFlavorRequest, opts ...grpc.CallOption) (*runnersv1.CreateFlavorResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "CreateFlavor not implemented")
-}
-
-func (f *fakeRunnersClient) GetFlavor(ctx context.Context, in *runnersv1.GetFlavorRequest, opts ...grpc.CallOption) (*runnersv1.GetFlavorResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "GetFlavor not implemented")
-}
-
-func (f *fakeRunnersClient) UpdateFlavor(ctx context.Context, in *runnersv1.UpdateFlavorRequest, opts ...grpc.CallOption) (*runnersv1.UpdateFlavorResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateFlavor not implemented")
-}
-
-func (f *fakeRunnersClient) DeleteFlavor(ctx context.Context, in *runnersv1.DeleteFlavorRequest, opts ...grpc.CallOption) (*runnersv1.DeleteFlavorResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "DeleteFlavor not implemented")
-}
-
-func (f *fakeRunnersClient) ReportRunnerCatalog(ctx context.Context, in *runnersv1.ReportRunnerCatalogRequest, opts ...grpc.CallOption) (*runnersv1.ReportRunnerCatalogResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ReportRunnerCatalog not implemented")
-}
-
-func (f *fakeRunnersClient) ListStorageClasses(ctx context.Context, in *runnersv1.ListStorageClassesRequest, opts ...grpc.CallOption) (*runnersv1.ListStorageClassesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListStorageClasses not implemented")
-}
-
-func (f *fakeRunnersClient) ListFlavors(ctx context.Context, in *runnersv1.ListFlavorsRequest, opts ...grpc.CallOption) (*runnersv1.ListFlavorsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListFlavors not implemented")
-}
-
-func (f *fakeRunnersClient) CreateWorkload(ctx context.Context, in *runnersv1.CreateWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.CreateWorkloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "CreateWorkload not implemented")
-}
-
-func (f *fakeRunnersClient) UpdateWorkload(ctx context.Context, in *runnersv1.UpdateWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.UpdateWorkloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateWorkload not implemented")
-}
-
-func (f *fakeRunnersClient) UpdateWorkloadStatus(ctx context.Context, in *runnersv1.UpdateWorkloadStatusRequest, opts ...grpc.CallOption) (*runnersv1.UpdateWorkloadStatusResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateWorkloadStatus not implemented")
-}
-
-func (f *fakeRunnersClient) TouchWorkload(ctx context.Context, in *runnersv1.TouchWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.TouchWorkloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "TouchWorkload not implemented")
-}
-
-func (f *fakeRunnersClient) DeleteWorkload(ctx context.Context, in *runnersv1.DeleteWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.DeleteWorkloadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "DeleteWorkload not implemented")
 }
 
 func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.GetWorkloadResponse, error) {
@@ -162,22 +89,6 @@ func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWo
 	return f.getWorkload(ctx, in)
 }
 
-func (f *fakeRunnersClient) ListWorkloadsByThread(ctx context.Context, in *runnersv1.ListWorkloadsByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByThreadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListWorkloadsByThread not implemented")
-}
-
-func (f *fakeRunnersClient) ListWorkloadsByAgentInstance(ctx context.Context, in *runnersv1.ListWorkloadsByAgentInstanceRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsByAgentInstanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListWorkloadsByAgentInstance not implemented")
-}
-
-func (f *fakeRunnersClient) ListWorkloads(ctx context.Context, in *runnersv1.ListWorkloadsRequest, opts ...grpc.CallOption) (*runnersv1.ListWorkloadsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListWorkloads not implemented")
-}
-
-func (f *fakeRunnersClient) BatchUpdateWorkloadSampledAt(ctx context.Context, in *runnersv1.BatchUpdateWorkloadSampledAtRequest, opts ...grpc.CallOption) (*runnersv1.BatchUpdateWorkloadSampledAtResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "BatchUpdateWorkloadSampledAt not implemented")
-}
-
 func (f *fakeRunnersClient) StreamWorkloadLogs(ctx context.Context, in *runnerv1.StreamWorkloadLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
 	f.streamWorkloadLogsCalls++
 	f.streamWorkloadLogsReq = in
@@ -185,34 +96,6 @@ func (f *fakeRunnersClient) StreamWorkloadLogs(ctx context.Context, in *runnerv1
 		return nil, status.Error(codes.Unimplemented, "StreamWorkloadLogs not implemented")
 	}
 	return f.streamWorkloadLogs(ctx, in)
-}
-
-func (f *fakeRunnersClient) CreateVolume(ctx context.Context, in *runnersv1.CreateVolumeRequest, opts ...grpc.CallOption) (*runnersv1.CreateVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "CreateVolume not implemented")
-}
-
-func (f *fakeRunnersClient) UpdateVolume(ctx context.Context, in *runnersv1.UpdateVolumeRequest, opts ...grpc.CallOption) (*runnersv1.UpdateVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "UpdateVolume not implemented")
-}
-
-func (f *fakeRunnersClient) GetVolume(ctx context.Context, in *runnersv1.GetVolumeRequest, opts ...grpc.CallOption) (*runnersv1.GetVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "GetVolume not implemented")
-}
-
-func (f *fakeRunnersClient) ListVolumes(ctx context.Context, in *runnersv1.ListVolumesRequest, opts ...grpc.CallOption) (*runnersv1.ListVolumesResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListVolumes not implemented")
-}
-
-func (f *fakeRunnersClient) ListVolumesByThread(ctx context.Context, in *runnersv1.ListVolumesByThreadRequest, opts ...grpc.CallOption) (*runnersv1.ListVolumesByThreadResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListVolumesByThread not implemented")
-}
-
-func (f *fakeRunnersClient) ListVolumesByAgentInstance(ctx context.Context, in *runnersv1.ListVolumesByAgentInstanceRequest, opts ...grpc.CallOption) (*runnersv1.ListVolumesByAgentInstanceResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "ListVolumesByAgentInstance not implemented")
-}
-
-func (f *fakeRunnersClient) BatchUpdateVolumeSampledAt(ctx context.Context, in *runnersv1.BatchUpdateVolumeSampledAtRequest, opts ...grpc.CallOption) (*runnersv1.BatchUpdateVolumeSampledAtResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "BatchUpdateVolumeSampledAt not implemented")
 }
 
 func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway) gatewayv1connect.RunnersGatewayClient {
