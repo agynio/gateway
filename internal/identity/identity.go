@@ -9,18 +9,24 @@ import (
 type IdentityType string
 
 const (
-	IdentityTypeUser    IdentityType = "user"
-	IdentityTypeAgent   IdentityType = "agent"
-	IdentityTypeApp     IdentityType = "app"
-	IdentityTypeRunner  IdentityType = "runner"
-	IdentityTypeSandbox IdentityType = "sandbox"
+	IdentityTypeUser IdentityType = "user"
+	// IdentityTypeAgent names an agent class. It predates instances and is kept
+	// because identities minted before the migration still present it.
+	IdentityTypeAgent IdentityType = "agent"
+	// IdentityTypeAgentInstance names one running instance of an agent class.
+	// Workloads authenticate as this: an instance owns its inbox, its volumes
+	// and its runner pinning, none of which the class can stand in for.
+	IdentityTypeAgentInstance IdentityType = "agent_instance"
+	IdentityTypeApp           IdentityType = "app"
+	IdentityTypeRunner        IdentityType = "runner"
+	IdentityTypeSandbox       IdentityType = "sandbox"
 )
 
 // IsWorkload reports whether the type belongs to a workload the platform starts
 // and stops — one whose identity is only meaningful together with the workload
 // it runs in.
 func (t IdentityType) IsWorkload() bool {
-	return t == IdentityTypeAgent || t == IdentityTypeSandbox
+	return t == IdentityTypeAgent || t == IdentityTypeAgentInstance || t == IdentityTypeSandbox
 }
 
 type ResolvedIdentity struct {
@@ -49,6 +55,8 @@ func ParseIdentityType(value string) (IdentityType, error) {
 		return IdentityTypeUser, nil
 	case string(IdentityTypeAgent):
 		return IdentityTypeAgent, nil
+	case string(IdentityTypeAgentInstance):
+		return IdentityTypeAgentInstance, nil
 	case string(IdentityTypeApp):
 		return IdentityTypeApp, nil
 	case string(IdentityTypeRunner):
