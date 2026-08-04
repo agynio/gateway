@@ -35,6 +35,14 @@ func (f *fakeOrganizationsClient) GetOrganization(ctx context.Context, in *organ
 	return nil, status.Error(codes.Unimplemented, "GetOrganization not implemented")
 }
 
+func (f *fakeOrganizationsClient) RegisterPlatformOrganization(ctx context.Context, in *organizationsv1.RegisterPlatformOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.RegisterPlatformOrganizationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "RegisterPlatformOrganization not implemented")
+}
+
+func (f *fakeOrganizationsClient) GetOrganizationBySlug(ctx context.Context, in *organizationsv1.GetOrganizationBySlugRequest, opts ...grpc.CallOption) (*organizationsv1.GetOrganizationBySlugResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "GetOrganizationBySlug not implemented")
+}
+
 func (f *fakeOrganizationsClient) UpdateOrganization(ctx context.Context, in *organizationsv1.UpdateOrganizationRequest, opts ...grpc.CallOption) (*organizationsv1.UpdateOrganizationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "UpdateOrganization not implemented")
 }
