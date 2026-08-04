@@ -399,46 +399,6 @@ func (g *Gateway) ListSkills(ctx context.Context, req *connect.Request[agentsv1.
 	return connect.NewResponse(resp), nil
 }
 
-func (g *Gateway) CreateHook(ctx context.Context, req *connect.Request[agentsv1.CreateHookRequest]) (*connect.Response[agentsv1.CreateHookResponse], error) {
-	resp, err := g.agents.CreateHook(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) GetHook(ctx context.Context, req *connect.Request[agentsv1.GetHookRequest]) (*connect.Response[agentsv1.GetHookResponse], error) {
-	resp, err := g.agents.GetHook(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) UpdateHook(ctx context.Context, req *connect.Request[agentsv1.UpdateHookRequest]) (*connect.Response[agentsv1.UpdateHookResponse], error) {
-	resp, err := g.agents.UpdateHook(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) DeleteHook(ctx context.Context, req *connect.Request[agentsv1.DeleteHookRequest]) (*connect.Response[agentsv1.DeleteHookResponse], error) {
-	resp, err := g.agents.DeleteHook(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) ListHooks(ctx context.Context, req *connect.Request[agentsv1.ListHooksRequest]) (*connect.Response[agentsv1.ListHooksResponse], error) {
-	resp, err := g.agents.ListHooks(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
 func (g *Gateway) CreateEnv(ctx context.Context, req *connect.Request[agentsv1.CreateEnvRequest]) (*connect.Response[agentsv1.CreateEnvResponse], error) {
 	resp, err := g.agents.CreateEnv(ctx, req.Msg)
 	if err != nil {
