@@ -1,8 +1,8 @@
 version: v2
 
-# Vendored copies of agynio/api/images/v1, its gateway surface, and the
-# agents protos with hooks removed, so the Gateway builds before those changes
-# land in buf.build/agynio/api. Delete this
+# Vendored copies of agynio/api/images/v1, its gateway surface, and the agents
+# and secrets protos, so the Gateway builds before those changes land in
+# buf.build/agynio/api. Delete this
 # directory and the `buf generate proto` step from the Dockerfile and from
 # scripts/devspace-startup.sh once it is published there.
 modules:
