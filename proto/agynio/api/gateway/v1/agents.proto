@@ -89,9 +89,4 @@ service AgentsGateway {
   rpc DeleteInitScript(agynio.api.agents.v1.DeleteInitScriptRequest) returns (agynio.api.agents.v1.DeleteInitScriptResponse);
   rpc ListInitScripts(agynio.api.agents.v1.ListInitScriptsRequest) returns (agynio.api.agents.v1.ListInitScriptsResponse);
 
-  // --- Image Pull Secret Attachments (no Update - immutable) ---
-  rpc CreateImagePullSecretAttachment(agynio.api.agents.v1.CreateImagePullSecretAttachmentRequest) returns (agynio.api.agents.v1.CreateImagePullSecretAttachmentResponse);
-  rpc GetImagePullSecretAttachment(agynio.api.agents.v1.GetImagePullSecretAttachmentRequest) returns (agynio.api.agents.v1.GetImagePullSecretAttachmentResponse);
-  rpc DeleteImagePullSecretAttachment(agynio.api.agents.v1.DeleteImagePullSecretAttachmentRequest) returns (agynio.api.agents.v1.DeleteImagePullSecretAttachmentResponse);
-  rpc ListImagePullSecretAttachments(agynio.api.agents.v1.ListImagePullSecretAttachmentsRequest) returns (agynio.api.agents.v1.ListImagePullSecretAttachmentsResponse);
 }

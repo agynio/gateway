@@ -479,34 +479,3 @@ func (g *Gateway) ListInitScripts(ctx context.Context, req *connect.Request[agen
 	return connect.NewResponse(resp), nil
 }
 
-func (g *Gateway) CreateImagePullSecretAttachment(ctx context.Context, req *connect.Request[agentsv1.CreateImagePullSecretAttachmentRequest]) (*connect.Response[agentsv1.CreateImagePullSecretAttachmentResponse], error) {
-	resp, err := g.agents.CreateImagePullSecretAttachment(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) GetImagePullSecretAttachment(ctx context.Context, req *connect.Request[agentsv1.GetImagePullSecretAttachmentRequest]) (*connect.Response[agentsv1.GetImagePullSecretAttachmentResponse], error) {
-	resp, err := g.agents.GetImagePullSecretAttachment(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) DeleteImagePullSecretAttachment(ctx context.Context, req *connect.Request[agentsv1.DeleteImagePullSecretAttachmentRequest]) (*connect.Response[agentsv1.DeleteImagePullSecretAttachmentResponse], error) {
-	resp, err := g.agents.DeleteImagePullSecretAttachment(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
-
-func (g *Gateway) ListImagePullSecretAttachments(ctx context.Context, req *connect.Request[agentsv1.ListImagePullSecretAttachmentsRequest]) (*connect.Response[agentsv1.ListImagePullSecretAttachmentsResponse], error) {
-	resp, err := g.agents.ListImagePullSecretAttachments(ctx, req.Msg)
-	if err != nil {
-		return nil, toConnectError(err)
-	}
-	return connect.NewResponse(resp), nil
-}
