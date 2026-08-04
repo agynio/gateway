@@ -5,6 +5,9 @@ echo "=== DevSpace startup ==="
 
 echo "Generating protobuf types..."
 buf generate buf.build/agynio/api
+# Images is generated from the vendored copy under proto/ until it lands in
+# buf.build/agynio/api; see proto/buf.yaml.
+buf generate proto --template buf.gen.yaml
 
 echo "Downloading Go modules..."
 go mod download

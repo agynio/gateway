@@ -6,6 +6,7 @@ import (
 	appsv1 "github.com/agynio/gateway/gen/agynio/api/apps/v1"
 	chatv1 "github.com/agynio/gateway/gen/agynio/api/chat/v1"
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
+	imagesv1 "github.com/agynio/gateway/gen/agynio/api/images/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	notificationsv1 "github.com/agynio/gateway/gen/agynio/api/notifications/v1"
 	secretsv1 "github.com/agynio/gateway/gen/agynio/api/secrets/v1"
@@ -27,6 +28,7 @@ type Gateway struct {
 	llm           llmv1.LLMServiceClient
 	secrets       secretsv1.SecretsServiceClient
 	tracing       tracingv1.TracingServiceClient
+	images        imagesv1.ImagesServiceClient
 }
 
 func New(
@@ -41,6 +43,7 @@ func New(
 	llm llmv1.LLMServiceClient,
 	secrets secretsv1.SecretsServiceClient,
 	tracing tracingv1.TracingServiceClient,
+	images imagesv1.ImagesServiceClient,
 ) *Gateway {
 	return &Gateway{
 		agents:        agents,
@@ -54,5 +57,6 @@ func New(
 		llm:           llm,
 		secrets:       secrets,
 		tracing:       tracing,
+		images:        images,
 	}
 }

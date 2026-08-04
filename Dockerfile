@@ -49,6 +49,11 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/ziti_management/v1 \
       --path agynio/api/gateway/v1
 
+# Images is generated from the vendored copy under proto/ until it lands in
+# buf.build/agynio/api; see proto/buf.yaml.
+COPY proto ./proto
+RUN buf generate proto --template buf.gen.yaml
+
 COPY . .
 
 ARG TARGETOS TARGETARCH

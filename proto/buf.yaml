@@ -1,0 +1,15 @@
+version: v2
+
+# Vendored copy of agynio/api/images/v1 and the gateway surface over it, so the
+# Gateway builds before the change lands in buf.build/agynio/api. Delete this
+# directory and the `buf generate proto` step from the Dockerfile and from
+# scripts/devspace-startup.sh once it is published there.
+modules:
+  - path: .
+
+lint:
+  use:
+    - STANDARD
+  except:
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - SERVICE_SUFFIX
