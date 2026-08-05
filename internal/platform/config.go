@@ -10,6 +10,7 @@ import (
 
 const (
 	defaultAgentsGRPCTarget         = "agents:50051"
+	defaultIdentityGRPCTarget       = "identity:50051"
 	defaultAppsGRPCTarget           = "apps:50051"
 	defaultThreadsGRPCTarget        = "threads:50051"
 	defaultChatGRPCTarget           = "chat:50051"
@@ -39,6 +40,7 @@ const (
 // Config holds the runtime configuration for communicating with upstream services.
 type Config struct {
 	AgentsGRPCTarget         string
+	IdentityGRPCTarget       string
 	AppsGRPCTarget           string
 	ThreadsGRPCTarget        string
 	ChatGRPCTarget           string
@@ -117,6 +119,7 @@ func LoadConfigFromEnv() (*Config, error) {
 
 	return &Config{
 		AgentsGRPCTarget:         envOrDefault("AGENTS_GRPC_TARGET", defaultAgentsGRPCTarget),
+		IdentityGRPCTarget:       envOrDefault("IDENTITY_GRPC_TARGET", defaultIdentityGRPCTarget),
 		AppsGRPCTarget:           envOrDefault("APPS_GRPC_TARGET", defaultAppsGRPCTarget),
 		ThreadsGRPCTarget:        envOrDefault("THREADS_GRPC_TARGET", defaultThreadsGRPCTarget),
 		ChatGRPCTarget:           envOrDefault("CHAT_GRPC_TARGET", defaultChatGRPCTarget),
