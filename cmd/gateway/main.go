@@ -30,6 +30,7 @@ import (
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
 	groupsv1 "github.com/agynio/gateway/gen/agynio/api/groups/v1"
 	identityv1 "github.com/agynio/gateway/gen/agynio/api/identity/v1"
+	imagesv1 "github.com/agynio/gateway/gen/agynio/api/images/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	meteringv1 "github.com/agynio/gateway/gen/agynio/api/metering/v1"
 	networksv1 "github.com/agynio/gateway/gen/agynio/api/networks/v1"
@@ -150,6 +151,7 @@ func main() {
 	llmClient := mustClient(config.LLMGRPCTarget, "llm", llmv1.NewLLMServiceClient, &cleanup)
 	secretsClient := mustClient(config.SecretsGRPCTarget, "secrets", secretsv1.NewSecretsServiceClient, &cleanup)
 	tracingClient := mustClient(config.TracingGRPCTarget, "tracing", tracingv1.NewTracingServiceClient, &cleanup)
+	imagesClient := mustClient(config.ImagesGRPCTarget, "images", imagesv1.NewImagesServiceClient, &cleanup)
 	exposeClient := mustClient(config.ExposeGRPCTarget, "expose", exposev1.NewExposeServiceClient, &cleanup)
 	egressRulesClient := mustClient(config.EgressRulesGRPCTarget, "egress rules", egressv1.NewEgressRulesServiceClient, &cleanup)
 	groupsClient := mustClient(config.GroupsGRPCTarget, "groups", groupsv1.NewGroupsServiceClient, &cleanup)
@@ -176,6 +178,7 @@ func main() {
 		llmClient,
 		secretsClient,
 		tracingClient,
+		imagesClient,
 	)
 	threadsGateway := gateway.NewThreadsGateway(gatewayHandler)
 	usersGateway := gateway.NewUsersGateway(usersClient)
@@ -222,6 +225,7 @@ func main() {
 	registerConnect(gatewayv1connect.NewMeteringGatewayHandler(meteringGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewLLMGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewSecretsGatewayHandler(gatewayHandler, handlerOptions))
+	registerConnect(gatewayv1connect.NewImagesGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewTracingGatewayHandler(gatewayHandler, handlerOptions))
 	registerConnect(gatewayv1connect.NewUsersGatewayHandler(usersGateway, handlerOptions))
 	registerConnect(gatewayv1connect.NewOrganizationsGatewayHandler(organizationsGateway, handlerOptions))

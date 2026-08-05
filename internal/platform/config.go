@@ -22,6 +22,7 @@ const (
 	defaultLLMGRPCTarget            = "llm:50051"
 	defaultSecretsGRPCTarget        = "secrets:50051"
 	defaultTracingGRPCTarget        = "tracing:50051"
+	defaultImagesGRPCTarget         = "images:50051"
 	defaultZitiManagementGRPCTarget = "ziti-management:50051"
 	defaultZitiLeaseRenewalInterval = 2 * time.Minute
 	defaultZitiEnrollmentTimeout    = 2 * time.Minute
@@ -51,6 +52,7 @@ type Config struct {
 	LLMGRPCTarget            string
 	SecretsGRPCTarget        string
 	TracingGRPCTarget        string
+	ImagesGRPCTarget         string
 	ZitiEnabled              bool
 	ZitiLeaseRenewalInterval time.Duration
 	ZitiEnrollmentTimeout    time.Duration
@@ -128,6 +130,7 @@ func LoadConfigFromEnv() (*Config, error) {
 		MeteringGRPCTarget:       envOrDefault("METERING_GRPC_TARGET", defaultMeteringGRPCTarget),
 		LLMGRPCTarget:            envOrDefault("LLM_GRPC_TARGET", defaultLLMGRPCTarget),
 		SecretsGRPCTarget:        envOrDefault("SECRETS_GRPC_TARGET", defaultSecretsGRPCTarget),
+		ImagesGRPCTarget:         envOrDefault("IMAGES_GRPC_TARGET", defaultImagesGRPCTarget),
 		TracingGRPCTarget:        envOrDefault("TRACING_GRPC_TARGET", defaultTracingGRPCTarget),
 		ZitiEnabled:              zitiEnabled,
 		ZitiLeaseRenewalInterval: zitiLeaseRenewalInterval,

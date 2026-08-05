@@ -37,7 +37,6 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/token_counting/v1 \
       --path agynio/api/metering/v1 \
       --path agynio/api/llm/v1 \
-      --path agynio/api/secrets/v1 \
       --path agynio/api/identity/v1 \
       --path agynio/api/tracing/v1 \
       --path agynio/api/users/v1 \
@@ -47,6 +46,8 @@ RUN buf generate buf.build/agynio/api \
       --path agynio/api/egress/v1 \
       --path agynio/api/terminal_proxy/v1 \
       --path agynio/api/ziti_management/v1 \
+      --path agynio/api/images/v1 \
+      --path agynio/api/secrets/v1 \
       --path agynio/api/gateway/v1
 
 COPY . .
