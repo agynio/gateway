@@ -160,3 +160,44 @@ func assertTerminalIssueTicket(t *testing.T, req *terminalproxyv1.IssueTicketReq
 		t.Fatalf("expected command to be forwarded unchanged")
 	}
 }
+
+// The Gateway forwards the kind and its parameters untouched. Interpreting them
+// here would put a service's domain rules in its router.
+func TestTerminalGatewayForwardsKindAndSyncRoot(t *testing.T) {
+	terminalProxy := &fakeTerminalProxyClient{issueTicketResp: &terminalproxyv1.IssueTicketResponse{
+		Ticket: "t", WebsocketUrl: "wss://proxy/terminal", ExpiresInSeconds: 30,
+	}}
+	_, err := NewTerminalGateway(terminalProxy).CreateTerminalSession(
+		terminalIdentityContext(),
+		connect.NewRequest(&gatewayv1.CreateTerminalSessionRequest{
+			WorkloadId:    terminalTestWorkloadID,
+			ContainerName: "main",
+			Kind:          terminalproxyv1.SessionKind_SESSION_KIND_SYNC,
+			SyncRoot:      "/workspace/project",
+		}),
+	)
+	if err != nil {
+		t.Fatalf("create terminal session: %v", err)
+	}
+	if terminalProxy.issueTicketReq.GetKind() != terminalproxyv1.SessionKind_SESSION_KIND_SYNC {
+		t.Fatalf("kind not forwarded, got %s", terminalProxy.issueTicketReq.GetKind())
+	}
+	if terminalProxy.issueTicketReq.GetSyncRoot() != "/workspace/project" {
+		t.Fatalf("sync_root not forwarded, got %q", terminalProxy.issueTicketReq.GetSyncRoot())
+	}
+}
+
+// An unspecified kind is the proxy's to reject, not the Gateway's to default.
+func TestTerminalGatewayDoesNotDefaultTheKind(t *testing.T) {
+	terminalProxy := &fakeTerminalProxyClient{issueTicketResp: &terminalproxyv1.IssueTicketResponse{Ticket: "t"}}
+	_, _ = NewTerminalGateway(terminalProxy).CreateTerminalSession(
+		terminalIdentityContext(),
+		connect.NewRequest(&gatewayv1.CreateTerminalSessionRequest{
+			WorkloadId:    terminalTestWorkloadID,
+			ContainerName: "main",
+		}),
+	)
+	if terminalProxy.issueTicketReq.GetKind() != terminalproxyv1.SessionKind_SESSION_KIND_UNSPECIFIED {
+		t.Fatalf("the Gateway substituted a kind: %s", terminalProxy.issueTicketReq.GetKind())
+	}
+}
