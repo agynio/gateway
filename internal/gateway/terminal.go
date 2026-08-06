@@ -41,11 +41,17 @@ func (g *TerminalGateway) CreateTerminalSession(ctx context.Context, req *connec
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 
+	// The kind and its parameters are forwarded as given. What a kind means —
+	// the command it resolves to, which parameters it accepts, whether the
+	// caller may attach — belongs to the Terminal Proxy, which owns terminal
+	// sessions. The Gateway routes and does not interpret.
 	ticket, err := g.terminalProxy.IssueTicket(ctx, &terminalproxyv1.IssueTicketRequest{
 		IdentityId:    strings.TrimSpace(caller.IdentityID),
 		WorkloadId:    workloadID,
 		ContainerName: containerName,
+		Kind:          req.Msg.GetKind(),
 		Command:       req.Msg.GetCommand(),
+		SyncRoot:      req.Msg.GetSyncRoot(),
 	})
 	if err != nil {
 		return nil, toConnectError(err)
