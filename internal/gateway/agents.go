@@ -550,3 +550,27 @@ func (g *Gateway) ListImagePullSecretAttachments(ctx context.Context, req *conne
 	}
 	return connect.NewResponse(resp), nil
 }
+
+func (g *Gateway) SetEnvironmentRole(ctx context.Context, req *connect.Request[agentsv1.SetEnvironmentRoleRequest]) (*connect.Response[agentsv1.SetEnvironmentRoleResponse], error) {
+	resp, err := g.agents.SetEnvironmentRole(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) RemoveEnvironmentRole(ctx context.Context, req *connect.Request[agentsv1.RemoveEnvironmentRoleRequest]) (*connect.Response[agentsv1.RemoveEnvironmentRoleResponse], error) {
+	resp, err := g.agents.RemoveEnvironmentRole(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListEnvironmentRoles(ctx context.Context, req *connect.Request[agentsv1.ListEnvironmentRolesRequest]) (*connect.Response[agentsv1.ListEnvironmentRolesResponse], error) {
+	resp, err := g.agents.ListEnvironmentRoles(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
