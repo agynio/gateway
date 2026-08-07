@@ -94,3 +94,72 @@ func (g *Gateway) TestModel(ctx context.Context, req *connect.Request[llmv1.Test
 	}
 	return connect.NewResponse(resp), nil
 }
+
+// Subscriptions. ResolveSubscription and CountSubscriptionsReferencingSecret
+// are deliberately absent: they are internal calls over Istio, and a
+// subscription credential is not something an external caller should reach
+// through the Gateway.
+
+func (g *Gateway) CreateSubscription(ctx context.Context, req *connect.Request[llmv1.CreateSubscriptionRequest]) (*connect.Response[llmv1.CreateSubscriptionResponse], error) {
+	resp, err := g.llm.CreateSubscription(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) GetSubscription(ctx context.Context, req *connect.Request[llmv1.GetSubscriptionRequest]) (*connect.Response[llmv1.GetSubscriptionResponse], error) {
+	resp, err := g.llm.GetSubscription(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) UpdateSubscription(ctx context.Context, req *connect.Request[llmv1.UpdateSubscriptionRequest]) (*connect.Response[llmv1.UpdateSubscriptionResponse], error) {
+	resp, err := g.llm.UpdateSubscription(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteSubscription(ctx context.Context, req *connect.Request[llmv1.DeleteSubscriptionRequest]) (*connect.Response[llmv1.DeleteSubscriptionResponse], error) {
+	resp, err := g.llm.DeleteSubscription(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListSubscriptions(ctx context.Context, req *connect.Request[llmv1.ListSubscriptionsRequest]) (*connect.Response[llmv1.ListSubscriptionsResponse], error) {
+	resp, err := g.llm.ListSubscriptions(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) CreateSubscriptionAttachment(ctx context.Context, req *connect.Request[llmv1.CreateSubscriptionAttachmentRequest]) (*connect.Response[llmv1.CreateSubscriptionAttachmentResponse], error) {
+	resp, err := g.llm.CreateSubscriptionAttachment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) DeleteSubscriptionAttachment(ctx context.Context, req *connect.Request[llmv1.DeleteSubscriptionAttachmentRequest]) (*connect.Response[llmv1.DeleteSubscriptionAttachmentResponse], error) {
+	resp, err := g.llm.DeleteSubscriptionAttachment(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) ListSubscriptionAttachments(ctx context.Context, req *connect.Request[llmv1.ListSubscriptionAttachmentsRequest]) (*connect.Response[llmv1.ListSubscriptionAttachmentsResponse], error) {
+	resp, err := g.llm.ListSubscriptionAttachments(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}

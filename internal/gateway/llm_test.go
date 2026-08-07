@@ -79,3 +79,43 @@ func TestGatewayTestModelForwards(t *testing.T) {
 		t.Fatalf("expected output ok, got %q", resp.Msg.GetOutputText())
 	}
 }
+
+func (f *fakeLLMClient) CreateSubscription(context.Context, *llmv1.CreateSubscriptionRequest, ...grpc.CallOption) (*llmv1.CreateSubscriptionResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) GetSubscription(context.Context, *llmv1.GetSubscriptionRequest, ...grpc.CallOption) (*llmv1.GetSubscriptionResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) UpdateSubscription(context.Context, *llmv1.UpdateSubscriptionRequest, ...grpc.CallOption) (*llmv1.UpdateSubscriptionResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) DeleteSubscription(context.Context, *llmv1.DeleteSubscriptionRequest, ...grpc.CallOption) (*llmv1.DeleteSubscriptionResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) ListSubscriptions(context.Context, *llmv1.ListSubscriptionsRequest, ...grpc.CallOption) (*llmv1.ListSubscriptionsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) CreateSubscriptionAttachment(context.Context, *llmv1.CreateSubscriptionAttachmentRequest, ...grpc.CallOption) (*llmv1.CreateSubscriptionAttachmentResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) DeleteSubscriptionAttachment(context.Context, *llmv1.DeleteSubscriptionAttachmentRequest, ...grpc.CallOption) (*llmv1.DeleteSubscriptionAttachmentResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) ListSubscriptionAttachments(context.Context, *llmv1.ListSubscriptionAttachmentsRequest, ...grpc.CallOption) (*llmv1.ListSubscriptionAttachmentsResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) ResolveSubscription(context.Context, *llmv1.ResolveSubscriptionRequest, ...grpc.CallOption) (*llmv1.ResolveSubscriptionResponse, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (f *fakeLLMClient) CountSubscriptionsReferencingSecret(context.Context, *llmv1.CountSubscriptionsReferencingSecretRequest, ...grpc.CallOption) (*llmv1.CountSubscriptionsReferencingSecretResponse, error) {
+	return nil, errors.New("not implemented")
+}
