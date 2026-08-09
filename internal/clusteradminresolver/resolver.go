@@ -35,6 +35,6 @@ func (r *Resolver) ResolveFromToken(_ context.Context, accessToken string) (iden
 	}
 	return identity.ResolvedIdentity{
 		IdentityID:   r.identityID,
-		IdentityType: identity.IdentityTypeUser,
+		IdentityType: identity.IdentityTypePlatform,
 	}, nil
 }

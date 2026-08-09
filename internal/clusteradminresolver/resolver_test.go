@@ -56,7 +56,9 @@ func TestResolverResolveFromToken(t *testing.T) {
 	if resolved.IdentityID != "identity-1" {
 		t.Fatalf("expected identity id %q, got %q", "identity-1", resolved.IdentityID)
 	}
-	if resolved.IdentityType != identity.IdentityTypeUser {
-		t.Fatalf("expected identity type %q, got %q", identity.IdentityTypeUser, resolved.IdentityType)
+	// Not a user: it has no account in Users, and resolving it as one would put
+	// an unnameable member in every organization it touches.
+	if resolved.IdentityType != identity.IdentityTypePlatform {
+		t.Fatalf("expected identity type %q, got %q", identity.IdentityTypePlatform, resolved.IdentityType)
 	}
 }

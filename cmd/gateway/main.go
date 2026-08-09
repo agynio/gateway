@@ -157,13 +157,11 @@ func main() {
 	groupsClient := mustClient(config.GroupsGRPCTarget, "groups", groupsv1.NewGroupsServiceClient, &cleanup)
 	networksClient := mustClient(config.NetworksGRPCTarget, "networks", networksv1.NewNetworksServiceClient, &cleanup)
 
-	// The cluster admin is the one identity nothing else mints: it comes from
+	// The platform admin is the one identity nothing else mints: it comes from
 	// configuration, so no service ever registered it and anything that asks the
-	// identity service what type it is gets nothing back. Threads refuses to
-	// create a thread whose participant has no type, which is how an admin-token
-	// caller ends up with "expected 2 entries, got 1".
+	// identity service what type it is gets nothing back.
 	if config.ClusterAdminIdentityID != "" {
-		registerClusterAdminIdentity(identityClient, config.ClusterAdminIdentityID)
+		go registerPlatformIdentity(ctx, identityClient, config.ClusterAdminIdentityID)
 	}
 
 	gatewayHandler := gateway.New(
@@ -345,23 +343,38 @@ func mustClient[T any](target, name string, factory func(grpc.ClientConnInterfac
 	return client.Service()
 }
 
-// registerClusterAdminIdentity records the configured cluster admin with the
-// identity service. It is idempotent, and a failure is logged rather than
-// fatal: the Gateway serves every other request without it, and the identity
-// service may simply not be up yet on a cold cluster.
-func registerClusterAdminIdentity(client identityv1.IdentityServiceClient, identityID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// registerPlatformIdentity records the configured platform admin with the
+// identity service, which grants it cluster admin as a consequence of the type.
+//
+// Retried until it lands rather than attempted once: on a cold cluster the
+// identity service is routinely not serving yet, and the platform has no
+// administrator of its own until this call succeeds. The Gateway serves every
+// other request meanwhile.
+func registerPlatformIdentity(ctx context.Context, client identityv1.IdentityServiceClient, identityID string) {
+	const (
+		initialBackoff = 2 * time.Second
+		maxBackoff     = 30 * time.Second
+	)
 
-	if _, err := client.RegisterIdentity(ctx, &identityv1.RegisterIdentityRequest{
-		IdentityId:   identityID,
-		IdentityType: identityv1.IdentityType_IDENTITY_TYPE_USER,
-	}); err != nil {
-		if status.Code(err) == codes.AlreadyExists {
+	for backoff := initialBackoff; ; {
+		callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		_, err := client.RegisterIdentity(callCtx, &identityv1.RegisterIdentityRequest{
+			IdentityId:   identityID,
+			IdentityType: identityv1.IdentityType_IDENTITY_TYPE_PLATFORM,
+		})
+		cancel()
+		if err == nil || status.Code(err) == codes.AlreadyExists {
+			log.Printf("registered the platform admin identity %s", identityID)
 			return
 		}
-		log.Printf("failed to register the cluster admin identity %s: %v", identityID, err)
-		return
+		log.Printf("failed to register the platform admin identity %s (%v); retrying in %s", identityID, err, backoff)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(backoff):
+		}
+		if backoff *= 2; backoff > maxBackoff {
+			backoff = maxBackoff
+		}
 	}
-	log.Printf("registered the cluster admin identity %s", identityID)
 }
