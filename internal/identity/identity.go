@@ -20,6 +20,9 @@ const (
 	IdentityTypeApp           IdentityType = "app"
 	IdentityTypeRunner        IdentityType = "runner"
 	IdentityTypeSandbox       IdentityType = "sandbox"
+	// IdentityTypePlatform names the platform admin identity, which provisions
+	// what a release ships. It has no account in Users and never becomes one.
+	IdentityTypePlatform IdentityType = "platform"
 )
 
 // IsWorkload reports whether the type belongs to a workload the platform starts
@@ -63,6 +66,8 @@ func ParseIdentityType(value string) (IdentityType, error) {
 		return IdentityTypeRunner, nil
 	case string(IdentityTypeSandbox):
 		return IdentityTypeSandbox, nil
+	case string(IdentityTypePlatform):
+		return IdentityTypePlatform, nil
 	default:
 		return "", fmt.Errorf("unsupported identity type: %q", value)
 	}

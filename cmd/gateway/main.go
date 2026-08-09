@@ -17,8 +17,6 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
@@ -29,7 +27,6 @@ import (
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
 	groupsv1 "github.com/agynio/gateway/gen/agynio/api/groups/v1"
-	identityv1 "github.com/agynio/gateway/gen/agynio/api/identity/v1"
 	imagesv1 "github.com/agynio/gateway/gen/agynio/api/images/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	meteringv1 "github.com/agynio/gateway/gen/agynio/api/metering/v1"
@@ -136,7 +133,6 @@ func main() {
 	}
 
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
-	identityClient := mustClient(config.IdentityGRPCTarget, "identity", identityv1.NewIdentityServiceClient, &cleanup)
 	appsClient := mustClient(config.AppsGRPCTarget, "apps", appsv1.NewAppsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
 	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
@@ -156,15 +152,6 @@ func main() {
 	egressRulesClient := mustClient(config.EgressRulesGRPCTarget, "egress rules", egressv1.NewEgressRulesServiceClient, &cleanup)
 	groupsClient := mustClient(config.GroupsGRPCTarget, "groups", groupsv1.NewGroupsServiceClient, &cleanup)
 	networksClient := mustClient(config.NetworksGRPCTarget, "networks", networksv1.NewNetworksServiceClient, &cleanup)
-
-	// The cluster admin is the one identity nothing else mints: it comes from
-	// configuration, so no service ever registered it and anything that asks the
-	// identity service what type it is gets nothing back. Threads refuses to
-	// create a thread whose participant has no type, which is how an admin-token
-	// caller ends up with "expected 2 entries, got 1".
-	if config.ClusterAdminIdentityID != "" {
-		registerClusterAdminIdentity(identityClient, config.ClusterAdminIdentityID)
-	}
 
 	gatewayHandler := gateway.New(
 		agentsClient,
@@ -343,25 +330,4 @@ func mustClient[T any](target, name string, factory func(grpc.ClientConnInterfac
 	}
 
 	return client.Service()
-}
-
-// registerClusterAdminIdentity records the configured cluster admin with the
-// identity service. It is idempotent, and a failure is logged rather than
-// fatal: the Gateway serves every other request without it, and the identity
-// service may simply not be up yet on a cold cluster.
-func registerClusterAdminIdentity(client identityv1.IdentityServiceClient, identityID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	if _, err := client.RegisterIdentity(ctx, &identityv1.RegisterIdentityRequest{
-		IdentityId:   identityID,
-		IdentityType: identityv1.IdentityType_IDENTITY_TYPE_USER,
-	}); err != nil {
-		if status.Code(err) == codes.AlreadyExists {
-			return
-		}
-		log.Printf("failed to register the cluster admin identity %s: %v", identityID, err)
-		return
-	}
-	log.Printf("registered the cluster admin identity %s", identityID)
 }
