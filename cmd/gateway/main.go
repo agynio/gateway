@@ -17,8 +17,6 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 
 	agentstatev1 "github.com/agynio/gateway/gen/agynio/api/agent_state/v1"
 	agentsv1 "github.com/agynio/gateway/gen/agynio/api/agents/v1"
@@ -29,7 +27,6 @@ import (
 	filesv1 "github.com/agynio/gateway/gen/agynio/api/files/v1"
 	"github.com/agynio/gateway/gen/agynio/api/gateway/v1/gatewayv1connect"
 	groupsv1 "github.com/agynio/gateway/gen/agynio/api/groups/v1"
-	identityv1 "github.com/agynio/gateway/gen/agynio/api/identity/v1"
 	imagesv1 "github.com/agynio/gateway/gen/agynio/api/images/v1"
 	llmv1 "github.com/agynio/gateway/gen/agynio/api/llm/v1"
 	meteringv1 "github.com/agynio/gateway/gen/agynio/api/metering/v1"
@@ -136,7 +133,6 @@ func main() {
 	}
 
 	agentsClient := mustClient(config.AgentsGRPCTarget, "agents", agentsv1.NewAgentsServiceClient, &cleanup)
-	identityClient := mustClient(config.IdentityGRPCTarget, "identity", identityv1.NewIdentityServiceClient, &cleanup)
 	appsClient := mustClient(config.AppsGRPCTarget, "apps", appsv1.NewAppsServiceClient, &cleanup)
 	threadsClient := mustClient(config.ThreadsGRPCTarget, "threads", threadsv1.NewThreadsServiceClient, &cleanup)
 	chatClient := mustClient(config.ChatGRPCTarget, "chat", chatv1.NewChatServiceClient, &cleanup)
@@ -156,13 +152,6 @@ func main() {
 	egressRulesClient := mustClient(config.EgressRulesGRPCTarget, "egress rules", egressv1.NewEgressRulesServiceClient, &cleanup)
 	groupsClient := mustClient(config.GroupsGRPCTarget, "groups", groupsv1.NewGroupsServiceClient, &cleanup)
 	networksClient := mustClient(config.NetworksGRPCTarget, "networks", networksv1.NewNetworksServiceClient, &cleanup)
-
-	// The platform admin is the one identity nothing else mints: it comes from
-	// configuration, so no service ever registered it and anything that asks the
-	// identity service what type it is gets nothing back.
-	if config.ClusterAdminIdentityID != "" {
-		go registerPlatformIdentity(ctx, identityClient, config.ClusterAdminIdentityID)
-	}
 
 	gatewayHandler := gateway.New(
 		agentsClient,
@@ -341,40 +330,4 @@ func mustClient[T any](target, name string, factory func(grpc.ClientConnInterfac
 	}
 
 	return client.Service()
-}
-
-// registerPlatformIdentity records the configured platform admin with the
-// identity service, which grants it cluster admin as a consequence of the type.
-//
-// Retried until it lands rather than attempted once: on a cold cluster the
-// identity service is routinely not serving yet, and the platform has no
-// administrator of its own until this call succeeds. The Gateway serves every
-// other request meanwhile.
-func registerPlatformIdentity(ctx context.Context, client identityv1.IdentityServiceClient, identityID string) {
-	const (
-		initialBackoff = 2 * time.Second
-		maxBackoff     = 30 * time.Second
-	)
-
-	for backoff := initialBackoff; ; {
-		callCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		_, err := client.RegisterIdentity(callCtx, &identityv1.RegisterIdentityRequest{
-			IdentityId:   identityID,
-			IdentityType: identityv1.IdentityType_IDENTITY_TYPE_PLATFORM,
-		})
-		cancel()
-		if err == nil || status.Code(err) == codes.AlreadyExists {
-			log.Printf("registered the platform admin identity %s", identityID)
-			return
-		}
-		log.Printf("failed to register the platform admin identity %s (%v); retrying in %s", identityID, err, backoff)
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(backoff):
-		}
-		if backoff *= 2; backoff > maxBackoff {
-			backoff = maxBackoff
-		}
-	}
 }
