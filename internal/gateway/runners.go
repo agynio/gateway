@@ -28,6 +28,7 @@ type runnersClient interface {
 	DeleteFlavor(context.Context, *runnersv1.DeleteFlavorRequest, ...grpc.CallOption) (*runnersv1.DeleteFlavorResponse, error)
 	ListFlavors(context.Context, *runnersv1.ListFlavorsRequest, ...grpc.CallOption) (*runnersv1.ListFlavorsResponse, error)
 	ReportRunnerCatalog(context.Context, *runnersv1.ReportRunnerCatalogRequest, ...grpc.CallOption) (*runnersv1.ReportRunnerCatalogResponse, error)
+	ReportWorkloadState(context.Context, *runnersv1.ReportWorkloadStateRequest, ...grpc.CallOption) (*runnersv1.ReportWorkloadStateResponse, error)
 	ListStorageClasses(context.Context, *runnersv1.ListStorageClassesRequest, ...grpc.CallOption) (*runnersv1.ListStorageClassesResponse, error)
 	GetVolume(context.Context, *runnersv1.GetVolumeRequest, ...grpc.CallOption) (*runnersv1.GetVolumeResponse, error)
 	ListVolumes(context.Context, *runnersv1.ListVolumesRequest, ...grpc.CallOption) (*runnersv1.ListVolumesResponse, error)
@@ -137,6 +138,16 @@ func (g *RunnersGateway) ListFlavors(ctx context.Context, req *connect.Request[r
 // EnrollRunner does; the runners service authenticates it there.
 func (g *RunnersGateway) ReportRunnerCatalog(ctx context.Context, req *connect.Request[runnersv1.ReportRunnerCatalogRequest]) (*connect.Response[runnersv1.ReportRunnerCatalogResponse], error) {
 	resp, err := g.runners.ReportRunnerCatalog(downstreamContext(ctx), req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+// ReportWorkloadState carries the runner's service token in the request, as
+// ReportRunnerCatalog does; the runners service authenticates it there.
+func (g *RunnersGateway) ReportWorkloadState(ctx context.Context, req *connect.Request[runnersv1.ReportWorkloadStateRequest]) (*connect.Response[runnersv1.ReportWorkloadStateResponse], error) {
+	resp, err := g.runners.ReportWorkloadState(downstreamContext(ctx), req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}
