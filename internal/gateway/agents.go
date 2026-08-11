@@ -135,6 +135,29 @@ func (g *Gateway) GetSandbox(ctx context.Context, req *connect.Request[agentsv1.
 	return connect.NewResponse(resp), nil
 }
 
+// GetSandboxLayout forwards the caller's saved tab layout for a sandbox.
+//
+// Added here because the Gateway must implement every method of the service it
+// registers: without it the whole AgentsGateway handler fails to compile, and
+// the build failing is not visible at runtime -- the file watcher keeps serving
+// the last binary that did compile, so the process looks healthy while every
+// route added since is quietly absent.
+func (g *Gateway) GetSandboxLayout(ctx context.Context, req *connect.Request[agentsv1.GetSandboxLayoutRequest]) (*connect.Response[agentsv1.GetSandboxLayoutResponse], error) {
+	resp, err := g.agents.GetSandboxLayout(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+func (g *Gateway) SetSandboxLayout(ctx context.Context, req *connect.Request[agentsv1.SetSandboxLayoutRequest]) (*connect.Response[agentsv1.SetSandboxLayoutResponse], error) {
+	resp, err := g.agents.SetSandboxLayout(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
 func (g *Gateway) ListSandboxes(ctx context.Context, req *connect.Request[agentsv1.ListSandboxesRequest]) (*connect.Response[agentsv1.ListSandboxesResponse], error) {
 	resp, err := g.agents.ListSandboxes(ctx, req.Msg)
 	if err != nil {
