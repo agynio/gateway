@@ -41,8 +41,16 @@ pipelines:
                   - |
                     set -eu
                     start=$(date +%s)
+                    # buf.gen.yaml and buf.yaml are in this list because the
+                    # startup script generates before it builds. Without them a
+                    # sync that drops partway lets the container start on
+                    # incomplete source, fail on the missing file, and crash-loop
+                    # -- which then keeps DevSpace from re-attaching to finish
+                    # the very sync that would have repaired it.
                     while [ ! -f /opt/app/data/go.mod ] \
                       || [ ! -f /opt/app/data/go.sum ] \
+                      || [ ! -f /opt/app/data/buf.gen.yaml ] \
+                      || [ ! -f /opt/app/data/buf.yaml ] \
                       || [ ! -f /opt/app/data/.air.toml ] \
                       || [ ! -f /opt/app/data/cmd/gateway/main.go ] \
                       || [ ! -f /opt/app/data/internal/platform/config.go ]; do
