@@ -130,6 +130,13 @@ dev:
               - /gen/
               - dist/
               - .devspace/
+              # air builds here. The sync is bidirectional, so without this the
+              # 50MB binary is copied back to the developer's machine -- and a
+              # download cut short by a pod restart leaves a truncated file that
+              # every later sync uploads over air's good build. The binary then
+              # segfaults with no output, and deleting it in the pod does not
+              # help because the host copy restores it.
+              - tmp/
               - gateway.log
               - gateway.pid
               - bootstrap/
