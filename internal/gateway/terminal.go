@@ -52,6 +52,8 @@ func (g *TerminalGateway) CreateTerminalSession(ctx context.Context, req *connec
 		Kind:          req.Msg.GetKind(),
 		Command:       req.Msg.GetCommand(),
 		SyncRoot:      req.Msg.GetSyncRoot(),
+		ShellId:       req.Msg.GetShellId(),
+		ShellCwd:      req.Msg.GetShellCwd(),
 	})
 	if err != nil {
 		return nil, toConnectError(err)

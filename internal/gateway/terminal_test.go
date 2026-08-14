@@ -163,6 +163,34 @@ func assertTerminalIssueTicket(t *testing.T, req *terminalproxyv1.IssueTicketReq
 
 // The Gateway forwards the kind and its parameters untouched. Interpreting them
 // here would put a service's domain rules in its router.
+// A shell a caller names has to survive the hop. The Gateway dropping it is
+// invisible -- the proxy issues a working ticket for an unnamed shell, and the
+// only symptom is that persistence silently does not happen.
+func TestTerminalGatewayForwardsShellParameters(t *testing.T) {
+	terminalProxy := &fakeTerminalProxyClient{issueTicketResp: &terminalproxyv1.IssueTicketResponse{
+		Ticket: "t", WebsocketUrl: "wss://proxy/terminal", ExpiresInSeconds: 30,
+	}}
+	_, err := NewTerminalGateway(terminalProxy).CreateTerminalSession(
+		terminalIdentityContext(),
+		connect.NewRequest(&gatewayv1.CreateTerminalSessionRequest{
+			WorkloadId:    terminalTestWorkloadID,
+			ContainerName: "main",
+			Kind:          terminalproxyv1.SessionKind_SESSION_KIND_SHELL,
+			ShellId:       "shell-a",
+			ShellCwd:      "/workspace",
+		}),
+	)
+	if err != nil {
+		t.Fatalf("CreateTerminalSession: %v", err)
+	}
+	if got := terminalProxy.issueTicketReq.GetShellId(); got != "shell-a" {
+		t.Fatalf("shell_id not forwarded, got %q", got)
+	}
+	if got := terminalProxy.issueTicketReq.GetShellCwd(); got != "/workspace" {
+		t.Fatalf("shell_cwd not forwarded, got %q", got)
+	}
+}
+
 func TestTerminalGatewayForwardsKindAndSyncRoot(t *testing.T) {
 	terminalProxy := &fakeTerminalProxyClient{issueTicketResp: &terminalproxyv1.IssueTicketResponse{
 		Ticket: "t", WebsocketUrl: "wss://proxy/terminal", ExpiresInSeconds: 30,
