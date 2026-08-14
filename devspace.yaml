@@ -1,7 +1,7 @@
 version: v2beta1
 
 vars:
-  GATEWAY_NAMESPACE: platform
+  GATEWAY_NAMESPACE: agyn-platform
 
 pipelines:
   dev:
