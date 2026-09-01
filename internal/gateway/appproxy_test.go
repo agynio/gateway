@@ -104,6 +104,14 @@ func (f *fakeAppsClient) AppendInstallationAuditLogEntry(ctx context.Context, re
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
+func (f *fakeAppsClient) ReportConfigurationSchema(ctx context.Context, req *appsv1.ReportConfigurationSchemaRequest, opts ...grpc.CallOption) (*appsv1.ReportConfigurationSchemaResponse, error) {
+	return &appsv1.ReportConfigurationSchemaResponse{}, nil
+}
+
+func (f *fakeAppsClient) DeleteOrganizationResources(ctx context.Context, req *appsv1.DeleteOrganizationResourcesRequest, opts ...grpc.CallOption) (*appsv1.DeleteOrganizationResourcesResponse, error) {
+	return &appsv1.DeleteOrganizationResourcesResponse{}, nil
+}
+
 func (f *fakeAppsClient) ListInstallationAuditLogEntries(ctx context.Context, req *appsv1.ListInstallationAuditLogEntriesRequest, opts ...grpc.CallOption) (*appsv1.ListInstallationAuditLogEntriesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }

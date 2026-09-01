@@ -142,3 +142,25 @@ func (g *Gateway) ListInstallationAuditLogEntries(ctx context.Context, req *conn
 	}
 	return connect.NewResponse(resp), nil
 }
+
+// GetInstallationConfiguration is the only read path that returns the values of
+// properties an app marked x-agyn-secret; every other one omits them. The Apps
+// Service authorizes it to the app's own identity.
+func (g *Gateway) GetInstallationConfiguration(ctx context.Context, req *connect.Request[appsv1.GetInstallationConfigurationRequest]) (*connect.Response[appsv1.GetInstallationConfigurationResponse], error) {
+	resp, err := g.apps.GetInstallationConfiguration(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+// ReportConfigurationSchema is called by the app itself, at startup and
+// whenever its schema changes. The schema is a property of the deployed binary,
+// so the running app is what reports it.
+func (g *Gateway) ReportConfigurationSchema(ctx context.Context, req *connect.Request[appsv1.ReportConfigurationSchemaRequest]) (*connect.Response[appsv1.ReportConfigurationSchemaResponse], error) {
+	resp, err := g.apps.ReportConfigurationSchema(ctx, req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
