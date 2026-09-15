@@ -27,6 +27,10 @@ type fakeGroupsClient struct {
 	memberGroupsReq *groupsv1.ListMemberGroupsRequest
 }
 
+func (f *fakeGroupsClient) DeleteOrganizationResources(ctx context.Context, req *groupsv1.DeleteOrganizationResourcesRequest, opts ...grpc.CallOption) (*groupsv1.DeleteOrganizationResourcesResponse, error) {
+	return &groupsv1.DeleteOrganizationResourcesResponse{}, nil
+}
+
 func (f *fakeGroupsClient) CreateGroup(ctx context.Context, req *groupsv1.CreateGroupRequest, _ ...grpc.CallOption) (*groupsv1.CreateGroupResponse, error) {
 	f.createReq = req
 	f.createMetadata, _ = metadata.FromOutgoingContext(ctx)
