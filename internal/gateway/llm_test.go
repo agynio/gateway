@@ -15,6 +15,14 @@ type fakeLLMClient struct {
 	testModelResp *llmv1.TestModelResponse
 }
 
+func (f *fakeLLMClient) ResolveModelExists(ctx context.Context, req *llmv1.ResolveModelExistsRequest, opts ...grpc.CallOption) (*llmv1.ResolveModelExistsResponse, error) {
+	return &llmv1.ResolveModelExistsResponse{}, nil
+}
+
+func (f *fakeLLMClient) DeleteOrganizationResources(ctx context.Context, req *llmv1.DeleteOrganizationResourcesRequest, opts ...grpc.CallOption) (*llmv1.DeleteOrganizationResourcesResponse, error) {
+	return &llmv1.DeleteOrganizationResourcesResponse{}, nil
+}
+
 func (f *fakeLLMClient) CreateLLMProvider(context.Context, *llmv1.CreateLLMProviderRequest, ...grpc.CallOption) (*llmv1.CreateLLMProviderResponse, error) {
 	return nil, errors.New("not implemented")
 }
