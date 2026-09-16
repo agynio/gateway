@@ -35,6 +35,18 @@ type fakeNetworksClient struct {
 	listAccessReq         *networksv1.ListPrivateResourceAccessRequest
 }
 
+func (f *fakeNetworksClient) SetPrivateResourceMediation(ctx context.Context, req *networksv1.SetPrivateResourceMediationRequest, opts ...grpc.CallOption) (*networksv1.SetPrivateResourceMediationResponse, error) {
+	return &networksv1.SetPrivateResourceMediationResponse{}, nil
+}
+
+func (f *fakeNetworksClient) ListPrivateResourcesReachableBy(ctx context.Context, req *networksv1.ListPrivateResourcesReachableByRequest, opts ...grpc.CallOption) (*networksv1.ListPrivateResourcesReachableByResponse, error) {
+	return &networksv1.ListPrivateResourcesReachableByResponse{}, nil
+}
+
+func (f *fakeNetworksClient) DeleteOrganizationResources(ctx context.Context, req *networksv1.DeleteOrganizationResourcesRequest, opts ...grpc.CallOption) (*networksv1.DeleteOrganizationResourcesResponse, error) {
+	return &networksv1.DeleteOrganizationResourcesResponse{}, nil
+}
+
 func (f *fakeNetworksClient) CreateNetwork(ctx context.Context, req *networksv1.CreateNetworkRequest, _ ...grpc.CallOption) (*networksv1.CreateNetworkResponse, error) {
 	f.createNetworkReq = req
 	f.createNetworkMetadata, _ = metadata.FromOutgoingContext(ctx)
