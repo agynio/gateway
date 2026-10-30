@@ -66,17 +66,21 @@ func (f *fakeStream) RecvMsg(any) error {
 	return nil
 }
 
-// Embedded for the same reason as fakeAgentsClient: this fake answers two RPCs
-// and used to restate thirty.
+// Embedded for the same reason as fakeAgentsClient: this fake answers three
+// RPCs and used to restate thirty.
 type fakeRunnersClient struct {
 	runnersv1.RunnersServiceClient
-	getWorkload             func(ctx context.Context, req *runnersv1.GetWorkloadRequest) (*runnersv1.GetWorkloadResponse, error)
-	getWorkloadReq          *runnersv1.GetWorkloadRequest
-	getWorkloadMetadata     metadata.MD
-	getWorkloadCalls        int
-	streamWorkloadLogs      func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
-	streamWorkloadLogsReq   *runnerv1.StreamWorkloadLogsRequest
-	streamWorkloadLogsCalls int
+	getWorkload                func(ctx context.Context, req *runnersv1.GetWorkloadRequest) (*runnersv1.GetWorkloadResponse, error)
+	getWorkloadReq             *runnersv1.GetWorkloadRequest
+	getWorkloadMetadata        metadata.MD
+	getWorkloadCalls           int
+	reportWorkloadIdle         func(ctx context.Context, req *runnersv1.ReportWorkloadIdleRequest) (*runnersv1.ReportWorkloadIdleResponse, error)
+	reportWorkloadIdleReq      *runnersv1.ReportWorkloadIdleRequest
+	reportWorkloadIdleMetadata metadata.MD
+	reportWorkloadIdleCalls    int
+	streamWorkloadLogs         func(ctx context.Context, req *runnerv1.StreamWorkloadLogsRequest) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
+	streamWorkloadLogsReq      *runnerv1.StreamWorkloadLogsRequest
+	streamWorkloadLogsCalls    int
 }
 
 func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWorkloadRequest, opts ...grpc.CallOption) (*runnersv1.GetWorkloadResponse, error) {
@@ -89,6 +93,16 @@ func (f *fakeRunnersClient) GetWorkload(ctx context.Context, in *runnersv1.GetWo
 	return f.getWorkload(ctx, in)
 }
 
+func (f *fakeRunnersClient) ReportWorkloadIdle(ctx context.Context, in *runnersv1.ReportWorkloadIdleRequest, opts ...grpc.CallOption) (*runnersv1.ReportWorkloadIdleResponse, error) {
+	f.reportWorkloadIdleCalls++
+	f.reportWorkloadIdleReq = in
+	f.reportWorkloadIdleMetadata, _ = metadata.FromOutgoingContext(ctx)
+	if f.reportWorkloadIdle == nil {
+		return nil, status.Error(codes.Unimplemented, "ReportWorkloadIdle not implemented")
+	}
+	return f.reportWorkloadIdle(ctx, in)
+}
+
 func (f *fakeRunnersClient) StreamWorkloadLogs(ctx context.Context, in *runnerv1.StreamWorkloadLogsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error) {
 	f.streamWorkloadLogsCalls++
 	f.streamWorkloadLogsReq = in
@@ -98,10 +112,10 @@ func (f *fakeRunnersClient) StreamWorkloadLogs(ctx context.Context, in *runnerv1
 	return f.streamWorkloadLogs(ctx, in)
 }
 
-func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway) gatewayv1connect.RunnersGatewayClient {
+func newRunnersGatewayClient(t *testing.T, gateway *RunnersGateway, opts ...connect.HandlerOption) gatewayv1connect.RunnersGatewayClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	handlerPath, handler := gatewayv1connect.NewRunnersGatewayHandler(gateway)
+	handlerPath, handler := gatewayv1connect.NewRunnersGatewayHandler(gateway, opts...)
 	mux.Handle(handlerPath, handler)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
@@ -146,6 +160,77 @@ func TestRunnersGatewayGetWorkloadPropagatesIdentityMetadata(t *testing.T) {
 	}
 	assertMetadataValue(t, client.getWorkloadMetadata, identity.MetadataKeyIdentityID, resolved.IdentityID)
 	assertMetadataValue(t, client.getWorkloadMetadata, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
+}
+
+func TestRunnersGatewayReportWorkloadIdleForwardsCallerIdentity(t *testing.T) {
+	client := &fakeRunnersClient{}
+	client.reportWorkloadIdle = func(ctx context.Context, req *runnersv1.ReportWorkloadIdleRequest) (*runnersv1.ReportWorkloadIdleResponse, error) {
+		return &runnersv1.ReportWorkloadIdleResponse{}, nil
+	}
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "instance-1",
+		IdentityType: identity.IdentityTypeAgentInstance,
+		WorkloadID:   "workload-1",
+	}
+	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client), connect.WithInterceptors(identityInterceptor{resolved: resolved}))
+
+	_, err := gatewayClient.ReportWorkloadIdle(context.Background(), connect.NewRequest(&runnersv1.ReportWorkloadIdleRequest{Id: "workload-1"}))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if client.reportWorkloadIdleCalls != 1 {
+		t.Fatalf("expected ReportWorkloadIdle to be called once, got %d", client.reportWorkloadIdleCalls)
+	}
+	if client.reportWorkloadIdleReq.GetId() != "workload-1" {
+		t.Fatalf("expected workload id to be forwarded")
+	}
+	assertMetadataValue(t, client.reportWorkloadIdleMetadata, identity.MetadataKeyIdentityID, resolved.IdentityID)
+	assertMetadataValue(t, client.reportWorkloadIdleMetadata, identity.MetadataKeyIdentityType, string(resolved.IdentityType))
+	assertMetadataValue(t, client.reportWorkloadIdleMetadata, identity.MetadataKeyWorkloadID, resolved.WorkloadID)
+}
+
+// The runners service decides whether the caller owns the workload; what the
+// Gateway guarantees is that it decides on the identity the caller
+// authenticated as, whatever the request itself claims.
+func TestRunnersGatewayReportWorkloadIdleDeniesAnotherWorkload(t *testing.T) {
+	owners := map[string]string{"workload-1": "instance-1", "workload-2": "instance-2"}
+	client := &fakeRunnersClient{}
+	client.reportWorkloadIdle = func(ctx context.Context, req *runnersv1.ReportWorkloadIdleRequest) (*runnersv1.ReportWorkloadIdleResponse, error) {
+		md, _ := metadata.FromOutgoingContext(ctx)
+		caller := md.Get(identity.MetadataKeyIdentityID)
+		if len(caller) != 1 || caller[0] != owners[req.GetId()] {
+			return nil, status.Error(codes.PermissionDenied, "workload is not owned by the caller")
+		}
+		return &runnersv1.ReportWorkloadIdleResponse{}, nil
+	}
+	resolved := identity.ResolvedIdentity{
+		IdentityID:   "instance-1",
+		IdentityType: identity.IdentityTypeAgentInstance,
+		WorkloadID:   "workload-1",
+	}
+	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client), connect.WithInterceptors(identityInterceptor{resolved: resolved}))
+
+	req := connect.NewRequest(&runnersv1.ReportWorkloadIdleRequest{Id: "workload-2"})
+	req.Header().Set(identity.MetadataKeyIdentityID, "instance-2")
+	_, err := gatewayClient.ReportWorkloadIdle(context.Background(), req)
+	if connect.CodeOf(err) != connect.CodePermissionDenied {
+		t.Fatalf("expected code %v, got %v", connect.CodePermissionDenied, err)
+	}
+	assertMetadataValue(t, client.reportWorkloadIdleMetadata, identity.MetadataKeyIdentityID, resolved.IdentityID)
+}
+
+func TestRunnersGatewayReportWorkloadIdlePropagatesError(t *testing.T) {
+	client := &fakeRunnersClient{}
+	client.reportWorkloadIdle = func(ctx context.Context, req *runnersv1.ReportWorkloadIdleRequest) (*runnersv1.ReportWorkloadIdleResponse, error) {
+		return nil, status.Error(codes.Unavailable, "runners unavailable")
+	}
+	gatewayClient := newRunnersGatewayClient(t, NewRunnersGateway(client))
+
+	_, err := gatewayClient.ReportWorkloadIdle(context.Background(), connect.NewRequest(&runnersv1.ReportWorkloadIdleRequest{Id: "workload-1"}))
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Fatalf("expected code %v, got %v", connect.CodeUnavailable, connect.CodeOf(err))
+	}
 }
 
 func TestStreamWorkloadLogs_PassThrough(t *testing.T) {
