@@ -39,6 +39,7 @@ type runnersClient interface {
 	ListWorkloads(context.Context, *runnersv1.ListWorkloadsRequest, ...grpc.CallOption) (*runnersv1.ListWorkloadsResponse, error)
 	GetWorkload(context.Context, *runnersv1.GetWorkloadRequest, ...grpc.CallOption) (*runnersv1.GetWorkloadResponse, error)
 	TouchWorkload(context.Context, *runnersv1.TouchWorkloadRequest, ...grpc.CallOption) (*runnersv1.TouchWorkloadResponse, error)
+	ReportWorkloadIdle(context.Context, *runnersv1.ReportWorkloadIdleRequest, ...grpc.CallOption) (*runnersv1.ReportWorkloadIdleResponse, error)
 	StreamWorkloadLogs(context.Context, *runnerv1.StreamWorkloadLogsRequest, ...grpc.CallOption) (grpc.ServerStreamingClient[runnerv1.StreamWorkloadLogsResponse], error)
 }
 
@@ -228,6 +229,16 @@ func (g *RunnersGateway) GetWorkload(ctx context.Context, req *connect.Request[r
 
 func (g *RunnersGateway) TouchWorkload(ctx context.Context, req *connect.Request[runnersv1.TouchWorkloadRequest]) (*connect.Response[runnersv1.TouchWorkloadResponse], error) {
 	resp, err := g.runners.TouchWorkload(downstreamContext(ctx), req.Msg)
+	if err != nil {
+		return nil, toConnectError(err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+// ReportWorkloadIdle is called by agynd over its workload's own identity, as
+// TouchWorkload is; the runners service checks that identity owns the workload.
+func (g *RunnersGateway) ReportWorkloadIdle(ctx context.Context, req *connect.Request[runnersv1.ReportWorkloadIdleRequest]) (*connect.Response[runnersv1.ReportWorkloadIdleResponse], error) {
+	resp, err := g.runners.ReportWorkloadIdle(downstreamContext(ctx), req.Msg)
 	if err != nil {
 		return nil, toConnectError(err)
 	}
